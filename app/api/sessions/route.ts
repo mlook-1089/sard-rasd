@@ -107,32 +107,83 @@ export async function POST(req: Request) {
 
   const trimmedReciter = (b.reciterName || '').trim() || 'بدون اسم';
   const deviceTag = b.deviceTag ? String(b.deviceTag).trim() : null;
+  const STALE_SESSION_MS = 2 * 60 * 60 * 1000; // 2 hours
 
-  // Check if there is an existing un-ended session for this student & hizb
-  const openSessions = await db.select().from(sessions).where(and(
+  // 1) Check ALL open sessions for this student across ALL hizbs and ALL reciters
+  const openStudentSessions = await db.select().from(sessions).where(and(
     eq(sessions.studentId, studentId),
-    eq(sessions.hizbNumber, hizbNumber),
     eq(sessions.cancelled, false),
     isNull(sessions.endedAt)
   ));
 
-  if (openSessions.length > 0) {
-    const latestOpen = openSessions[openSessions.length - 1];
-    const ageMs = Date.now() - new Date(latestOpen.startedAt).getTime();
-    const sameOwner = (deviceTag && latestOpen.deviceTag === deviceTag) || latestOpen.reciterName === trimmedReciter;
-
-    // If double-clicked within 5 seconds by the same reciter/device, return existing session
-    if (sameOwner && ageMs < 5000 && !b.forceNew) {
-      return NextResponse.json({ ok: true, id: latestOpen.id, startedAt: latestOpen.startedAt, resumed: true });
-    }
-
-    // Cancel stale un-ended sessions for this student+hizb so orphan sessions never accumulate
-    for (const oldOpen of openSessions) {
+  const liveStudentSessions: typeof openStudentSessions = [];
+  for (const s of openStudentSessions) {
+    const ageMs = Date.now() - new Date(s.startedAt).getTime();
+    if (ageMs >= STALE_SESSION_MS) {
+      // Auto-cancel stale orphan sessions older than 2 hours
       await db.update(sessions).set({
         cancelled: true,
         endedAt: new Date(),
-        durationSeconds: Math.max(0, Math.floor((Date.now() - new Date(oldOpen.startedAt).getTime()) / 1000))
-      }).where(eq(sessions.id, oldOpen.id));
+        durationSeconds: Math.max(0, Math.floor(ageMs / 1000))
+      }).where(eq(sessions.id, s.id));
+    } else {
+      liveStudentSessions.push(s);
+    }
+  }
+
+  if (liveStudentSessions.length > 0) {
+    // Keep the earliest live session if multiple somehow existed in DB, cancel any extras
+    liveStudentSessions.sort((a, b) => a.id - b.id);
+    const activeStudentSession = liveStudentSessions[0];
+    for (let i = 1; i < liveStudentSessions.length; i++) {
+      const extra = liveStudentSessions[i];
+      await db.update(sessions).set({
+        cancelled: true,
+        endedAt: new Date(),
+        durationSeconds: Math.max(0, Math.floor((Date.now() - new Date(extra.startedAt).getTime()) / 1000))
+      }).where(eq(sessions.id, extra.id));
+    }
+
+    const sameDevice = Boolean(deviceTag && activeStudentSession.deviceTag && activeStudentSession.deviceTag === deviceTag);
+    const sameNameNoDevice = Boolean(!deviceTag && !activeStudentSession.deviceTag && activeStudentSession.reciterName === trimmedReciter);
+    const sameOwner = sameDevice || sameNameNoDevice;
+
+    // If the same reciter/device is re-requesting the exact same active hizb, resume it idempotently
+    if (sameOwner && activeStudentSession.hizbNumber === hizbNumber) {
+      return NextResponse.json({
+        ok: true,
+        id: activeStudentSession.id,
+        startedAt: activeStudentSession.startedAt,
+        resumed: true
+      });
+    }
+
+    // Otherwise, strictly block opening a second concurrent session for the same student!
+    return NextResponse.json({
+      error: `الطالب في جلسة تسميع جارية حالياً (الحزب ${activeStudentSession.hizbNumber} مع المسمع: ${activeStudentSession.reciterName}). لا يمكن فتح جلستين لنفس الطالب في نفس الوقت.`
+    }, { status: 409 });
+  }
+
+  // 2) Also ensure this reciter/device does not already have an open session with ANOTHER student
+  if (deviceTag) {
+    const openDeviceSessions = await db.select().from(sessions).where(and(
+      eq(sessions.deviceTag, deviceTag),
+      eq(sessions.cancelled, false),
+      isNull(sessions.endedAt)
+    ));
+    for (const ds of openDeviceSessions) {
+      const ageMs = Date.now() - new Date(ds.startedAt).getTime();
+      if (ageMs >= STALE_SESSION_MS) {
+        await db.update(sessions).set({
+          cancelled: true,
+          endedAt: new Date(),
+          durationSeconds: Math.max(0, Math.floor(ageMs / 1000))
+        }).where(eq(sessions.id, ds.id));
+      } else if (ds.studentId !== studentId) {
+        return NextResponse.json({
+          error: `لديك جلسة تسميع جارية حالياً مع طالب آخر (الحزب ${ds.hizbNumber}). يجب إنهاء الجلسة الحالية أو إلغاؤها أولاً.`
+        }, { status: 409 });
+      }
     }
   }
 
@@ -144,5 +195,29 @@ export async function POST(req: Request) {
     programId: activeId,
     deviceTag
   }).returning();
+
+  // 3) Post-insert atomic race check: if two requests for the same student raced at the exact same millisecond,
+  // only the lowest session ID wins; any higher ID is immediately rolled back and rejected with 409.
+  const afterInsertOpen = await db.select({
+    id: sessions.id,
+    hizbNumber: sessions.hizbNumber,
+    reciterName: sessions.reciterName
+  }).from(sessions).where(and(
+    eq(sessions.studentId, studentId),
+    eq(sessions.cancelled, false),
+    isNull(sessions.endedAt)
+  ));
+
+  if (afterInsertOpen.length > 1) {
+    const winnerId = Math.min(...afterInsertOpen.map((r) => r.id));
+    if (row.id !== winnerId) {
+      await db.delete(sessions).where(eq(sessions.id, row.id));
+      const winner = afterInsertOpen.find((r) => r.id === winnerId);
+      return NextResponse.json({
+        error: `الطالب في جلسة تسميع جارية حالياً (الحزب ${winner?.hizbNumber ?? hizbNumber} مع المسمع: ${winner?.reciterName ?? ''}). لا يمكن فتح جلستين لنفس الطالب في نفس الوقت.`
+      }, { status: 409 });
+    }
+  }
+
   return NextResponse.json({ ok: true, id: row.id, startedAt: row.startedAt });
 }

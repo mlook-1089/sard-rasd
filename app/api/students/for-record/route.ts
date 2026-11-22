@@ -43,6 +43,37 @@ export async function GET(req: Request) {
     }
   }
 
+  // Fetch currently active (in-progress) sessions across all students (< 2 hours old)
+  const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
+  const openRows = await db.select({
+    id: sessions.id,
+    studentId: sessions.studentId,
+    hizbNumber: sessions.hizbNumber,
+    reciterName: sessions.reciterName,
+    deviceTag: sessions.deviceTag,
+    startedAt: sessions.startedAt
+  }).from(sessions).where(and(eq(sessions.cancelled, false), isNull(sessions.endedAt)));
+
+  const activeSessionMap = new Map<number, {
+    id: number;
+    hizbNumber: number;
+    reciterName: string;
+    deviceTag: string | null;
+    startedAt: string;
+  }>();
+  for (const r of openRows) {
+    const startedMs = new Date(r.startedAt).getTime();
+    if (startedMs > twoHoursAgo && !activeSessionMap.has(r.studentId)) {
+      activeSessionMap.set(r.studentId, {
+        id: r.id,
+        hizbNumber: r.hizbNumber,
+        reciterName: r.reciterName,
+        deviceTag: r.deviceTag ?? null,
+        startedAt: new Date(r.startedAt).toISOString()
+      });
+    }
+  }
+
   const out: {
     id: number;
     name: string;
@@ -53,6 +84,13 @@ export async function GET(req: Request) {
     memorized: number;
     target: number;
     attendanceStatus: 'present' | 'absent' | 'unset';
+    activeSession: {
+      id: number;
+      hizbNumber: number;
+      reciterName: string;
+      deviceTag: string | null;
+      startedAt: string;
+    } | null;
   }[] = [];
 
   for (const st of sts) {
@@ -69,6 +107,7 @@ export async function GET(req: Request) {
     const recited = Array.from(new Set(recitedRows.map((r) => r.h)));
     const remaining = assigned.filter((h) => !recited.includes(h)).sort((a, b) => a - b);
     const attendanceStatus = attMap.get(st.id) ?? 'unset';
+    const activeSession = activeSessionMap.get(st.id) ?? null;
 
     out.push({
       id: st.id,
@@ -79,7 +118,8 @@ export async function GET(req: Request) {
       remaining,
       memorized: recited.length,
       target: assigned.length,
-      attendanceStatus
+      attendanceStatus,
+      activeSession
     });
   }
 

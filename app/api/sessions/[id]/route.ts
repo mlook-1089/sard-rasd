@@ -36,11 +36,19 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (b.action === 'cancel') {
       await db.update(sessions).set({
         cancelled: true,
-        endedAt,
-        durationSeconds
+        endedAt: row.endedAt ?? endedAt,
+        durationSeconds: row.durationSeconds ?? durationSeconds
       }).where(eq(sessions.id, id));
       return NextResponse.json({ ok: true });
     }
+
+    if (row.cancelled) {
+      return NextResponse.json({ error: 'هذه الجلسة تم إلغاؤها ولا يمكن اعتمادها' }, { status: 409 });
+    }
+    if (row.endedAt && row.score !== null) {
+      return NextResponse.json({ ok: true, score: row.score, passed: row.passed });
+    }
+
     const errors = Math.max(0, Math.floor(Number(b.errors ?? row.errors) || 0));
     const alerts = Math.max(0, Math.floor(Number(b.alerts ?? row.alerts) || 0));
     const score = computeScore(g.total, g.errDeduct, g.alertDeduct, errors, alerts);

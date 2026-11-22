@@ -11,6 +11,13 @@ type Student = {
   memorized: number;
   target: number;
   attendanceStatus?: AttendanceStatus;
+  activeSession?: {
+    id: number;
+    hizbNumber: number;
+    reciterName: string;
+    deviceTag: string | null;
+    startedAt: string;
+  } | null;
 };
 
 type ActiveSession = {
@@ -137,7 +144,12 @@ export default function RecordFlow({
   useEffect(() => {
     if (committeeIdRequired && !liveCommitteeId) return;
     loadStudents(liveCommitteeId);
-  }, [liveCommitteeId, committeeIdRequired, loadStudents]);
+    if (active) return;
+    const iv = setInterval(() => {
+      loadStudents(liveCommitteeId);
+    }, 8000);
+    return () => clearInterval(iv);
+  }, [liveCommitteeId, committeeIdRequired, loadStudents, active]);
 
   // Restore active session on mount from localStorage or server so navigation never orphans a session
   useEffect(() => {
@@ -589,10 +601,34 @@ export default function RecordFlow({
     return () => window.removeEventListener('keydown', onKey);
   }, [confirmCancelOpen, savingCancel]);
 
+  function isMyActiveSession(act?: Student['activeSession']) {
+    if (!act) return false;
+    const myTag = getOrSetDeviceTag();
+    if (myTag && act.deviceTag && act.deviceTag === myTag) return true;
+    if (!act.deviceTag && reciterName.trim() && act.reciterName === reciterName.trim()) return true;
+    return false;
+  }
+
   function handleSelectStudent(s: Student) {
     setSavedResult(null);
     if (s.attendanceStatus === 'absent') {
       setErrorMsg('لا يمكن تسميع طالب مسجل غائباً في التحضير');
+      return;
+    }
+    if (s.activeSession) {
+      if (isMyActiveSession(s.activeSession)) {
+        setErrorMsg(null);
+        setSelected(s);
+        setChosenHizb(s.activeSession.hizbNumber);
+        setActive({
+          id: s.activeSession.id,
+          startedAt: s.activeSession.startedAt,
+          studentId: s.id,
+          hizbNumber: s.activeSession.hizbNumber
+        });
+        return;
+      }
+      setErrorMsg(`الطالب (${s.name}) في جلسة تسميع جارية حالياً (الحزب ${s.activeSession.hizbNumber} مع المسمع: ${s.activeSession.reciterName}). لا يمكن فتح جلستين لنفس الطالب في نفس الوقت.`);
       return;
     }
     setErrorMsg(null);
@@ -768,12 +804,15 @@ export default function RecordFlow({
                   const on = selected?.id === s.id;
                   const att = s.attendanceStatus ?? 'unset';
                   const isAbsent = att === 'absent';
+                  const inOtherSession = Boolean(s.activeSession && !isMyActiveSession(s.activeSession));
+                  const inMySession = Boolean(s.activeSession && isMyActiveSession(s.activeSession));
+                  const blocked = isAbsent || inOtherSession;
                   return (
                     <button
                       key={s.id}
                       type="button"
                       onClick={() => handleSelectStudent(s)}
-                      aria-disabled={isAbsent}
+                      aria-disabled={blocked}
                       className="u-btn"
                       style={{
                         height: 'auto',
@@ -783,11 +822,11 @@ export default function RecordFlow({
                         flexDirection: 'column',
                         alignItems: 'stretch',
                         gap: 6,
-                        opacity: isAbsent ? 0.65 : 1,
-                        cursor: isAbsent ? 'not-allowed' : 'pointer',
+                        opacity: blocked ? 0.65 : 1,
+                        cursor: blocked ? 'not-allowed' : 'pointer',
                         background: on ? 'var(--brand-soft)' : 'var(--card2)',
                         color: on ? 'var(--brand-ink)' : 'var(--ink)',
-                        border: on ? '2px solid var(--brand)' : isAbsent ? '1.5px dashed var(--bad)' : '2px solid transparent'
+                        border: on ? '2px solid var(--brand)' : blocked ? '1.5px dashed var(--bad)' : inMySession ? '2px solid var(--warn)' : '2px solid transparent'
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, width: '100%' }}>
@@ -805,6 +844,16 @@ export default function RecordFlow({
                       <span style={{ fontSize: 11, color: 'var(--ink3)', fontWeight: 600 }}>
                         {s.level || '—'} · متبقي: {s.remaining.length}
                       </span>
+                      {s.activeSession && (
+                        <span
+                          className={`u-pill ${inMySession ? 'warn' : 'bad'}`}
+                          style={{ fontSize: 10.5, padding: '3px 8px', alignSelf: 'flex-start' }}
+                        >
+                          {inMySession
+                            ? `▶ استئناف جلستك (حزب ${s.activeSession.hizbNumber})`
+                            : `🔴 يسمّع الآن: حزب ${s.activeSession.hizbNumber} (${s.activeSession.reciterName})`}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
