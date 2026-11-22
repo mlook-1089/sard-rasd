@@ -71,6 +71,11 @@ export const circles = pgTable('circles', {
 export const committees = pgTable('committees', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
+  // Capacity constraints — used by the smart auto-assign feature.
+  maxStudents: integer('max_students'),      // nullable = no cap
+  minStudents: integer('min_students'),      // nullable = no floor
+  maxHizbs: integer('max_hizbs'),            // sum of assigned hizbs across students
+  minHizbs: integer('min_hizbs'),
   createdAt: timestamp('created_at').defaultNow().notNull()
 });
 

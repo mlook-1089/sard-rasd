@@ -41,6 +41,11 @@ async function main() {
     id SERIAL PRIMARY KEY, name TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
   )`;
+  // v3: capacity constraints for auto-assign
+  await sql`ALTER TABLE committees ADD COLUMN IF NOT EXISTS max_students INTEGER`;
+  await sql`ALTER TABLE committees ADD COLUMN IF NOT EXISTS min_students INTEGER`;
+  await sql`ALTER TABLE committees ADD COLUMN IF NOT EXISTS max_hizbs INTEGER`;
+  await sql`ALTER TABLE committees ADD COLUMN IF NOT EXISTS min_hizbs INTEGER`;
 
   await sql`CREATE TABLE IF NOT EXISTS supervisors (
     id SERIAL PRIMARY KEY,
