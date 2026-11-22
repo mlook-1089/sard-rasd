@@ -20,7 +20,11 @@ export async function POST(req: Request) {
 
   const contentType = (req.headers.get('content-type') || '').toLowerCase();
   const contentDisp = (req.headers.get('content-disposition') || '').toLowerCase();
-  const filename = (req.headers.get('x-filename') || '').toLowerCase();
+  const rawFilename = req.headers.get('x-filename') || '';
+  let filename = rawFilename.toLowerCase();
+  try {
+    filename = decodeURIComponent(rawFilename).toLowerCase();
+  } catch {}
 
   let rows: string[][] = [];
 

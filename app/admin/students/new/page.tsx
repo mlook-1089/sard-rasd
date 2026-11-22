@@ -110,7 +110,7 @@ function ImportForm() {
           'content-type': isXlsx
             ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             : 'text/csv',
-          'x-filename': file.name
+          'x-filename': encodeURIComponent(file.name)
         },
         body
       });
