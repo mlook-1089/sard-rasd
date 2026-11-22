@@ -63,26 +63,49 @@ export default async function StudentPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <header style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        background: 'var(--card)', borderBottom: '1px solid var(--line)',
-        padding: 'calc(10px + env(safe-area-inset-top)) 16px 10px',
-        position: 'sticky', top: 0, zIndex: 20
-      }}>
-        <div style={{
-          width: 42, height: 42, borderRadius: 12, flexShrink: 0,
-          background: 'var(--brand)', color: 'var(--gold-bright)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-          <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13" />
-          </svg>
+      <header
+        className="student-portal-header"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'var(--card)',
+          borderBottom: '1px solid var(--line)',
+          padding: 'calc(10px + env(safe-area-inset-top)) 16px 10px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          boxShadow: 'var(--shadow)'
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            width: '100%',
+            maxWidth: 1024,
+            flexWrap: 'wrap'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: '1 1 auto' }}>
+            <div style={{
+              width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+              background: 'var(--brand)', color: 'var(--gold-bright)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13" />
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="truncate" style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.25 }}>بوابة الطالب</div>
+              <div className="truncate" style={{ fontSize: 12, color: 'var(--ink3)' }}>تقريرك المباشر</div>
+            </div>
+          </div>
+          <StudentActions />
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.25 }}>بوابة الطالب</div>
-          <div style={{ fontSize: 12, color: 'var(--ink3)' }}>تقريرك المباشر</div>
-        </div>
-        <StudentActions />
       </header>
 
       <div className="max-w-5xl mx-auto p-4 md:p-6">
@@ -97,15 +120,19 @@ export default async function StudentPage() {
           <div className="u-bar"><i style={{ width: `${completion}%` }} /></div>
           <div className="meta">
             <span>الإنجاز العام</span>
-            <span className="u-num">{memorized} / {target} · {completion}%</span>
+            <span className="u-num">
+              <span dir="ltr" style={{ display: 'inline-block', unicodeBidi: 'isolate' }}>{memorized} / {target}</span>
+              {' · '}
+              <span dir="ltr" style={{ display: 'inline-block', unicodeBidi: 'isolate' }}>{completion}%</span>
+            </span>
           </div>
         </section>
 
         <section className="u-grid2 md4">
           <div className="u-stat"><div className="l">الهدف</div><div className="v">{target}</div></div>
           <div className="u-stat"><div className="l">المحفوظ</div><div className="v" style={{ color: 'var(--ok)' }}>{memorized}</div></div>
-          <div className="u-stat"><div className="l">الترتيب العام</div><div className="v" style={{ color: 'var(--gold)' }}>{rankOverall > 0 ? <bdi dir="ltr">{rankOverall} / {ranked.length}</bdi> : '—'}</div></div>
-          <div className="u-stat"><div className="l">ترتيبك في مستواك</div><div className="v" style={{ color: 'var(--info)' }}>{rankInLevel > 0 ? <bdi dir="ltr">{rankInLevel} / {inLevel.length}</bdi> : '—'}</div></div>
+          <div className="u-stat"><div className="l">الترتيب العام</div><div className="v" style={{ color: 'var(--gold)' }}>{rankOverall > 0 ? <span dir="ltr" style={{ display: 'inline-block', unicodeBidi: 'isolate' }}>{rankOverall} / {ranked.length}</span> : '—'}</div></div>
+          <div className="u-stat"><div className="l">ترتيبك في مستواك</div><div className="v" style={{ color: 'var(--info)' }}>{rankInLevel > 0 ? <span dir="ltr" style={{ display: 'inline-block', unicodeBidi: 'isolate' }}>{rankInLevel} / {inLevel.length}</span> : '—'}</div></div>
         </section>
 
         <section className="u-card">

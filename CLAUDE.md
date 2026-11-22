@@ -36,19 +36,36 @@ npm run dev
 # افتح http://localhost:3000
 ```
 
-### نشر التحديثات (الأمر النهائي)
+### نشر التحديثات
+
+**الطريقة الموصى بها (GitHub auto-deploy):**
+الريبو على https://github.com/mlook-1089/sard-rasd مربوط بـ Vercel.
+أي `git push` على فرع `main` ينشر تلقائياً خلال دقيقتين. أي `git push` على فرع آخر أو PR ينشئ Preview Deployment برابط خاص.
+
+```powershell
+# بعد أي تعديل
+git add .
+git commit -m "وصف التعديل"
+git push
+```
+
+**الطريقة اليدوية (fallback فقط إذا تعطّل GitHub):**
 ```powershell
 $env:VERCEL_TOKEN="<توكن-الذي-أعطاه-لك-صاحب-المشروع>"
 $env:NODE_OPTIONS="--require ./shim-hostname.js"
 npx vercel@latest deploy --prod --yes --token=$env:VERCEL_TOKEN
 ```
+أو `.\deploy.bat` بعد `setx VERCEL_TOKEN "<التوكن>"`.
 
-**أو بنقرة واحدة بعد ضبط Token:**
-```powershell
-setx VERCEL_TOKEN "<التوكن>"
-# أعد فتح النافذة
-.\deploy.bat
-```
+### دورة عمل الوكيل الخارجي
+1. اطلب من صاحب المشروع إضافتك كـ Collaborator على https://github.com/mlook-1089/sard-rasd/settings/access
+2. `git clone https://github.com/mlook-1089/sard-rasd.git`
+3. اطلب قيم `.env.local` (DATABASE_URL + SESSION_SECRET) في قناة آمنة
+4. أنشئ branch: `git checkout -b my-fix`
+5. عدّل → commit → `git push -u origin my-fix`
+6. افتح Pull Request على GitHub
+7. Vercel يُنشئ Preview Deployment تلقائياً — رابطه على PR
+8. صاحب المشروع يراجع ويدمج → النشر للـ production تلقائي
 
 ### فخاخ حرجة لازم تعرفها
 

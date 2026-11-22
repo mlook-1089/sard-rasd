@@ -57,125 +57,195 @@ export default async function CertificatePage() {
   const today = new Date();
   const dateStr = `${AR_DAYS[today.getDay()]}، ${today.getDate()} ${AR_MONTHS[today.getMonth()]} ${today.getFullYear()}`;
 
-  // Always-white text with a shadow — reads on both custom bg images and the brand fallback gradient.
-  const textShadow = bgUrl ? '0 2px 8px rgba(0,0,0,0.5)' : '0 1px 3px rgba(0,0,0,0.65)';
-  const subtleShadow = bgUrl ? '0 1px 4px rgba(0,0,0,0.4)' : '0 1px 2px rgba(0,0,0,0.5)';
+  const textShadow = '0 2px 8px rgba(0,0,0,0.65)';
+  const subtleShadow = '0 1px 4px rgba(0,0,0,0.55)';
 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
         @page { size: A4 portrait; margin: 0; }
         html, body { margin: 0; padding: 0; background: #e5e7eb; }
-        .cert-page { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 16px; }
-        .cert-topbar {
-          position: fixed; left: 12px; right: 12px; z-index: 5;
-          top: calc(12px + env(safe-area-inset-top));
-          display: flex; justify-content: space-between; gap: 8px; pointer-events: none;
+        .cert-shell {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          background: var(--bg, #e5e7eb);
         }
-        .cert-topbar > * { pointer-events: auto; }
+        .cert-topbar {
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+          background: var(--card, #ffffff);
+          border-bottom: 1px solid var(--line, #e5e7eb);
+          box-shadow: 0 2px 8px rgba(15,27,45,0.06);
+        }
+        .cert-page {
+          flex: 1;
+          display: flex;
+          align-items: flex-start;
+          justify-content: center;
+          padding: 20px 16px 32px;
+        }
         .cert {
           position: relative;
           width: 210mm;
+          max-width: 100%;
           min-height: 297mm;
-          background: ${bgUrl ? `url("${bgUrl}") center/cover no-repeat` : 'linear-gradient(135deg, #013856 0%, #09598E 55%, #0B3B5C 100%)'};
-          color: #ffffff;
-          box-shadow: 0 10px 40px rgba(0,0,0,.2);
+          background: ${bgUrl
+            ? `linear-gradient(135deg, rgba(1, 40, 64, 0.84) 0%, rgba(9, 70, 114, 0.80) 55%, rgba(11, 45, 72, 0.86) 100%), url("${bgUrl}") center/cover no-repeat`
+            : 'linear-gradient(135deg, #012a42 0%, #074773 55%, #09324f 100%)'} !important;
+          color: #ffffff !important;
+          box-shadow: 0 12px 40px rgba(0,0,0,.22);
           overflow: hidden;
           font-family: 'Tajawal', 'IBM Plex Sans Arabic', sans-serif;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          padding: 60px;
+          box-sizing: border-box;
+          border-radius: 4px;
+        }
+        .cert * {
+          color: inherit;
         }
         .cert::before {
           content: '';
-          position: absolute; inset: 24px;
-          border: 3px double #d4af37;
+          position: absolute;
+          inset: 22px;
+          border: 3px double #f5d061;
           border-radius: 12px;
           pointer-events: none;
         }
         .cert-body {
-          position: absolute; inset: 60px;
-          display: flex; flex-direction: column; align-items: center;
+          position: relative;
+          z-index: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
           text-align: center;
           gap: 10px;
-          padding: 40px 32px;
-          border-radius: 8px;
+          padding: 28px 24px;
+          border-radius: 12px;
         }
-        .cert-ornament { color: #d4af37; margin: 0 auto 4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.4)); }
-        .cert-inst { font-size: 20px; font-weight: 700; color: #ffffff; margin: 0; text-shadow: ${textShadow}; }
-        .cert-title { font-size: 48px; font-weight: 900; color: #ffffff; margin: 24px 0 4px; letter-spacing: -1px; text-shadow: ${textShadow}; }
-        .cert-subtitle { font-size: 18px; color: rgba(255,255,255,.92); margin: 0 0 32px; text-shadow: ${subtleShadow}; }
-        .cert-granted { font-size: 16px; color: #ffffff; margin: 8px 0; text-shadow: ${subtleShadow}; }
-        .cert-name { font-size: 54px; font-weight: 900; color: #e3c170; margin: 12px 0 24px; letter-spacing: -1px; line-height: 1.1; text-shadow: 0 2px 6px rgba(0,0,0,.45); }
+        .cert-ornament { color: #f5d061 !important; margin: 0 auto 4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.45)); }
+        .cert-inst { font-size: 21px; font-weight: 800; color: #ffffff !important; margin: 0; text-shadow: ${textShadow}; }
+        .cert-title { font-size: 48px; font-weight: 900; color: #ffffff !important; margin: 20px 0 4px; letter-spacing: -1px; text-shadow: ${textShadow}; }
+        .cert-subtitle { font-size: 18px; font-weight: 600; color: #f8fafc !important; margin: 0 0 28px; text-shadow: ${subtleShadow}; }
+        .cert-granted { font-size: 17px; font-weight: 600; color: #ffffff !important; margin: 8px 0; text-shadow: ${subtleShadow}; }
+        .cert-name { font-size: 50px; font-weight: 900; color: #fde047 !important; margin: 12px 0 24px; letter-spacing: -0.5px; line-height: 1.2; text-shadow: 0 2px 8px rgba(0,0,0,.6); }
         .cert-program {
-          font-size: 18px; font-weight: 700; color: #ffffff; margin: 0 0 32px;
-          padding: 8px 20px; border-radius: 99px;
-          background: rgba(1,56,86,.55); border: 1px solid rgba(255,255,255,.3);
+          font-size: 18px; font-weight: 700; color: #ffffff !important; margin: 0 0 28px;
+          padding: 8px 22px; border-radius: 99px;
+          background: rgba(255,255,255,.14) !important; border: 1.5px solid rgba(245,208,97,.55);
           display: inline-block; text-shadow: ${subtleShadow};
         }
-        .cert-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; width: 100%; margin: 24px 0; }
+        .cert-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; width: 100%; margin: 20px 0; }
         .cert-stat {
           padding: 20px 12px; border-radius: 16px;
-          border: 1.5px solid rgba(255,255,255,.35);
-          background: rgba(0,0,0,.25);
-          backdrop-filter: blur(2px);
+          border: 1.5px solid rgba(255,255,255,.4);
+          background: rgba(0, 18, 32, 0.45) !important;
+          backdrop-filter: blur(3px);
         }
-        .cert-stat-v { font-size: 36px; font-weight: 900; color: #ffffff; line-height: 1; font-variant-numeric: tabular-nums; text-shadow: ${textShadow}; }
-        .cert-stat-l { font-size: 13px; color: rgba(255,255,255,.9); margin-top: 6px; font-weight: 600; text-shadow: ${subtleShadow}; }
-        .cert-foot { position: absolute; left: 60px; right: 60px; bottom: 80px; display: flex; justify-content: space-between; align-items: end; font-size: 13px; color: rgba(255,255,255,.9); text-shadow: ${subtleShadow}; }
+        .cert-stat-v { font-size: 36px; font-weight: 900; color: #ffffff !important; line-height: 1.1; font-variant-numeric: tabular-nums; text-shadow: ${textShadow}; }
+        .cert-stat-l { font-size: 13.5px; color: #f1f5f9 !important; margin-top: 6px; font-weight: 700; text-shadow: ${subtleShadow}; }
+        .cert-foot {
+          position: relative;
+          z-index: 1;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          gap: 16px;
+          padding: 16px 12px 8px;
+          font-size: 14px;
+          font-weight: 600;
+          color: #ffffff !important;
+          text-shadow: ${subtleShadow};
+        }
         .cert-sig { text-align: center; }
-        .cert-sig-line { width: 180px; border-top: 1.5px solid rgba(255,255,255,.75); margin: 32px auto 4px; }
-        .cert-sig-lbl { font-weight: 700; color: #ffffff; text-shadow: ${subtleShadow}; }
+        .cert-sig-line { width: 180px; max-width: 40vw; border-top: 1.5px solid rgba(255,255,255,.85); margin: 28px auto 6px; }
+        .cert-sig-lbl { font-weight: 800; color: #ffffff !important; text-shadow: ${subtleShadow}; }
         .back-btn { text-decoration: none; }
+        @media (max-width: 767px) {
+          .cert-page { padding: 12px; }
+          .cert {
+            width: 100%;
+            min-height: auto;
+            padding: 32px 20px 28px;
+            border-radius: 14px;
+          }
+          .cert::before { inset: 12px; }
+          .cert-body { padding: 16px 8px; }
+          .cert-inst { font-size: 17px; }
+          .cert-title { font-size: 32px; margin: 12px 0 4px; }
+          .cert-subtitle { font-size: 15px; margin-bottom: 18px; }
+          .cert-name { font-size: 30px; margin: 8px 0 16px; }
+          .cert-program { font-size: 14px; padding: 6px 14px; margin-bottom: 18px; }
+          .cert-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+          .cert-stat { padding: 12px 6px; border-radius: 12px; }
+          .cert-stat-v { font-size: 24px; }
+          .cert-stat-l { font-size: 11.5px; }
+          .cert-foot { margin-top: 20px; font-size: 12.5px; }
+          .cert-sig-line { width: 120px; }
+        }
         @media print {
-          body, html { background: #fff !important; }
+          body, html, .cert-shell { background: #fff !important; }
           .cert-page { padding: 0 !important; }
           .cert-topbar { display: none !important; }
-          .cert { box-shadow: none !important; width: 210mm; min-height: 297mm; }
+          .cert { box-shadow: none !important; width: 210mm !important; min-height: 297mm !important; padding: 60px !important; border-radius: 0 !important; }
         }
       `}} />
-      <div className="cert-topbar">
-        <a href="/student" className="u-btn u-btn-g back-btn">
-          <span>←</span><span>رجوع</span>
-        </a>
-        <PrintButton />
-      </div>
-      <div className="cert-page">
-        <div className="cert">
-          <div className="cert-body">
-            <svg className="cert-ornament" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13" />
-            </svg>
-            <h2 className="cert-inst">{inst}</h2>
+      <div className="cert-shell">
+        <div className="cert-topbar">
+          <a href="/student" className="u-btn u-btn-g back-btn">
+            <span>←</span><span>رجوع</span>
+          </a>
+          <PrintButton />
+        </div>
+        <div className="cert-page">
+          <div className="cert" style={{ color: '#ffffff' }}>
+            <div className="cert-body">
+              <svg className="cert-ornament" style={{ color: '#f5d061' }} width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13" />
+              </svg>
+              <h2 className="cert-inst" style={{ color: '#ffffff' }}>{inst}</h2>
 
-            <h1 className="cert-title">شهادة إتمام</h1>
-            <p className="cert-subtitle">بسم الله الرحمن الرحيم</p>
+              <h1 className="cert-title" style={{ color: '#ffffff' }}>شهادة إتمام</h1>
+              <p className="cert-subtitle" style={{ color: '#f8fafc' }}>بسم الله الرحمن الرحيم</p>
 
-            <p className="cert-granted">تُمنح هذه الشهادة إلى الطالب</p>
-            <h3 className="cert-name">{student.name}</h3>
+              <p className="cert-granted" style={{ color: '#ffffff' }}>تُمنح هذه الشهادة إلى الطالب</p>
+              <h3 className="cert-name" style={{ color: '#fde047' }}>{student.name}</h3>
 
-            {program && <div className="cert-program">ضمن برنامج: {program.name}</div>}
+              {program && <div className="cert-program" style={{ color: '#ffffff' }}>ضمن برنامج: {program.name}</div>}
 
-            <div className="cert-stats">
-              <div className="cert-stat">
-                <div className="cert-stat-v">{memorized}</div>
-                <div className="cert-stat-l">الأحزاب المحفوظة</div>
-              </div>
-              <div className="cert-stat">
-                <div className="cert-stat-v">{target}</div>
-                <div className="cert-stat-l">الهدف المحدد</div>
-              </div>
-              <div className="cert-stat">
-                <div className="cert-stat-v">{completion}%</div>
-                <div className="cert-stat-l">نسبة الإنجاز</div>
+              <div className="cert-stats">
+                <div className="cert-stat">
+                  <div className="cert-stat-v" style={{ color: '#ffffff' }}>{memorized}</div>
+                  <div className="cert-stat-l" style={{ color: '#f1f5f9' }}>الأحزاب المحفوظة</div>
+                </div>
+                <div className="cert-stat">
+                  <div className="cert-stat-v" style={{ color: '#ffffff' }}>{target}</div>
+                  <div className="cert-stat-l" style={{ color: '#f1f5f9' }}>الهدف المحدد</div>
+                </div>
+                <div className="cert-stat">
+                  <div className="cert-stat-v" style={{ color: '#ffffff' }} dir="ltr">{completion}%</div>
+                  <div className="cert-stat-l" style={{ color: '#f1f5f9' }}>نسبة الإنجاز</div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="cert-foot">
-            <div>
-              <div>{dateStr}</div>
-            </div>
-            <div className="cert-sig">
-              <div className="cert-sig-line" />
-              <div className="cert-sig-lbl">إدارة المجمع</div>
+            <div className="cert-foot" style={{ color: '#ffffff' }}>
+              <div>
+                <div style={{ color: '#ffffff' }}>{dateStr}</div>
+              </div>
+              <div className="cert-sig">
+                <div className="cert-sig-line" />
+                <div className="cert-sig-lbl" style={{ color: '#ffffff' }}>إدارة المجمع</div>
+              </div>
             </div>
           </div>
         </div>
