@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { students, studentHizbs, sessions, attendance } from '@/lib/schema';
-import { and, eq, isNull, or } from 'drizzle-orm';
+import { students, studentHizbs, sessions, attendance, circles } from '@/lib/schema';
+import { and, asc, eq, isNotNull, isNull, or } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
 import { getActiveProgramId } from '@/lib/activeProgram';
 
@@ -11,7 +11,8 @@ export const dynamic = 'force-dynamic';
 /**
  * Returns active students for a committee, plus for each one:
  *   assignedHizbs (from studentHizbs), recitedHizbs (completed passed sessions),
- *   remainingHizbs = assigned - recited, and attendanceStatus ('present' | 'absent' | 'unset').
+ *   remainingHizbs = assigned - recited, hizbResults (latest result per hizb),
+ *   circleName, and attendanceStatus ('present' | 'absent' | 'unset').
  */
 export async function GET(req: Request) {
   const s = await getSession();
@@ -27,8 +28,15 @@ export async function GET(req: Request) {
   const activeProgramId = await getActiveProgramId();
 
   const sts = await db.select({
-    id: students.id, name: students.name, level: students.level
-  }).from(students).where(and(eq(students.committeeId, committeeId), eq(students.status, 'active')));
+    id: students.id,
+    name: students.name,
+    level: students.level,
+    circleId: students.circleId,
+    circleName: circles.name
+  })
+    .from(students)
+    .leftJoin(circles, eq(students.circleId, circles.id))
+    .where(and(eq(students.committeeId, committeeId), eq(students.status, 'active')));
 
   // Fetch attendance records for the active program
   const attMap = new Map<number, 'present' | 'absent' | 'unset'>();
@@ -74,15 +82,25 @@ export async function GET(req: Request) {
     }
   }
 
+  type HizbResult = {
+    sessionId: number;
+    score: number;
+    passed: boolean;
+    errors: number;
+    alerts: number;
+  };
+
   const out: {
     id: number;
     name: string;
     level: string | null;
+    circleName: string | null;
     assigned: number[];
     recited: number[];
     remaining: number[];
     memorized: number;
     target: number;
+    hizbResults: Record<number, HizbResult>;
     attendanceStatus: 'present' | 'absent' | 'unset';
     activeSession: {
       id: number;
@@ -94,17 +112,49 @@ export async function GET(req: Request) {
   }[] = [];
 
   for (const st of sts) {
-    const assigned = (await db.select().from(studentHizbs).where(eq(studentHizbs.studentId, st.id))).map((r) => r.hizbNumber);
-    const recitedWhere: any[] = [
+    const assigned = (await db.select().from(studentHizbs).where(eq(studentHizbs.studentId, st.id)))
+      .map((r) => r.hizbNumber)
+      .sort((a, b) => a - b);
+
+    const completedWhere: any[] = [
       eq(sessions.studentId, st.id),
-      eq(sessions.passed, true),
+      isNotNull(sessions.endedAt),
+      isNotNull(sessions.score),
       eq(sessions.cancelled, false)
     ];
     if (activeProgramId) {
-      recitedWhere.push(or(eq(sessions.programId, activeProgramId), isNull(sessions.programId)));
+      completedWhere.push(or(eq(sessions.programId, activeProgramId), isNull(sessions.programId)));
     }
-    const recitedRows = await db.select({ h: sessions.hizbNumber }).from(sessions).where(and(...recitedWhere));
-    const recited = Array.from(new Set(recitedRows.map((r) => r.h)));
+    const completedRows = await db.select({
+      id: sessions.id,
+      h: sessions.hizbNumber,
+      score: sessions.score,
+      passed: sessions.passed,
+      errors: sessions.errors,
+      alerts: sessions.alerts
+    })
+      .from(sessions)
+      .where(and(...completedWhere))
+      .orderBy(asc(sessions.id));
+
+    const hizbResults: Record<number, HizbResult> = {};
+    for (const r of completedRows) {
+      const prev = hizbResults[r.h];
+      // Passed result stays unless overwritten by a newer passed result; otherwise latest attempt is shown
+      if (!prev || !prev.passed || r.passed) {
+        hizbResults[r.h] = {
+          sessionId: r.id,
+          score: Number(r.score ?? 0),
+          passed: Boolean(r.passed),
+          errors: Number(r.errors ?? 0),
+          alerts: Number(r.alerts ?? 0)
+        };
+      }
+    }
+
+    const recited = Object.entries(hizbResults)
+      .filter(([, v]) => v.passed)
+      .map(([k]) => Number(k));
     const remaining = assigned.filter((h) => !recited.includes(h)).sort((a, b) => a - b);
     const attendanceStatus = attMap.get(st.id) ?? 'unset';
     const activeSession = activeSessionMap.get(st.id) ?? null;
@@ -113,11 +163,13 @@ export async function GET(req: Request) {
       id: st.id,
       name: st.name,
       level: st.level,
+      circleName: st.circleName ?? null,
       assigned,
       recited,
       remaining,
       memorized: recited.length,
       target: assigned.length,
+      hizbResults,
       attendanceStatus,
       activeSession
     });

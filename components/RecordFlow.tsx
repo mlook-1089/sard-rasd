@@ -3,13 +3,25 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 type AttendanceStatus = 'present' | 'absent' | 'unset';
 
+type HizbResult = {
+  sessionId: number;
+  score: number;
+  passed: boolean;
+  errors: number;
+  alerts: number;
+};
+
 type Student = {
   id: number;
   name: string;
   level: string | null;
+  circleName?: string | null;
+  assigned?: number[];
+  recited?: number[];
   remaining: number[];
   memorized: number;
   target: number;
+  hizbResults?: Record<number, HizbResult>;
   attendanceStatus?: AttendanceStatus;
   activeSession?: {
     id: number;
@@ -100,6 +112,10 @@ export default function RecordFlow({
   const [savingEnd, setSavingEnd] = useState(false);
   const [savingCancel, setSavingCancel] = useState(false);
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const [editHizbsOpen, setEditHizbsOpen] = useState(false);
+  const [draftHizbs, setDraftHizbs] = useState<number[]>([]);
+  const [savingHizbs, setSavingHizbs] = useState(false);
 
   const hizbCardRef = useRef<HTMLDivElement | null>(null);
   const restoredOnceRef = useRef(false);
@@ -391,12 +407,19 @@ export default function RecordFlow({
     });
   }
 
-  async function start() {
-    if (!selected || !chosenHizb || !reciterName.trim() || starting) return;
+  async function start(hizbOverride?: number) {
+    const targetHizb = hizbOverride ?? chosenHizb;
+    if (!selected || !targetHizb || starting) return;
+    if (!reciterName.trim()) {
+      setChosenHizb(targetHizb);
+      setErrorMsg('يرجى كتابة اسمك كمسمع أولاً قبل بدء الرصد');
+      return;
+    }
     if (selected.attendanceStatus === 'absent') {
       setErrorMsg('لا يمكن تسميع طالب مسجل غائباً في التحضير');
       return;
     }
+    setChosenHizb(targetHizb);
     setStarting(true);
     setErrorMsg(null);
     setSavedResult(null);
@@ -404,7 +427,7 @@ export default function RecordFlow({
     try {
       const body: any = {
         studentId: selected.id,
-        hizbNumber: Math.max(1, Math.floor(Number(chosenHizb) || 1)),
+        hizbNumber: Math.max(1, Math.floor(Number(targetHizb) || 1)),
         reciterName: reciterName.trim(),
         deviceTag: getOrSetDeviceTag()
       };
@@ -425,7 +448,7 @@ export default function RecordFlow({
         id: data.id,
         startedAt: data.startedAt,
         studentId: selected.id,
-        hizbNumber: chosenHizb
+        hizbNumber: targetHizb
       });
       setErrors(0);
       setAlerts(0);
@@ -438,6 +461,48 @@ export default function RecordFlow({
       setErrorMsg('خطأ في الاتصال بالخادم');
     } finally {
       setStarting(false);
+    }
+  }
+
+  function openEditHizbsModal() {
+    if (!selected) return;
+    const currentAssigned = Array.isArray(selected.assigned) && selected.assigned.length > 0
+      ? selected.assigned
+      : selected.remaining || [];
+    setDraftHizbs([...currentAssigned].sort((a, b) => a - b));
+    setEditHizbsOpen(true);
+  }
+
+  function toggleDraftHizb(n: number) {
+    setDraftHizbs((prev) =>
+      prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n].sort((a, b) => a - b)
+    );
+  }
+
+  async function saveEditedHizbs() {
+    if (!selected || savingHizbs) return;
+    setSavingHizbs(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch(`/api/students/${selected.id}/hizbs`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ hizbs: draftHizbs })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrorMsg(data.error || 'تعذر حفظ الأحزاب المحددة');
+        setSavingHizbs(false);
+        return;
+      }
+      const updatedList = await loadStudents(liveCommitteeId);
+      const refreshed = updatedList.find((s) => s.id === selected.id);
+      if (refreshed) setSelected(refreshed);
+      setEditHizbsOpen(false);
+    } catch {
+      setErrorMsg('خطأ في الاتصال بالخادم أثناء حفظ الأحزاب');
+    } finally {
+      setSavingHizbs(false);
     }
   }
 
@@ -489,7 +554,6 @@ export default function RecordFlow({
         notes: trimmedNotes || undefined
       });
       setActive(null);
-      setSelected(null);
       setChosenHizb(null);
       setErrors(0);
       setAlerts(0);
@@ -500,7 +564,9 @@ export default function RecordFlow({
       setNotes('');
 
       if (liveCommitteeId || !committeeIdRequired) {
-        await loadStudents(liveCommitteeId);
+        const refreshedList = await loadStudents(liveCommitteeId);
+        const updatedStudent = refreshedList.find((s) => s.id === finishedStudentId);
+        if (updatedStudent) setSelected(updatedStudent);
       }
     } catch {
       setErrorMsg('خطأ في الاتصال بالخادم أثناء الحفظ');
@@ -631,9 +697,10 @@ export default function RecordFlow({
       setErrorMsg(`الطالب (${s.name}) في جلسة تسميع جارية حالياً (الحزب ${s.activeSession.hizbNumber} مع المسمع: ${s.activeSession.reciterName}). لا يمكن فتح جلستين لنفس الطالب في نفس الوقت.`);
       return;
     }
-    setErrorMsg(null);
-    setSelected(s);
-    setChosenHizb(null);
+      setErrorMsg(null);
+      setSelected(s);
+      setChosenHizb(null);
+      setShowPicker(false);
   }
 
   function handleNextHizbSameStudent() {
@@ -760,6 +827,61 @@ export default function RecordFlow({
 
       {!!liveCommitteeId && !active && (
         <>
+          {selected && (() => {
+            const assignedList = (Array.isArray(selected.assigned) && selected.assigned.length > 0
+              ? selected.assigned
+              : selected.remaining || []
+            ).slice().sort((a, b) => a - b);
+            const hizbResults = selected.hizbResults || {};
+            const passedCount = assignedList.filter((h) => hizbResults[h]?.passed === true).length;
+            const failedCount = assignedList.filter((h) => hizbResults[h] && hizbResults[h].passed === false).length;
+            const gradedCount = passedCount + failedCount;
+            const circleOrLevel = selected.circleName || selected.level || 'بدون حلقة';
+            return (
+              <div
+                style={{
+                  background: '#ffffff',
+                  border: '1.5px solid #cbd5e1',
+                  borderRadius: 16,
+                  padding: '14px 18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)'
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', lineHeight: 1.25 }}>
+                    {selected.name}
+                  </div>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: '#64748b', marginTop: 3 }}>
+                    {circleOrLevel} · {assignedList.length} أحزاب · <span dir="ltr">{assignedList.length}/{gradedCount}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPicker((v) => !v)}
+                  style={{
+                    background: '#07476e',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 12,
+                    padding: '10px 18px',
+                    fontSize: 14,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    minHeight: 42
+                  }}
+                >
+                  {showPicker ? 'إخفاء القائمة' : 'تبديل الطالب'}
+                </button>
+              </div>
+            );
+          })()}
+
+          {(!selected || showPicker) && (
           <div className="u-card">
             <div className="u-card-h" style={{ flexWrap: 'wrap', gap: 8 }}>
               <h3>١) اختر الطالب</h3>
@@ -842,7 +964,7 @@ export default function RecordFlow({
                         )}
                       </div>
                       <span style={{ fontSize: 11, color: 'var(--ink3)', fontWeight: 600 }}>
-                        {s.level || '—'} · متبقي: {s.remaining.length}
+                        {s.circleName || s.level || '—'} · متبقي: {s.remaining.length}
                       </span>
                       {s.activeSession && (
                         <span
@@ -860,27 +982,364 @@ export default function RecordFlow({
               </div>
             )}
           </div>
+          )}
 
-          {selected && (
-            <div className="u-card" ref={hizbCardRef}>
-              <div className="u-card-h">
-                <h3>٢) اختر الحزب للطالب {selected.name} <span className="u-muted" style={{ fontWeight: 500 }}>(من المتبقي فقط)</span></h3>
-              </div>
-              {selected.attendanceStatus === 'absent' ? (
-                <div className="u-note bad" style={{ marginBottom: 0 }}>
-                  لا يمكن تسميع طالب مسجل غائباً في التحضير
+          {selected && (() => {
+            const assignedList = (Array.isArray(selected.assigned) && selected.assigned.length > 0
+              ? selected.assigned
+              : selected.remaining || []
+            ).slice().sort((a, b) => a - b);
+            const hizbResults = selected.hizbResults || {};
+            const passedCount = assignedList.filter((h) => hizbResults[h]?.passed === true).length;
+            const failedCount = assignedList.filter((h) => hizbResults[h] && hizbResults[h].passed === false).length;
+            const gradedCount = passedCount + failedCount;
+            const totalPossible = assignedList.length * 100;
+            const earnedSum = assignedList.reduce((acc, h) => acc + (hizbResults[h]?.score ?? 0), 0);
+            const rawPct = totalPossible > 0 ? Math.round((earnedSum / totalPossible) * 1000) / 10 : 0;
+            const pctText = rawPct % 1 === 0 ? rawPct.toFixed(0) : rawPct.toFixed(1);
+            const pctColor = rawPct >= 70 ? '#15803d' : rawPct >= 60 ? '#d97706' : '#b91c1c';
+            const circleOrLevel = selected.circleName || selected.level || 'بدون حلقة';
+
+            return (
+              <div
+                ref={hizbCardRef}
+                style={{
+                  borderRadius: 18,
+                  border: '1.5px solid #cbd5e1',
+                  overflow: 'hidden',
+                  background: '#ffffff',
+                  boxShadow: '0 4px 16px rgba(15, 23, 42, 0.05)'
+                }}
+              >
+                {/* Top Summary Banner */}
+                <div
+                  style={{
+                    background: 'linear-gradient(180deg, #e4eff8 0%, #f4f9fd 65%, #ffffff 100%)',
+                    borderInlineStart: '4px solid #60a5fa',
+                    padding: '18px 20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 16
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: '#07476e', marginBottom: 2 }}>
+                      {circleOrLevel}
+                    </div>
+                    <div style={{ fontSize: 27, fontWeight: 900, color: '#0f172a', lineHeight: 1.2 }}>
+                      {selected.name}
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: '#64748b', marginTop: 6 }}>
+                      {assignedList.length} أحزاب · <span dir="ltr">{assignedList.length}/{gradedCount}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <span
+                        style={{
+                          background: '#d1fae5',
+                          color: '#15803d',
+                          borderRadius: 999,
+                          padding: '3px 14px',
+                          fontSize: 13,
+                          fontWeight: 800,
+                          textAlign: 'center',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        ناجح {passedCount}
+                      </span>
+                      <span
+                        style={{
+                          background: '#fee2e2',
+                          color: '#b91c1c',
+                          borderRadius: 999,
+                          padding: '3px 14px',
+                          fontSize: 13,
+                          fontWeight: 800,
+                          textAlign: 'center',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        راسب {failedCount}
+                      </span>
+                    </div>
+
+                    <div
+                      dir="ltr"
+                      style={{
+                        fontSize: 38,
+                        fontWeight: 900,
+                        color: pctColor,
+                        lineHeight: 1,
+                        letterSpacing: '-0.5px'
+                      }}
+                    >
+                      {pctText}%
+                    </div>
+                  </div>
                 </div>
-              ) : selected.remaining.length === 0 ? (
-                <div className="u-note ok">لا توجد أحزاب متبقية — الطالب أنجز كل أحزابه! 🎉</div>
-              ) : (
-                <div className="th-hizb-grid">
-                  {selected.remaining.map((n) => {
-                    const on = chosenHizb === n;
+
+                {/* Dark Navy Section Bar */}
+                <div
+                  style={{
+                    background: '#063954',
+                    color: '#ffffff',
+                    padding: '12px 20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12
+                  }}
+                >
+                  <span style={{ fontSize: 16.5, fontWeight: 800 }}>الأحزاب المحددة</span>
+                  <button
+                    type="button"
+                    onClick={openEditHizbsModal}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.14)',
+                      border: '1.5px solid rgba(255, 255, 255, 0.35)',
+                      color: '#ffffff',
+                      borderRadius: 10,
+                      padding: '7px 16px',
+                      fontSize: 13.5,
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    تحديد الأحزاب
+                  </button>
+                </div>
+
+                {/* Hizb Cards Grid */}
+                <div style={{ padding: '18px 20px', background: '#ffffff' }}>
+                  {!defaultReciterName && (
+                    <div className="u-field" style={{ marginBottom: 14 }}>
+                      <label>اسمك كمسمع</label>
+                      <input
+                        value={reciterName}
+                        onChange={(e) => setReciterName(e.target.value)}
+                        placeholder="أبو عبدالله"
+                        className="u-input"
+                      />
+                    </div>
+                  )}
+
+                  {selected.attendanceStatus === 'absent' ? (
+                    <div className="u-note bad" style={{ marginBottom: 0 }}>
+                      لا يمكن تسميع طالب مسجل غائباً في التحضير
+                    </div>
+                  ) : assignedList.length === 0 ? (
+                    <div className="u-empty">
+                      لم تُحدد أحزاب لهذا الطالب بعد — اضغط <b>تحديد الأحزاب</b> أعلاه لإضافتها.
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                        gap: 12
+                      }}
+                    >
+                      {assignedList.map((n) => {
+                        const res = hizbResults[n];
+                        const isPassed = Boolean(res && res.passed);
+                        const isFailed = Boolean(res && !res.passed);
+                        const errLabel = res
+                          ? `${res.errors}خ${res.alerts > 0 ? ` · ${res.alerts}ت` : ''}`
+                          : 'رصد';
+
+                        if (isPassed && res) {
+                          return (
+                            <div
+                              key={n}
+                              style={{
+                                background: '#e6f4ea',
+                                border: '1.5px solid #a7f3d0',
+                                borderRadius: 14,
+                                padding: '12px 14px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'flex-start',
+                                justifyContent: 'space-between',
+                                minHeight: 96
+                              }}
+                            >
+                              <span style={{ fontSize: 14, fontWeight: 800, color: '#1e293b' }}>
+                                الحزب {n}
+                              </span>
+                              <span
+                                className="u-num"
+                                style={{
+                                  fontSize: 26,
+                                  fontWeight: 900,
+                                  color: '#15803d',
+                                  lineHeight: 1.2,
+                                  margin: '4px 0'
+                                }}
+                              >
+                                {res.score}
+                              </span>
+                              <span style={{ fontSize: 12.5, fontWeight: 700, color: '#64748b' }}>
+                                {errLabel}
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        if (isFailed && res) {
+                          return (
+                            <button
+                              key={n}
+                              type="button"
+                              disabled={starting}
+                              onClick={() => start(n)}
+                              title="اضغط لإعادة رصد هذا الحزب"
+                              style={{
+                                background: '#fdecec',
+                                border: chosenHizb === n ? '2px solid #dc2626' : '1.5px solid #f5c2c7',
+                                borderRadius: 14,
+                                padding: '12px 14px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'flex-start',
+                                justifyContent: 'space-between',
+                                minHeight: 96,
+                                cursor: starting ? 'wait' : 'pointer',
+                                textAlign: 'start'
+                              }}
+                            >
+                              <span style={{ fontSize: 14, fontWeight: 800, color: '#1e293b' }}>
+                                الحزب {n}
+                              </span>
+                              <span
+                                className="u-num"
+                                style={{
+                                  fontSize: 26,
+                                  fontWeight: 900,
+                                  color: '#b91c1c',
+                                  lineHeight: 1.2,
+                                  margin: '4px 0'
+                                }}
+                              >
+                                {res.score}
+                              </span>
+                              <span style={{ fontSize: 12.5, fontWeight: 700, color: '#64748b' }}>
+                                {errLabel}
+                              </span>
+                            </button>
+                          );
+                        }
+
+                        return (
+                          <button
+                            key={n}
+                            type="button"
+                            disabled={starting}
+                            onClick={() => start(n)}
+                            style={{
+                              background: chosenHizb === n ? '#e0f2fe' : '#f8fafc',
+                              border: chosenHizb === n ? '2px solid #0284c7' : '1.5px dashed #cbd5e1',
+                              borderRadius: 14,
+                              padding: '12px 14px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'flex-start',
+                              justifyContent: 'space-between',
+                              minHeight: 96,
+                              cursor: starting ? 'wait' : 'pointer',
+                              textAlign: 'start'
+                            }}
+                          >
+                            <span style={{ fontSize: 14, fontWeight: 800, color: '#334155' }}>
+                              الحزب {n}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 24,
+                                fontWeight: 700,
+                                color: '#64748b',
+                                lineHeight: 1.2,
+                                margin: '4px 0'
+                              }}
+                            >
+                              —
+                            </span>
+                            <span style={{ fontSize: 12.5, fontWeight: 700, color: '#64748b' }}>
+                              {starting && chosenHizb === n ? 'جاري البدء...' : 'رصد'}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {editHizbsOpen && selected && (
+            <div
+              onClick={(e) => {
+                if (e.target === e.currentTarget && !savingHizbs) setEditHizbsOpen(false);
+              }}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 75,
+                display: 'grid',
+                placeItems: 'center',
+                padding: 16,
+                background: 'var(--overlay)'
+              }}
+            >
+              <div
+                className="u-card"
+                role="dialog"
+                aria-modal="true"
+                style={{ margin: 0, width: '100%', maxWidth: 560, maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}
+              >
+                <div className="u-card-h" style={{ marginBottom: 10 }}>
+                  <h3>تحديد الأحزاب — {selected.name} ({draftHizbs.length}/60)</h3>
+                  <button
+                    type="button"
+                    onClick={() => setEditHizbsOpen(false)}
+                    disabled={savingHizbs}
+                    className="u-icon-btn"
+                    aria-label="إغلاق"
+                  >
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setDraftHizbs(Array.from({ length: 60 }, (_, i) => i + 1))}
+                    className="u-btn u-btn-g sm"
+                  >
+                    تحديد الكل (60)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDraftHizbs([])}
+                    className="u-btn u-btn-g sm"
+                  >
+                    إلغاء الكل
+                  </button>
+                </div>
+
+                <div className="th-hizb-grid" style={{ overflowY: 'auto', flex: 1, padding: 2 }}>
+                  {Array.from({ length: 60 }, (_, i) => i + 1).map((n) => {
+                    const on = draftHizbs.includes(n);
                     return (
                       <button
                         key={n}
                         type="button"
-                        onClick={() => { setChosenHizb(n); setErrorMsg(null); }}
+                        onClick={() => toggleDraftHizb(n)}
                         className={`th-h${on ? ' on' : ''}`}
                       >
                         <span className="th-h-num">{n}</span>
@@ -888,55 +1347,25 @@ export default function RecordFlow({
                     );
                   })}
                 </div>
-              )}
-              {!defaultReciterName && (
-                <div className="u-field" style={{ marginTop: 12, marginBottom: 0 }}>
-                  <label>اسمك كمسمع</label>
-                  <input value={reciterName} onChange={(e) => setReciterName(e.target.value)} placeholder="أبو عبدالله" className="u-input" />
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
+                  <button
+                    type="button"
+                    onClick={() => setEditHizbsOpen(false)}
+                    disabled={savingHizbs}
+                    className="u-btn u-btn-g"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveEditedHizbs}
+                    disabled={savingHizbs}
+                    className="u-btn u-btn-p"
+                  >
+                    {savingHizbs ? 'جاري الحفظ...' : 'حفظ الأحزاب'}
+                  </button>
                 </div>
-              )}
-            </div>
-          )}
-
-          {selected && chosenHizb && selected.attendanceStatus !== 'absent' && (
-            <div className="u-card">
-              <div className="u-card-h"><h3>٣) بدء التسميع</h3></div>
-              <button
-                type="button"
-                onClick={start}
-                disabled={!chosenHizb || !reciterName.trim() || starting}
-                className="u-btn u-btn-p lg w"
-              >
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>{starting ? 'جاري الحفظ...' : `بدء التسميع — الحزب ${chosenHizb}`}</span>
-              </button>
-            </div>
-          )}
-
-          {selected && history.length > 0 && (
-            <div className="u-card">
-              <div className="u-card-h"><h3>سجل {selected.name}</h3></div>
-              <div className="th-rpt-table-wrap">
-                <table className="th-rpt-table">
-                  <thead><tr><th>الحزب</th><th>الأخطاء</th><th>التنبيهات</th><th>الدرجة</th><th>المسمع</th></tr></thead>
-                  <tbody>
-                    {history.slice(0, 20).map((h: any) => (
-                      <tr key={h.id}>
-                        <td style={{ fontWeight: 700 }}>{h.hizbNumber}</td>
-                        <td>{h.errors}</td>
-                        <td>{h.alerts}</td>
-                        <td>
-                          {h.score != null ? (
-                            <span className={`u-pill ${h.passed ? 'ok' : 'bad'}`}><span className="u-num">{h.score}</span></span>
-                          ) : '—'}
-                        </td>
-                        <td>{h.reciterName}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
             </div>
           )}

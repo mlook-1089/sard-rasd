@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  const g = await requireRole(['admin', 'supervisor']);
+  const g = await requireRole(['admin', 'supervisor', 'reciter']);
   if (!g.ok) return g.res;
   const id = Number(params.id);
   const hz = await db.select().from(studentHizbs).where(eq(studentHizbs.studentId, id));
@@ -16,9 +16,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   return NextResponse.json({ hizbs });
 }
 
-/** Admin can replace hizbs for any student. */
+/** Admin, supervisor, or reciter can update assigned hizbs for a student. */
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
-  const g = await requireRole(['admin']);
+  const g = await requireRole(['admin', 'supervisor', 'reciter']);
   if (!g.ok) return g.res;
   const id = Number(params.id);
   const b = await req.json();
