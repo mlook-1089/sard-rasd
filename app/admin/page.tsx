@@ -69,9 +69,9 @@ export default async function AdminHome() {
           <div className="text-2xl mb-1">📋</div>
           <div className="l">التحضير</div>
         </Link>
-        <Link href="/admin/reports/students" className="u-stat text-center" style={{ textDecoration: 'none' }}>
-          <div className="text-2xl mb-1">📊</div>
-          <div className="l">التقارير</div>
+        <Link href="/honor" className="u-stat text-center" style={{ textDecoration: 'none' }}>
+          <div className="text-2xl mb-1">📺</div>
+          <div className="l">لوحة الشرف</div>
         </Link>
       </div>
 

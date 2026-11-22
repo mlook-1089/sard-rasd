@@ -58,16 +58,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   if (b.action === 'edit') {
-    // Permissions: admin always; supervisor only within their committee; reciter only their own deviceTag or reciterName sessions.
+    // Permissions: admin always; supervisor within their committee; reciter for any recorded session in their committee.
     if (session.role === 'supervisor' && session.committeeId !== row.committeeId) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-    }
-    if (session.role === 'reciter') {
-      const tagMatches = !row.deviceTag || !b.deviceTag || b.deviceTag === row.deviceTag;
-      const nameMatches = b.reciterName && b.reciterName === row.reciterName;
-      if (!tagMatches && !nameMatches) {
-        return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-      }
     }
     const errors = Math.max(0, Math.floor(Number(b.errors ?? row.errors) || 0));
     const alerts = Math.max(0, Math.floor(Number(b.alerts ?? row.alerts) || 0));

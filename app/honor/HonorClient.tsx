@@ -104,12 +104,12 @@ export default function HonorClient({ initialData = null }: { initialData?: Hono
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white">
       <a
-        href="/"
+        href="/admin"
         className="fixed top-3 start-3 z-30 inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm font-bold backdrop-blur"
         style={{ color: '#fff', textDecoration: 'none' }}
       >
         <span>←</span>
-        <span>الرجوع لتسجيل الدخول</span>
+        <span>الرجوع للوحة المدير</span>
       </a>
       <div className="max-w-screen-2xl mx-auto px-6 md:px-10 py-8">
         <header className="text-center mb-8">

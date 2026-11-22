@@ -113,9 +113,13 @@ export default function RecordFlow({
   const [savingCancel, setSavingCancel] = useState(false);
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
-  const [editHizbsOpen, setEditHizbsOpen] = useState(false);
-  const [draftHizbs, setDraftHizbs] = useState<number[]>([]);
-  const [savingHizbs, setSavingHizbs] = useState(false);
+  const [editingRecordedHizb, setEditingRecordedHizb] = useState<{
+    hizbNumber: number;
+    sessionId: number;
+    errors: number;
+    alerts: number;
+  } | null>(null);
+  const [savingRecordedEdit, setSavingRecordedEdit] = useState(false);
 
   const hizbCardRef = useRef<HTMLDivElement | null>(null);
   const restoredOnceRef = useRef(false);
@@ -464,45 +468,47 @@ export default function RecordFlow({
     }
   }
 
-  function openEditHizbsModal() {
-    if (!selected) return;
-    const currentAssigned = Array.isArray(selected.assigned) && selected.assigned.length > 0
-      ? selected.assigned
-      : selected.remaining || [];
-    setDraftHizbs([...currentAssigned].sort((a, b) => a - b));
-    setEditHizbsOpen(true);
+  function openEditRecordedHizbModal(hizbNumber: number, res: HizbResult) {
+    setChosenHizb(null);
+    setErrorMsg(null);
+    setEditingRecordedHizb({
+      hizbNumber,
+      sessionId: res.sessionId,
+      errors: Math.max(0, Math.floor(Number(res.errors) || 0)),
+      alerts: Math.max(0, Math.floor(Number(res.alerts) || 0))
+    });
   }
 
-  function toggleDraftHizb(n: number) {
-    setDraftHizbs((prev) =>
-      prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n].sort((a, b) => a - b)
-    );
-  }
-
-  async function saveEditedHizbs() {
-    if (!selected || savingHizbs) return;
-    setSavingHizbs(true);
+  async function saveEditedRecordedHizb() {
+    if (!selected || !editingRecordedHizb || savingRecordedEdit) return;
+    setSavingRecordedEdit(true);
     setErrorMsg(null);
     try {
-      const res = await fetch(`/api/students/${selected.id}/hizbs`, {
-        method: 'PUT',
+      const res = await fetch(`/api/sessions/${editingRecordedHizb.sessionId}`, {
+        method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ hizbs: draftHizbs })
+        body: JSON.stringify({
+          action: 'edit',
+          errors: Math.max(0, Math.floor(Number(editingRecordedHizb.errors) || 0)),
+          alerts: Math.max(0, Math.floor(Number(editingRecordedHizb.alerts) || 0)),
+          deviceTag: getOrSetDeviceTag(),
+          reciterName: reciterName.trim()
+        })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setErrorMsg(data.error || 'تعذر حفظ الأحزاب المحددة');
-        setSavingHizbs(false);
+        setErrorMsg(data.error || 'تعذر حفظ تعديل الحزب');
+        setSavingRecordedEdit(false);
         return;
       }
       const updatedList = await loadStudents(liveCommitteeId);
       const refreshed = updatedList.find((s) => s.id === selected.id);
       if (refreshed) setSelected(refreshed);
-      setEditHizbsOpen(false);
+      setEditingRecordedHizb(null);
     } catch {
-      setErrorMsg('خطأ في الاتصال بالخادم أثناء حفظ الأحزاب');
+      setErrorMsg('خطأ في الاتصال بالخادم أثناء تعديل الرصد');
     } finally {
-      setSavingHizbs(false);
+      setSavingRecordedEdit(false);
     }
   }
 
@@ -1140,8 +1146,11 @@ export default function RecordFlow({
 
                           if (isPassed && res) {
                             return (
-                              <div
+                              <button
                                 key={n}
+                                type="button"
+                                onClick={() => openEditRecordedHizbModal(n, res)}
+                                title="اضغط لتعديل رصد هذا الحزب"
                                 style={{
                                   background: '#e6f4ea',
                                   border: '1.5px solid #a7f3d0',
@@ -1151,7 +1160,9 @@ export default function RecordFlow({
                                   flexDirection: 'column',
                                   alignItems: 'flex-start',
                                   justifyContent: 'space-between',
-                                  minHeight: 96
+                                  minHeight: 96,
+                                  cursor: 'pointer',
+                                  textAlign: 'start'
                                 }}
                               >
                                 <span style={{ fontSize: 14, fontWeight: 800, color: '#1e293b' }}>
@@ -1172,7 +1183,7 @@ export default function RecordFlow({
                                 <span style={{ fontSize: 12.5, fontWeight: 700, color: '#64748b' }}>
                                   {errLabel}
                                 </span>
-                              </div>
+                              </button>
                             );
                           }
 
@@ -1181,16 +1192,11 @@ export default function RecordFlow({
                               <button
                                 key={n}
                                 type="button"
-                                disabled={starting}
-                                onClick={() => {
-                                  setChosenHizb(n);
-                                  setErrorMsg(null);
-                                }}
-                                title="اضغط لتحديد هذا الحزب لإعادة التسميع"
+                                onClick={() => openEditRecordedHizbModal(n, res)}
+                                title="اضغط لتعديل رصد هذا الحزب"
                                 style={{
-                                  background: isChosen ? '#fee2e2' : '#fdecec',
-                                  border: isChosen ? '2.5px solid #dc2626' : '1.5px solid #f5c2c7',
-                                  boxShadow: isChosen ? '0 0 0 3px rgba(220, 38, 38, 0.16)' : 'none',
+                                  background: '#fdecec',
+                                  border: '1.5px solid #f5c2c7',
                                   borderRadius: 14,
                                   padding: '12px 14px',
                                   display: 'flex',
@@ -1217,8 +1223,8 @@ export default function RecordFlow({
                                 >
                                   {res.score}
                                 </span>
-                                <span style={{ fontSize: 12.5, fontWeight: 700, color: isChosen ? '#b91c1c' : '#64748b' }}>
-                                  {isChosen ? `${errLabel} · محدّد` : errLabel}
+                                <span style={{ fontSize: 12.5, fontWeight: 700, color: '#64748b' }}>
+                                  {errLabel}
                                 </span>
                               </button>
                             );
@@ -1287,6 +1293,168 @@ export default function RecordFlow({
                       )}
                     </>
                   )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {editingRecordedHizb && selected && (() => {
+            const previewScore = Math.max(0, 100 - editingRecordedHizb.errors * 2 - editingRecordedHizb.alerts * 1);
+            const previewPassed = previewScore >= 60;
+            return (
+              <div
+                onClick={(e) => {
+                  if (e.target === e.currentTarget && !savingRecordedEdit) setEditingRecordedHizb(null);
+                }}
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 75,
+                  display: 'grid',
+                  placeItems: 'center',
+                  padding: 16,
+                  background: 'var(--overlay)'
+                }}
+              >
+                <div
+                  className="u-card"
+                  role="dialog"
+                  aria-modal="true"
+                  style={{ margin: 0, width: '100%', maxWidth: 440 }}
+                >
+                  <div className="u-card-h" style={{ marginBottom: 12 }}>
+                    <h3>تعديل رصد الحزب {editingRecordedHizb.hizbNumber} — {selected.name}</h3>
+                    <button
+                      type="button"
+                      onClick={() => setEditingRecordedHizb(null)}
+                      disabled={savingRecordedEdit}
+                      className="u-icon-btn"
+                      aria-label="إغلاق"
+                    >
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+
+                  <div
+                    style={{
+                      background: previewPassed ? '#e6f4ea' : '#fdecec',
+                      border: `1.5px solid ${previewPassed ? '#a7f3d0' : '#f5c2c7'}`,
+                      borderRadius: 14,
+                      padding: '12px 16px',
+                      marginBottom: 14,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748b' }}>الدرجة بعد التعديل</div>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: previewPassed ? '#15803d' : '#b91c1c' }}>
+                        {previewPassed ? 'ناجح' : 'راسب'}
+                      </div>
+                    </div>
+                    <div
+                      className="u-num"
+                      style={{
+                        fontSize: 32,
+                        fontWeight: 900,
+                        color: previewPassed ? '#15803d' : '#b91c1c'
+                      }}
+                    >
+                      {previewScore}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                    <div className="u-field" style={{ marginBottom: 0 }}>
+                      <label htmlFor="edit-hizb-errors">عدد الأخطاء (−2)</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <button
+                          type="button"
+                          onClick={() => setEditingRecordedHizb((prev) => prev ? { ...prev, errors: prev.errors + 1 } : prev)}
+                          className="u-btn u-btn-g"
+                          style={{ width: 42, minWidth: 42, height: 42, padding: 0, fontSize: 20, fontWeight: 800 }}
+                        >
+                          +
+                        </button>
+                        <input
+                          id="edit-hizb-errors"
+                          type="number"
+                          min={0}
+                          value={editingRecordedHizb.errors}
+                          onChange={(e) => {
+                            const val = Math.max(0, Math.floor(Number(e.target.value) || 0));
+                            setEditingRecordedHizb((prev) => prev ? { ...prev, errors: val } : prev);
+                          }}
+                          className="u-input"
+                          style={{ textAlign: 'center', fontWeight: 800, fontSize: 16 }}
+                        />
+                        <button
+                          type="button"
+                          disabled={editingRecordedHizb.errors <= 0}
+                          onClick={() => setEditingRecordedHizb((prev) => prev ? { ...prev, errors: Math.max(0, prev.errors - 1) } : prev)}
+                          className="u-btn u-btn-g"
+                          style={{ width: 42, minWidth: 42, height: 42, padding: 0, fontSize: 20, fontWeight: 800 }}
+                        >
+                          −
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="u-field" style={{ marginBottom: 0 }}>
+                      <label htmlFor="edit-hizb-alerts">عدد التنبيهات (−1)</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <button
+                          type="button"
+                          onClick={() => setEditingRecordedHizb((prev) => prev ? { ...prev, alerts: prev.alerts + 1 } : prev)}
+                          className="u-btn u-btn-g"
+                          style={{ width: 42, minWidth: 42, height: 42, padding: 0, fontSize: 20, fontWeight: 800 }}
+                        >
+                          +
+                        </button>
+                        <input
+                          id="edit-hizb-alerts"
+                          type="number"
+                          min={0}
+                          value={editingRecordedHizb.alerts}
+                          onChange={(e) => {
+                            const val = Math.max(0, Math.floor(Number(e.target.value) || 0));
+                            setEditingRecordedHizb((prev) => prev ? { ...prev, alerts: val } : prev);
+                          }}
+                          className="u-input"
+                          style={{ textAlign: 'center', fontWeight: 800, fontSize: 16 }}
+                        />
+                        <button
+                          type="button"
+                          disabled={editingRecordedHizb.alerts <= 0}
+                          onClick={() => setEditingRecordedHizb((prev) => prev ? { ...prev, alerts: Math.max(0, prev.alerts - 1) } : prev)}
+                          className="u-btn u-btn-g"
+                          style={{ width: 42, minWidth: 42, height: 42, padding: 0, fontSize: 20, fontWeight: 800 }}
+                        >
+                          −
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => setEditingRecordedHizb(null)}
+                      disabled={savingRecordedEdit}
+                      className="u-btn u-btn-g"
+                    >
+                      إلغاء
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveEditedRecordedHizb}
+                      disabled={savingRecordedEdit}
+                      className="u-btn u-btn-p"
+                    >
+                      {savingRecordedEdit ? 'جاري الحفظ...' : 'حفظ التعديل'}
+                    </button>
+                  </div>
                 </div>
               </div>
             );

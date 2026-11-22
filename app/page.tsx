@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
@@ -7,33 +7,79 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showForgot, setShowForgot] = useState(false);
+  const redirectingRef = useRef(false);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = password.trim();
-    if (!trimmed) { setError('كلمة المرور مطلوبة'); return; }
+  async function attemptLogin(trimmed: string, showErrorImmediately: boolean, signal?: AbortSignal) {
+    if (!trimmed || redirectingRef.current) return;
     setLoading(true);
-    setError(null);
+    if (showErrorImmediately) setError(null);
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ password: trimmed })
+        body: JSON.stringify({ password: trimmed }),
+        signal
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'كلمة مرور غير صحيحة');
-        setLoading(false);
+      const data = await res.json().catch(() => ({}));
+      if (signal?.aborted) return;
+      if (res.ok && data.ok) {
+        redirectingRef.current = true;
+        setSuccess(true);
+        setError(null);
+        router.push(data.redirect || '/');
+        router.refresh();
         return;
       }
-      router.push(data.redirect || '/');
-      router.refresh();
-    } catch (err) {
-      setError('حدث خطأ. حاول مرة أخرى.');
       setLoading(false);
+      if (showErrorImmediately) {
+        setError(data.error || 'كلمة مرور غير صحيحة');
+      }
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return;
+      setLoading(false);
+      if (showErrorImmediately) {
+        setError('حدث خطأ. حاول مرة أخرى.');
+      }
     }
+  }
+
+  // Auto-login as soon as the user types a valid password
+  useEffect(() => {
+    const trimmed = password.trim();
+    setError(null);
+    if (!trimmed || redirectingRef.current) {
+      setLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    // Fast check after 220ms of typing to log in immediately on match
+    const fastTimer = setTimeout(() => {
+      attemptLogin(trimmed, false, controller.signal);
+    }, 220);
+
+    // If user stops typing for 950ms and password is still wrong, show error feedback
+    const errTimer = setTimeout(() => {
+      if (!redirectingRef.current) {
+        attemptLogin(trimmed, true, controller.signal);
+      }
+    }, 950);
+
+    return () => {
+      clearTimeout(fastTimer);
+      clearTimeout(errTimer);
+      controller.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [password]);
+
+  function onFormSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = password.trim();
+    if (!trimmed) return;
+    attemptLogin(trimmed, true);
   }
 
   return (
@@ -78,7 +124,7 @@ export default function LoginPage() {
           <p style={{ fontSize: '14px', fontWeight: 600, color: '#5B6475', marginTop: '6px', margin: '6px 0 0' }}>برنامج السرد — تحفيظ القرآن الكريم</p>
         </div>
 
-        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        <form onSubmit={onFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <label htmlFor="sard-pw" style={{ display: 'block', fontSize: '14px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>كلمة المرور</label>
             <div style={{ position: 'relative' }}>
@@ -87,15 +133,16 @@ export default function LoginPage() {
                 type={showPw ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={success}
                 style={{
                   width: '100%', padding: '14px 16px 14px 48px', borderRadius: '12px',
-                  border: '1.5px solid #E2E8F0', background: '#F9FAFB',
+                  border: success ? '2px solid #16a34a' : error ? '1.5px solid #B03038' : '1.5px solid #E2E8F0',
+                  background: '#F9FAFB',
                   outline: 'none', fontSize: '16px', boxSizing: 'border-box',
                   fontFamily: 'inherit', textAlign: 'start', direction: 'ltr',
                   letterSpacing: showPw ? 'normal' : '0.1em'
                 }}
                 autoFocus
-                required
                 autoComplete="off"
                 placeholder="••••••••"
               />
@@ -123,11 +170,20 @@ export default function LoginPage() {
               </button>
             </div>
             <p style={{ fontSize: '12px', color: '#8F97A6', marginTop: '8px', margin: '8px 0 0' }}>
-              كلمة المرور هي ما يحدد دورك — لا حاجة لاسم مستخدم.
+              أدخل كلمة المرور وسيتم الدخول تلقائياً مباشرة.
             </p>
           </div>
 
-          {error && (
+          {success && (
+            <div style={{
+              background: '#dcfce7', color: '#15803d',
+              border: '1px solid rgba(21,128,61,0.25)',
+              padding: '10px 12px', borderRadius: '12px',
+              fontSize: '14px', fontWeight: 700, textAlign: 'center'
+            }}>✓ تم التحقق — جاري الدخول...</div>
+          )}
+
+          {error && !success && (
             <div style={{
               background: '#F8E5E6', color: '#B03038',
               border: '1px solid rgba(176,48,56,0.25)',
@@ -135,54 +191,7 @@ export default function LoginPage() {
               fontSize: '14px', fontWeight: 700, textAlign: 'center'
             }}>{error}</div>
           )}
-
-          <button
-            type="submit"
-            disabled={loading || !password}
-            style={{
-              width: '100%', padding: '14px', borderRadius: '12px',
-              background: '#013856', color: '#fff', border: 0,
-              fontSize: '15px', fontWeight: 700, cursor: 'pointer',
-              boxShadow: '0 10px 24px -8px rgba(1,56,86,0.5)',
-              opacity: (loading || !password) ? 0.6 : 1,
-              fontFamily: 'inherit'
-            }}
-          >
-            {loading ? 'جاري الدخول...' : 'تسجيل الدخول'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowForgot((v) => !v)}
-            style={{
-              width: '100%', textAlign: 'center', fontSize: '14px',
-              fontWeight: 700, color: '#5B6475', background: 'transparent',
-              border: 0, cursor: 'pointer', fontFamily: 'inherit'
-            }}
-          >
-            نسيت كلمة المرور؟
-          </button>
-
-          {showForgot && (
-            <div style={{
-              background: '#E8F0F6', color: '#013856',
-              border: '1px solid rgba(1,56,86,0.15)',
-              padding: '12px 14px', borderRadius: '12px',
-              fontSize: '13px', lineHeight: 1.7
-            }}>
-              يرجى مراجعة إدارة المجمع لاستعادة كلمة المرور. مدير المنصة يستطيع إعادة توليد كلمات مرور الطلاب والمشرفين من لوحته.
-            </div>
-          )}
         </form>
-
-        <div style={{
-          marginTop: '20px', paddingTop: '20px', textAlign: 'center',
-          borderTop: '1px solid #E2E8F0'
-        }}>
-          <a href="/honor" style={{ fontSize: '14px', fontWeight: 700, color: '#013856', textDecoration: 'none' }}>
-            📺 لوحة الشرف
-          </a>
-        </div>
       </div>
     </div>
   );
