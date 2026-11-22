@@ -117,7 +117,7 @@ function ImportForm() {
       if (!res.ok || data?.error) {
         setError(data?.error || `فشل الاستيراد (HTTP ${res.status})`);
         setResult(null);
-      } else if (!Array.isArray(data?.created) || data.created.length === 0) {
+      } else if ((!Array.isArray(data?.created) || data.created.length === 0) && (!Array.isArray(data?.skipped) || data.skipped.length === 0)) {
         setError('لم يتم العثور على طلاب صالحين للاستيراد في الملف');
         setResult(null);
       } else {
@@ -211,21 +211,23 @@ function ImportForm() {
         </div>
       )}
 
-      {result && !error && Array.isArray(result.created) && result.created.length > 0 && (
+      {result && !error && (Array.isArray(result.created) || Array.isArray(result.skipped)) && (
         <div style={{ marginTop: 12 }}>
-          <div className="u-note ok">✓ أُضيف {result.created.length} طالب</div>
-          {result.skipped?.length > 0 && <div className="u-note warn" style={{ marginTop: 6 }}>⚠ تم تخطي {result.skipped.length} صف</div>}
+          <div className="u-note ok">✓ أُضيف {result.created?.length || 0} طالب</div>
+          {result.skipped?.length > 0 && <div className="u-note warn" style={{ marginTop: 6 }}>⚠ تم تخطي {result.skipped.length} صف (موجود مسبقاً أو فارغ)</div>}
+          {result.created?.length > 0 && (
           <details className="u-muted" style={{ marginTop: 8 }}>
-            <summary style={{ cursor: 'pointer', color: 'var(--brand-ink)', fontWeight: 600 }}>عرض كلمات المرور المولّدة</summary>
+            <summary style={{ cursor: 'pointer', color: 'var(--brand-ink)', fontWeight: 600 }}>عرض أرقام الهوية / كلمات المرور ({result.created.length})</summary>
             <div className="u-card" style={{ padding: 0, marginTop: 8 }}>
               <table className="w-full text-sm">
-                <thead><tr><th className="text-right p-1">الاسم</th><th>كلمة المرور</th></tr></thead>
+                <thead><tr><th className="text-right p-1">الاسم</th><th>رقم الهوية / كلمة المرور</th></tr></thead>
                 <tbody>{result.created.map((r: any, i: number) => (
                   <tr key={i} className="border-t"><td className="text-right p-1">{r.name}</td><td className="font-mono text-center">{r.password}</td></tr>
                 ))}</tbody>
               </table>
             </div>
           </details>
+          )}
         </div>
       )}
     </div>

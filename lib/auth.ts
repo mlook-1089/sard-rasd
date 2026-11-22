@@ -78,16 +78,18 @@ export async function identifyByPassword(password: string): Promise<Session | nu
 
   const studs = await db.select().from(students);
   const trimmedPw = password.trim();
-  // First match directly by nationalId (student's password is their National ID)
+  // 1) Instant match by nationalId or direct passwordHash (0ms CPU for hundreds of students)
   for (const st of studs) {
-    if (st.nationalId && st.nationalId.trim() === trimmedPw) {
+    if ((st.nationalId && st.nationalId.trim() === trimmedPw) || st.passwordHash === trimmedPw) {
       return { role: 'student', id: st.id };
     }
   }
-  // Fallback to passwordHash for students without nationalId or custom passwords
+  // 2) Legacy bcrypt fallback only for students without nationalId that have a $2 bcrypt hash
   for (const st of studs) {
-    if (await bcrypt.compare(password, st.passwordHash)) {
-      return { role: 'student', id: st.id };
+    if (!st.nationalId && st.passwordHash && st.passwordHash.startsWith('$2')) {
+      if (await bcrypt.compare(trimmedPw, st.passwordHash)) {
+        return { role: 'student', id: st.id };
+      }
     }
   }
 
@@ -110,8 +112,12 @@ export async function passwordCollides(password: string, exclude?: { kind: Role 
   const trimmedPw = password.trim();
   for (const st of studs) {
     if (exclude?.kind === 'student' && exclude.id === st.id) continue;
-    if (st.nationalId && st.nationalId.trim() === trimmedPw) return `student:${st.name}`;
-    if (await bcrypt.compare(password, st.passwordHash)) return `student:${st.name}`;
+    if ((st.nationalId && st.nationalId.trim() === trimmedPw) || st.passwordHash === trimmedPw) {
+      return `student:${st.name}`;
+    }
+    if (!st.nationalId && st.passwordHash && st.passwordHash.startsWith('$2')) {
+      if (await bcrypt.compare(trimmedPw, st.passwordHash)) return `student:${st.name}`;
+    }
   }
   return null;
 }

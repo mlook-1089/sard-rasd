@@ -83,38 +83,114 @@ export async function POST(req: Request) {
   };
   if (idx.name === -1) return NextResponse.json({ error: 'عمود "الاسم" مفقود' }, { status: 400 });
 
-  const allCircles = await db.select().from(circles);
+  const [allCircles, existingStudents] = await Promise.all([
+    db.select().from(circles),
+    db.select({
+      id: students.id,
+      name: students.name,
+      nationalId: students.nationalId,
+      passwordHash: students.passwordHash
+    }).from(students)
+  ]);
+
+  const normalizeCircle = (s: string) =>
+    s.trim().replace(/^حلقة\s+/i, '').replace(/\s+/g, ' ').trim();
+
   const findCircleId = (name: string) => {
     const n = (name || '').trim();
     if (!n) return null;
-    return allCircles.find((c) => c.name.trim() === n)?.id ?? null;
+    const exact = allCircles.find((c) => c.name.trim() === n);
+    if (exact) return exact.id;
+    const norm = normalizeCircle(n);
+    return allCircles.find((c) => normalizeCircle(c.name) === norm)?.id ?? null;
   };
+
+  const usedPasswords = new Set<string>();
+  const existingByNid = new Map<string, number>();
+  const existingByName = new Map<string, number>();
+
+  for (const st of existingStudents) {
+    if (st.nationalId) {
+      const nid = st.nationalId.trim();
+      usedPasswords.add(nid);
+      existingByNid.set(nid, st.id);
+    }
+    if (st.passwordHash && !st.passwordHash.startsWith('$2')) {
+      usedPasswords.add(st.passwordHash.trim());
+    }
+    if (st.name) {
+      existingByName.set(st.name.trim(), st.id);
+    }
+  }
 
   const created: Array<{ name: string; password: string }> = [];
   const skipped: Array<{ name: string; reason: string }> = [];
+  const toInsert: Array<{
+    name: string;
+    nationalId: string | null;
+    parentPhone: string | null;
+    level: string | null;
+    circleId: number | null;
+    passwordHash: string;
+    status: string;
+  }> = [];
 
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     const name = (r[idx.name] || '').trim();
-    if (!name) { skipped.push({ name: `صف ${i + 1}`, reason: 'اسم فارغ' }); continue; }
-    const nationalId = idx.nid >= 0 ? (r[idx.nid] || '').trim() || null : null;
+    if (!name) {
+      skipped.push({ name: `صف ${i + 1}`, reason: 'اسم فارغ' });
+      continue;
+    }
+
+    const nationalId = idx.nid >= 0 ? String(r[idx.nid] ?? '').trim() || null : null;
+
+    // Skip if already imported (e.g. from a previous partial import)
+    if (nationalId && existingByNid.has(nationalId)) {
+      skipped.push({ name, reason: 'موجود مسبقاً بنفس رقم الهوية' });
+      continue;
+    }
+    if (!nationalId && existingByName.has(name)) {
+      skipped.push({ name, reason: 'موجود مسبقاً بنفس الاسم' });
+      continue;
+    }
+
     let pw = nationalId || '';
     if (!pw) {
-      for (let t = 0; t < 10; t++) { pw = randomPassword(6); if (!(await passwordCollides(pw))) break; }
+      for (let t = 0; t < 20; t++) {
+        const candidate = randomPassword(6);
+        if (!usedPasswords.has(candidate)) {
+          pw = candidate;
+          break;
+        }
+      }
+      if (!pw) pw = randomPassword(8);
     }
-    await db.insert(students).values({
+
+    usedPasswords.add(pw);
+    if (nationalId) existingByNid.set(nationalId, -1);
+    existingByName.set(name, -1);
+
+    toInsert.push({
       name,
       nationalId,
-      parentPhone: idx.phone >= 0 ? (r[idx.phone] || '').trim() || null : null,
-      level: idx.level >= 0 ? (r[idx.level] || '').trim() || null : null,
-      circleId: idx.circle >= 0 ? findCircleId(r[idx.circle] || '') : null,
-      passwordHash: await hash(pw),
+      parentPhone: idx.phone >= 0 ? String(r[idx.phone] ?? '').trim() || null : null,
+      level: idx.level >= 0 ? String(r[idx.level] ?? '').trim() || null : null,
+      circleId: idx.circle >= 0 ? findCircleId(String(r[idx.circle] ?? '')) : null,
+      passwordHash: pw,
       status: 'waiting_hizbs'
     });
     created.push({ name, password: pw });
   }
 
-  if (created.length === 0) {
+  // Batch insert in chunks of 100 rows (1 fast query per 100 students instead of 1 query + bcrypt per student)
+  const CHUNK_SIZE = 100;
+  for (let i = 0; i < toInsert.length; i += CHUNK_SIZE) {
+    const chunk = toInsert.slice(i, i + CHUNK_SIZE);
+    await db.insert(students).values(chunk);
+  }
+
+  if (created.length === 0 && skipped.length === 0) {
     return NextResponse.json(
       { error: 'لم يتم العثور على بيانات طلاب صالحة للاستيراد في الملف', created, skipped },
       { status: 400 }

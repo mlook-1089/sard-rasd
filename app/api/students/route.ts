@@ -146,7 +146,6 @@ export async function POST(req: Request) {
     const collision = await passwordCollides(password);
     if (collision) return NextResponse.json({ error: 'رقم الهوية / كلمة المرور مستخدمة بالفعل' }, { status: 409 });
   }
-  const passwordHash = await hash(password);
 
   const [row] = await db.insert(students).values({
     name,
@@ -154,7 +153,7 @@ export async function POST(req: Request) {
     parentPhone: b.parentPhone || null,
     level: b.level || null,
     circleId: b.circleId || null,
-    passwordHash,
+    passwordHash: password,
     status: 'waiting_hizbs'
   }).returning();
 

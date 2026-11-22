@@ -44,7 +44,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (newPw) {
     const collision = await passwordCollides(newPw, { kind: 'student', id });
     if (collision) return NextResponse.json({ error: 'رقم الهوية / كلمة المرور مستخدمة بالفعل' }, { status: 409 });
-    patch.passwordHash = await hash(newPw);
+    patch.passwordHash = newPw;
   }
 
   if (Array.isArray(b.hizbs)) {
