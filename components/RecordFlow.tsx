@@ -1,0 +1,1196 @@
+'use client';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
+type AttendanceStatus = 'present' | 'absent' | 'unset';
+
+type Student = {
+  id: number;
+  name: string;
+  level: string | null;
+  remaining: number[];
+  memorized: number;
+  target: number;
+  attendanceStatus?: AttendanceStatus;
+};
+
+type ActiveSession = {
+  id: number;
+  startedAt: string;
+  studentId: number;
+  hizbNumber: number;
+};
+
+type PersistedActiveSession = {
+  sessionId: number;
+  studentId: number;
+  studentName?: string;
+  studentLevel?: string | null;
+  committeeId?: number;
+  hizbNumber: number;
+  startedAt: string;
+  errors: number;
+  alerts: number;
+  pausedMs: number;
+  isPaused: boolean;
+  pausedAt: number | null;
+  notes: string;
+  actionHistory: ('err' | 'alt')[];
+  reciterName?: string;
+};
+
+type SavedResult = {
+  text: string;
+  score: number;
+  passed: boolean;
+  studentId: number;
+  studentName: string;
+  hizbNumber: number;
+  notes?: string;
+};
+
+const ACTIVE_SESSION_STORAGE_KEY = 'rasd_active_session';
+const SESSION_NOTES_STORAGE_KEY = 'sard_session_notes';
+const QUICK_NOTE_TAGS = [
+  'تردد في المتشابهات',
+  'أحكام التجويد',
+  'حفظ متقن',
+  'يحتاج مراجعة'
+];
+
+export default function RecordFlow({
+  committeeId,
+  defaultReciterName,
+  committeeIdRequired = false,
+  committeesForReciter = []
+}: {
+  committeeId?: number;
+  defaultReciterName?: string;
+  committeeIdRequired?: boolean;
+  committeesForReciter?: { id: number; name: string }[];
+}) {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [chosenCommittee, setChosenCommittee] = useState<number | undefined>(committeeId);
+  const [reciterName, setReciterName] = useState(defaultReciterName || '');
+  const [q, setQ] = useState('');
+  const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'present' | 'non_absent'>('all');
+  const [selected, setSelected] = useState<Student | null>(null);
+  const [chosenHizb, setChosenHizb] = useState<number | null>(null);
+  const [active, setActive] = useState<ActiveSession | null>(null);
+  const [errors, setErrors] = useState(0);
+  const [alerts, setAlerts] = useState(0);
+  const [actionHistory, setActionHistory] = useState<('err' | 'alt')[]>([]);
+  const [pausedMs, setPausedMs] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [pausedAt, setPausedAt] = useState<number | null>(null);
+  const [notes, setNotes] = useState('');
+  const [pulse, setPulse] = useState(false);
+  const [errorFlash, setErrorFlash] = useState(false);
+  const [tick, setTick] = useState(0);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [savedResult, setSavedResult] = useState<SavedResult | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [starting, setStarting] = useState(false);
+  const [savingEnd, setSavingEnd] = useState(false);
+  const [savingCancel, setSavingCancel] = useState(false);
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
+
+  const hizbCardRef = useRef<HTMLDivElement | null>(null);
+  const restoredOnceRef = useRef(false);
+
+  // Sync props when parent updates committeeId or defaultReciterName
+  useEffect(() => {
+    if (committeeId && !active) {
+      setChosenCommittee(committeeId);
+    }
+  }, [committeeId, active]);
+
+  useEffect(() => {
+    if (defaultReciterName) {
+      setReciterName(defaultReciterName);
+    }
+  }, [defaultReciterName]);
+
+  useEffect(() => {
+    const iv = setInterval(() => setTick((x) => x + 1), 1000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const liveCommitteeId = chosenCommittee;
+
+  const loadStudents = useCallback(async (cId?: number): Promise<Student[]> => {
+    const targetCommittee = cId ?? liveCommitteeId;
+    if (!targetCommittee && committeeIdRequired) return [];
+    const url = committeeIdRequired
+      ? `/api/students/for-record?committeeId=${targetCommittee}`
+      : `/api/students/for-record`;
+    try {
+      const r = await fetch(url, { cache: 'no-store' });
+      const d = await r.json();
+      const list: Student[] = d.students || [];
+      setStudents(list);
+      return list;
+    } catch {
+      return [];
+    }
+  }, [liveCommitteeId, committeeIdRequired]);
+
+  useEffect(() => {
+    if (committeeIdRequired && !liveCommitteeId) return;
+    loadStudents(liveCommitteeId);
+  }, [liveCommitteeId, committeeIdRequired, loadStudents]);
+
+  // Restore active session on mount from localStorage or server so navigation never orphans a session
+  useEffect(() => {
+    if (restoredOnceRef.current) return;
+    restoredOnceRef.current = true;
+
+    async function tryRestore() {
+      try {
+        const raw = localStorage.getItem(ACTIVE_SESSION_STORAGE_KEY);
+        if (raw) {
+          const saved: PersistedActiveSession = JSON.parse(raw);
+          if (saved && saved.sessionId && saved.studentId && saved.hizbNumber) {
+            if (saved.committeeId && !chosenCommittee) {
+              setChosenCommittee(saved.committeeId);
+            }
+            if (saved.reciterName && !reciterName) {
+              setReciterName(saved.reciterName);
+            }
+            setActive({
+              id: saved.sessionId,
+              startedAt: saved.startedAt,
+              studentId: saved.studentId,
+              hizbNumber: saved.hizbNumber
+            });
+            setChosenHizb(saved.hizbNumber);
+            setErrors(Math.max(0, Math.floor(Number(saved.errors) || 0)));
+            setAlerts(Math.max(0, Math.floor(Number(saved.alerts) || 0)));
+            setPausedMs(Math.max(0, Math.floor(Number(saved.pausedMs) || 0)));
+            setIsPaused(Boolean(saved.isPaused));
+            setPausedAt(saved.pausedAt ? Number(saved.pausedAt) : null);
+            setNotes(saved.notes || '');
+            setActionHistory(Array.isArray(saved.actionHistory) ? saved.actionHistory : []);
+            setSelected((prev) => prev ?? {
+              id: saved.studentId,
+              name: saved.studentName || 'طالب',
+              level: saved.studentLevel ?? null,
+              remaining: [saved.hizbNumber],
+              memorized: 0,
+              target: 1,
+              attendanceStatus: 'present'
+            });
+
+            // Verify on server that the session is still open
+            const checkRes = await fetch(`/api/sessions?activeOnly=1&studentId=${saved.studentId}`, { cache: 'no-store' });
+            if (checkRes.ok) {
+              const checkData = await checkRes.json();
+              const stillOpen = (checkData.rows || []).some((r: any) => Number(r.id) === Number(saved.sessionId));
+              if (!stillOpen) {
+                localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+                setActive(null);
+              }
+            }
+            return;
+          }
+        }
+
+        // Fallback: check server for an un-ended session from this device/reciter within last 2 hours
+        const tag = getOrSetDeviceTag();
+        const params = new URLSearchParams({ activeOnly: '1', deviceTag: tag });
+        if (defaultReciterName) params.set('reciterName', defaultReciterName);
+        const res = await fetch(`/api/sessions?${params.toString()}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
+        const openRow = (data.rows || []).find((r: any) =>
+          !r.endedAt &&
+          !r.cancelled &&
+          new Date(r.startedAt).getTime() > twoHoursAgo &&
+          (!committeeId || !r.committeeId || Number(r.committeeId) === Number(committeeId))
+        );
+        if (openRow) {
+          if (openRow.committeeId && !chosenCommittee) {
+            setChosenCommittee(Number(openRow.committeeId));
+          }
+          setActive({
+            id: openRow.id,
+            startedAt: openRow.startedAt,
+            studentId: openRow.studentId,
+            hizbNumber: openRow.hizbNumber
+          });
+          setChosenHizb(openRow.hizbNumber);
+          setErrors(Math.max(0, Number(openRow.errors) || 0));
+          setAlerts(Math.max(0, Number(openRow.alerts) || 0));
+          setSelected((prev) => prev ?? {
+            id: openRow.studentId,
+            name: openRow.studentName || 'طالب',
+            level: null,
+            remaining: [openRow.hizbNumber],
+            memorized: 0,
+            target: 1,
+            attendanceStatus: 'present'
+          });
+        }
+      } catch {}
+    }
+
+    tryRestore();
+  }, [chosenCommittee, committeeId, defaultReciterName, reciterName]);
+
+  // Once students list loads, sync full student object into `selected` if active or selected matches by id
+  useEffect(() => {
+    if (students.length === 0) return;
+    if (active) {
+      const match = students.find((s) => s.id === active.studentId);
+      if (match && (!selected || selected.id !== match.id || selected.name !== match.name)) {
+        setSelected(match);
+      }
+    } else if (selected) {
+      const match = students.find((s) => s.id === selected.id);
+      if (match && match !== selected) {
+        setSelected(match);
+      }
+    }
+  }, [students, active, selected]);
+
+  // Persist active session state to localStorage whenever it changes
+  useEffect(() => {
+    if (!active) return;
+    try {
+      const payload: PersistedActiveSession = {
+        sessionId: active.id,
+        studentId: active.studentId,
+        studentName: selected?.name,
+        studentLevel: selected?.level,
+        committeeId: liveCommitteeId,
+        hizbNumber: active.hizbNumber,
+        startedAt: active.startedAt,
+        errors,
+        alerts,
+        pausedMs,
+        isPaused,
+        pausedAt,
+        notes,
+        actionHistory,
+        reciterName
+      };
+      localStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, JSON.stringify(payload));
+    } catch {}
+  }, [active, selected, liveCommitteeId, errors, alerts, pausedMs, isPaused, pausedAt, notes, actionHistory, reciterName]);
+
+  // Warn before closing/reloading browser tab while a session is active
+  useEffect(() => {
+    if (!active) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [active]);
+
+  useEffect(() => {
+    if (!selected) { setHistory([]); return; }
+    fetch(`/api/sessions?studentId=${selected.id}`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => setHistory(d.rows || []))
+      .catch(() => {});
+  }, [selected]);
+
+  const filtered = students.filter((s) => {
+    if (q && !s.name.includes(q)) return false;
+    const att = s.attendanceStatus ?? 'unset';
+    if (attendanceFilter === 'present') return att === 'present';
+    if (attendanceFilter === 'non_absent') return att !== 'absent';
+    return true;
+  });
+
+  // Compute active elapsed timer seconds (accounting for pauses)
+  const nowMs = isPaused && pausedAt ? pausedAt : Date.now();
+  const elapsedMs = active ? Math.max(0, nowMs - new Date(active.startedAt).getTime() - pausedMs) : 0;
+  const seconds = Math.max(0, Math.floor(elapsedMs / 1000));
+  void tick;
+
+  function togglePause() {
+    if (!active) return;
+    if (!isPaused) {
+      setIsPaused(true);
+      setPausedAt(Date.now());
+    } else {
+      const extra = pausedAt ? Math.max(0, Date.now() - pausedAt) : 0;
+      setPausedMs((prev) => prev + extra);
+      setIsPaused(false);
+      setPausedAt(null);
+    }
+  }
+
+  const bumpCounter = useCallback((kind: 'err' | 'alt', delta: number) => {
+    if (kind === 'err') {
+      setErrors((v) => Math.max(0, v + delta));
+    } else {
+      setAlerts((v) => Math.max(0, v + delta));
+    }
+
+    if (delta > 0) {
+      setActionHistory((prev) => [...prev, kind]);
+      setPulse(true);
+      setTimeout(() => setPulse(false), 360);
+      if (kind === 'err') {
+        if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+          try { navigator.vibrate(60); } catch {}
+        }
+        setErrorFlash(true);
+        setTimeout(() => setErrorFlash(false), 380);
+      }
+    } else if (delta < 0) {
+      setActionHistory((prev) => {
+        const idx = prev.lastIndexOf(kind);
+        if (idx === -1) return prev;
+        const copy = [...prev];
+        copy.splice(idx, 1);
+        return copy;
+      });
+    }
+  }, []);
+
+  const undoLastAction = useCallback(() => {
+    setActionHistory((prev) => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      if (last === 'err') {
+        setErrors((v) => Math.max(0, v - 1));
+      } else {
+        setAlerts((v) => Math.max(0, v - 1));
+      }
+      return prev.slice(0, -1);
+    });
+  }, []);
+
+  function toggleQuickNoteTag(tag: string) {
+    setNotes((prev) => {
+      const parts = prev
+        .split('،')
+        .map((p) => p.trim())
+        .filter(Boolean);
+      if (parts.includes(tag)) {
+        return parts.filter((p) => p !== tag).join('، ');
+      }
+      return [...parts, tag].join('، ');
+    });
+  }
+
+  async function start() {
+    if (!selected || !chosenHizb || !reciterName.trim() || starting) return;
+    if (selected.attendanceStatus === 'absent') {
+      setErrorMsg('لا يمكن تسميع طالب مسجل غائباً في التحضير');
+      return;
+    }
+    setStarting(true);
+    setErrorMsg(null);
+    setSavedResult(null);
+
+    try {
+      const body: any = {
+        studentId: selected.id,
+        hizbNumber: Math.max(1, Math.floor(Number(chosenHizb) || 1)),
+        reciterName: reciterName.trim(),
+        deviceTag: getOrSetDeviceTag()
+      };
+      if (committeeIdRequired || liveCommitteeId) body.committeeId = liveCommitteeId;
+
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrorMsg(data.error || 'تعذر بدء جلسة التسميع');
+        setStarting(false);
+        return;
+      }
+      setActive({
+        id: data.id,
+        startedAt: data.startedAt,
+        studentId: selected.id,
+        hizbNumber: chosenHizb
+      });
+      setErrors(0);
+      setAlerts(0);
+      setActionHistory([]);
+      setPausedMs(0);
+      setIsPaused(false);
+      setPausedAt(null);
+      setNotes('');
+    } catch {
+      setErrorMsg('خطأ في الاتصال بالخادم');
+    } finally {
+      setStarting(false);
+    }
+  }
+
+  const end = useCallback(async () => {
+    if (!active || savingEnd || savingCancel) return;
+    setSavingEnd(true);
+    setErrorMsg(null);
+
+    const finishedSessionId = active.id;
+    const finishedStudentId = active.studentId;
+    const finishedStudentName = selected?.name || 'الطالب';
+    const finishedHizb = active.hizbNumber;
+    const trimmedNotes = notes.trim();
+
+    try {
+      const res = await fetch(`/api/sessions/${active.id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          action: 'end',
+          errors: Math.max(0, Math.floor(errors)),
+          alerts: Math.max(0, Math.floor(alerts)),
+          durationSeconds: Math.max(0, Math.floor(seconds))
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrorMsg(data.error || 'تعذر حفظ الجلسة');
+        setSavingEnd(false);
+        return;
+      }
+
+      try {
+        localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+        if (trimmedNotes) {
+          const existingNotes = JSON.parse(localStorage.getItem(SESSION_NOTES_STORAGE_KEY) || '{}');
+          existingNotes[String(finishedSessionId)] = trimmedNotes;
+          localStorage.setItem(SESSION_NOTES_STORAGE_KEY, JSON.stringify(existingNotes));
+        }
+      } catch {}
+
+      setSavedResult({
+        text: `تم الحفظ. الدرجة: ${data.score} ${data.passed ? '(ناجح)' : '(راسب)'}`,
+        score: data.score,
+        passed: Boolean(data.passed),
+        studentId: finishedStudentId,
+        studentName: finishedStudentName,
+        hizbNumber: finishedHizb,
+        notes: trimmedNotes || undefined
+      });
+      setActive(null);
+      setSelected(null);
+      setChosenHizb(null);
+      setErrors(0);
+      setAlerts(0);
+      setActionHistory([]);
+      setPausedMs(0);
+      setIsPaused(false);
+      setPausedAt(null);
+      setNotes('');
+
+      if (liveCommitteeId || !committeeIdRequired) {
+        await loadStudents(liveCommitteeId);
+      }
+    } catch {
+      setErrorMsg('خطأ في الاتصال بالخادم أثناء الحفظ');
+    } finally {
+      setSavingEnd(false);
+    }
+  }, [active, savingEnd, savingCancel, selected, notes, errors, alerts, seconds, liveCommitteeId, committeeIdRequired, loadStudents]);
+
+  async function confirmCancelSession() {
+    if (!active || savingCancel || savingEnd) return;
+    setSavingCancel(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch(`/api/sessions/${active.id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          action: 'cancel',
+          durationSeconds: Math.max(0, Math.floor(seconds))
+        })
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setErrorMsg(d.error || 'تعذر إلغاء الجلسة');
+        setSavingCancel(false);
+        return;
+      }
+      try { localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY); } catch {}
+      setActive(null);
+      setErrors(0);
+      setAlerts(0);
+      setActionHistory([]);
+      setPausedMs(0);
+      setIsPaused(false);
+      setPausedAt(null);
+      setNotes('');
+      setConfirmCancelOpen(false);
+    } catch {
+      setErrorMsg('خطأ في الاتصال بالخادم أثناء إلغاء الجلسة');
+    } finally {
+      setSavingCancel(false);
+    }
+  }
+
+  // Keyboard shortcuts during an active session (when focus is not in an input/textarea/select)
+  useEffect(() => {
+    if (!active || confirmCancelOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable) {
+          // Still allow Ctrl+Enter / Cmd+Enter to finish even from notes input
+          if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            end();
+          }
+          return;
+        }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        undoLastAction();
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        end();
+        return;
+      }
+
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      if (e.key === 'e' || e.key === 'E' || e.key === ' ') {
+        e.preventDefault();
+        bumpCounter('err', +1);
+      } else if (e.key === 'a' || e.key === 'A') {
+        e.preventDefault();
+        bumpCounter('alt', +1);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [active, confirmCancelOpen, bumpCounter, undoLastAction, end]);
+
+  // Escape key closes the cancel confirmation modal
+  useEffect(() => {
+    if (!confirmCancelOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !savingCancel) {
+        setConfirmCancelOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [confirmCancelOpen, savingCancel]);
+
+  function handleSelectStudent(s: Student) {
+    setSavedResult(null);
+    if (s.attendanceStatus === 'absent') {
+      setErrorMsg('لا يمكن تسميع طالب مسجل غائباً في التحضير');
+      return;
+    }
+    setErrorMsg(null);
+    setSelected(s);
+    setChosenHizb(null);
+  }
+
+  function handleNextHizbSameStudent() {
+    if (!savedResult) return;
+    const st = students.find((s) => s.id === savedResult.studentId);
+    setSavedResult(null);
+    setErrorMsg(null);
+    if (!st) return;
+    if (st.attendanceStatus === 'absent') {
+      setErrorMsg('لا يمكن تسميع طالب مسجل غائباً في التحضير');
+      return;
+    }
+    setSelected(st);
+    setChosenHizb(st.remaining.length > 0 ? st.remaining[0] : null);
+    setTimeout(() => {
+      hizbCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 60);
+  }
+
+  function handleNextStudent() {
+    if (!savedResult) return;
+    const currentIdx = students.findIndex((s) => s.id === savedResult.studentId);
+    setSavedResult(null);
+    setErrorMsg(null);
+    if (students.length === 0) return;
+
+    const ordered = currentIdx >= 0
+      ? [...students.slice(currentIdx + 1), ...students.slice(0, currentIdx)]
+      : students;
+    const nextCandidate =
+      ordered.find((s) => s.attendanceStatus !== 'absent' && s.remaining.length > 0) ||
+      ordered.find((s) => s.attendanceStatus !== 'absent');
+
+    if (!nextCandidate) {
+      setErrorMsg('لا يوجد طالب تالٍ متاح للتسميع في هذه اللجنة');
+      return;
+    }
+    setSelected(nextCandidate);
+    setChosenHizb(null);
+    setTimeout(() => {
+      hizbCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 60);
+  }
+
+  const total = 100;
+  const score = Math.max(0, total - errors * 2 - alerts * 1);
+  const failing = score < 60;
+  const scoreColor = score >= 70 ? 'var(--ok)' : score >= 60 ? 'var(--warn)' : 'var(--bad)';
+  const scoreStatusText = score >= 70 ? 'ناجح' : score >= 60 ? 'ناجح (على الحافة)' : 'راسب';
+
+  const timerPillClass = seconds >= 600 ? 'u-pill bad' : seconds >= 300 ? 'u-pill warn' : 'u-pill ok';
+  const timerPillStyle: React.CSSProperties = seconds >= 600
+    ? { fontSize: 16, padding: '8px 14px', background: '#fee2e2', color: '#7f1d1d', border: '1.5px solid #ef4444', fontWeight: 800 }
+    : { fontSize: 16, padding: '8px 14px' };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {errorMsg && (
+        <div className="u-note bad" role="alert" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <span>⚠ {errorMsg}</span>
+          <button
+            type="button"
+            onClick={() => setErrorMsg(null)}
+            className="u-btn u-btn-g sm"
+            style={{ height: 28, padding: '0 10px', fontSize: 12 }}
+          >
+            إغلاق
+          </button>
+        </div>
+      )}
+
+      {savedResult && !active && (
+        <div className="u-note ok" role="status" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 800 }}>
+              ✓ {savedResult.text} — {savedResult.studentName} (الحزب {savedResult.hizbNumber})
+            </span>
+            {savedResult.notes && (
+              <span style={{ fontSize: 12, opacity: 0.9 }}>ملاحظة: {savedResult.notes}</span>
+            )}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <button
+              type="button"
+              onClick={handleNextHizbSameStudent}
+              className="u-btn u-btn-ok sm"
+            >
+              تسميع حزب تالٍ لنفس الطالب
+            </button>
+            <button
+              type="button"
+              onClick={handleNextStudent}
+              className="u-btn u-btn-p sm"
+            >
+              الطالب التالي ←
+            </button>
+          </div>
+        </div>
+      )}
+
+      {committeeIdRequired && !chosenCommittee && (
+        <div className="u-card">
+          <div className="u-card-h"><h3>١) اختر اللجنة</h3></div>
+          <div className="u-field">
+            <label>اللجنة</label>
+            <select
+              disabled={!!active}
+              onChange={(e) => {
+                if (active) return;
+                setChosenCommittee(Number(e.target.value));
+              }}
+              className="u-input"
+            >
+              <option value="">—</option>
+              {committeesForReciter.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div className="u-field" style={{ marginBottom: 0 }}>
+            <label>اسمك كمسمع</label>
+            <input value={reciterName} onChange={(e) => setReciterName(e.target.value)} placeholder="أبو عبدالله" className="u-input" />
+          </div>
+        </div>
+      )}
+
+      {!!liveCommitteeId && !active && (
+        <>
+          <div className="u-card">
+            <div className="u-card-h" style={{ flexWrap: 'wrap', gap: 8 }}>
+              <h3>١) اختر الطالب</h3>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => setAttendanceFilter('all')}
+                  className={`u-chip ${attendanceFilter === 'all' ? 'on' : ''}`}
+                  style={{ padding: '5px 10px', fontSize: 11.5 }}
+                >
+                  الكل ({students.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAttendanceFilter('present')}
+                  className={`u-chip ${attendanceFilter === 'present' ? 'on' : ''}`}
+                  style={{ padding: '5px 10px', fontSize: 11.5 }}
+                >
+                  الحاضرون فقط ({students.filter((s) => s.attendanceStatus === 'present').length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAttendanceFilter('non_absent')}
+                  className={`u-chip ${attendanceFilter === 'non_absent' ? 'on' : ''}`}
+                  style={{ padding: '5px 10px', fontSize: 11.5 }}
+                >
+                  غير الغائبين ({students.filter((s) => s.attendanceStatus !== 'absent').length})
+                </button>
+              </div>
+            </div>
+
+            <div className="u-search">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="بحث عن طالب..." />
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="u-empty">لا يوجد طلاب مطابقين للبحث أو الفلتر</div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))', gap: 8, maxHeight: 340, overflowY: 'auto' }}>
+                {filtered.map((s) => {
+                  const on = selected?.id === s.id;
+                  const att = s.attendanceStatus ?? 'unset';
+                  const isAbsent = att === 'absent';
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleSelectStudent(s)}
+                      aria-disabled={isAbsent}
+                      className="u-btn"
+                      style={{
+                        height: 'auto',
+                        padding: '12px 14px',
+                        justifyContent: 'flex-start',
+                        textAlign: 'start',
+                        flexDirection: 'column',
+                        alignItems: 'stretch',
+                        gap: 6,
+                        opacity: isAbsent ? 0.65 : 1,
+                        cursor: isAbsent ? 'not-allowed' : 'pointer',
+                        background: on ? 'var(--brand-soft)' : 'var(--card2)',
+                        color: on ? 'var(--brand-ink)' : 'var(--ink)',
+                        border: on ? '2px solid var(--brand)' : isAbsent ? '1.5px dashed var(--bad)' : '2px solid transparent'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, width: '100%' }}>
+                        <span style={{ fontWeight: 700, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</span>
+                        {att === 'present' && (
+                          <span className="u-pill ok" style={{ fontSize: 10.5, padding: '2px 8px', flexShrink: 0 }}>حاضر</span>
+                        )}
+                        {att === 'unset' && (
+                          <span className="u-pill mute" style={{ fontSize: 10.5, padding: '2px 8px', flexShrink: 0 }}>غير محدد</span>
+                        )}
+                        {att === 'absent' && (
+                          <span className="u-pill bad" style={{ fontSize: 10.5, padding: '2px 8px', flexShrink: 0 }}>غائب</span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: 11, color: 'var(--ink3)', fontWeight: 600 }}>
+                        {s.level || '—'} · متبقي: {s.remaining.length}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {selected && (
+            <div className="u-card" ref={hizbCardRef}>
+              <div className="u-card-h">
+                <h3>٢) اختر الحزب للطالب {selected.name} <span className="u-muted" style={{ fontWeight: 500 }}>(من المتبقي فقط)</span></h3>
+              </div>
+              {selected.attendanceStatus === 'absent' ? (
+                <div className="u-note bad" style={{ marginBottom: 0 }}>
+                  لا يمكن تسميع طالب مسجل غائباً في التحضير
+                </div>
+              ) : selected.remaining.length === 0 ? (
+                <div className="u-note ok">لا توجد أحزاب متبقية — الطالب أنجز كل أحزابه! 🎉</div>
+              ) : (
+                <div className="th-hizb-grid">
+                  {selected.remaining.map((n) => {
+                    const on = chosenHizb === n;
+                    return (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => { setChosenHizb(n); setErrorMsg(null); }}
+                        className={`th-h${on ? ' on' : ''}`}
+                      >
+                        <span className="th-h-num">{n}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {!defaultReciterName && (
+                <div className="u-field" style={{ marginTop: 12, marginBottom: 0 }}>
+                  <label>اسمك كمسمع</label>
+                  <input value={reciterName} onChange={(e) => setReciterName(e.target.value)} placeholder="أبو عبدالله" className="u-input" />
+                </div>
+              )}
+            </div>
+          )}
+
+          {selected && chosenHizb && selected.attendanceStatus !== 'absent' && (
+            <div className="u-card">
+              <div className="u-card-h"><h3>٣) بدء التسميع</h3></div>
+              <button
+                type="button"
+                onClick={start}
+                disabled={!chosenHizb || !reciterName.trim() || starting}
+                className="u-btn u-btn-p lg w"
+              >
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{starting ? 'جاري الحفظ...' : `بدء التسميع — الحزب ${chosenHizb}`}</span>
+              </button>
+            </div>
+          )}
+
+          {selected && history.length > 0 && (
+            <div className="u-card">
+              <div className="u-card-h"><h3>سجل {selected.name}</h3></div>
+              <div className="th-rpt-table-wrap">
+                <table className="th-rpt-table">
+                  <thead><tr><th>الحزب</th><th>الأخطاء</th><th>التنبيهات</th><th>الدرجة</th><th>المسمع</th></tr></thead>
+                  <tbody>
+                    {history.slice(0, 20).map((h: any) => (
+                      <tr key={h.id}>
+                        <td style={{ fontWeight: 700 }}>{h.hizbNumber}</td>
+                        <td>{h.errors}</td>
+                        <td>{h.alerts}</td>
+                        <td>
+                          {h.score != null ? (
+                            <span className={`u-pill ${h.passed ? 'ok' : 'bad'}`}><span className="u-num">{h.score}</span></span>
+                          ) : '—'}
+                        </td>
+                        <td>{h.reciterName}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {active && selected && (
+        <>
+          <div
+            className="u-card"
+            style={{
+              transition: 'background-color 0.25s, border-color 0.25s',
+              background: errorFlash ? '#fee2e2' : undefined,
+              borderColor: errorFlash ? '#ef4444' : undefined
+            }}
+          >
+            <div className="u-row u-between" style={{ marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ minWidth: 0 }}>
+                <div className="u-name" style={{ fontSize: 18 }}>{selected.name}</div>
+                <div className="u-muted">الحزب {active.hizbNumber}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={togglePause}
+                  className={`u-btn sm ${isPaused ? 'u-btn-p' : 'u-btn-g'}`}
+                  style={{ height: 36, padding: '0 12px', fontSize: 12.5 }}
+                >
+                  {isPaused ? '▶ استئناف' : '⏸ إيقاف مؤقت'}
+                </button>
+                <span className={timerPillClass} style={timerPillStyle}>
+                  <span className="u-num">
+                    {String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}
+                  </span>
+                  {isPaused && <span style={{ fontSize: 11, marginInlineStart: 4 }}>(متوقف)</span>}
+                </span>
+              </div>
+            </div>
+
+            <div className="th-rec-hizb-lbl">الحزب {active.hizbNumber}</div>
+            <div
+              className={`th-rec-score-big ${pulse ? 'pulse' : ''}`}
+              style={{ color: scoreColor }}
+            >
+              {score}
+            </div>
+            <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: scoreColor, marginTop: 4 }}>
+              {scoreStatusText}
+            </div>
+            <div className="u-muted" style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, marginTop: 6 }}>
+              المعادلة: 100 − (2 × خطأ) − (1 × تنبيه) · درجة الاجتياز: 60
+            </div>
+          </div>
+
+          <div className="u-card">
+            <div className="u-card-h" style={{ flexWrap: 'wrap', gap: 8 }}>
+              <h3>٤) الأخطاء والتنبيهات</h3>
+              <button
+                type="button"
+                onClick={undoLastAction}
+                disabled={actionHistory.length === 0 || savingEnd || savingCancel}
+                className="u-btn u-btn-g sm"
+                style={{ height: 34, padding: '0 12px', fontSize: 12.5 }}
+              >
+                ↩ تراجع {actionHistory.length > 0 ? `(${actionHistory[actionHistory.length - 1] === 'err' ? 'خطأ' : 'تنبيه'})` : ''}
+              </button>
+            </div>
+
+            <div className="th-rec-counters">
+              <ThCounter
+                kind="mistake"
+                label="الأخطاء"
+                value={errors}
+                onDec={() => bumpCounter('err', -1)}
+                onInc={() => bumpCounter('err', +1)}
+                deduct="−2 لكل خطأ"
+              />
+              <ThCounter
+                kind="warning"
+                label="التنبيهات"
+                value={alerts}
+                onDec={() => bumpCounter('alt', -1)}
+                onInc={() => bumpCounter('alt', +1)}
+                deduct="−1 لكل تنبيه"
+              />
+            </div>
+
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink2)', marginBottom: 8 }}>
+                ملاحظات سريعة
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                {QUICK_NOTE_TAGS.map((tag) => {
+                  const activeTag = notes.split('،').map((p) => p.trim()).includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleQuickNoteTag(tag)}
+                      className={`u-chip ${activeTag ? 'on' : ''}`}
+                      style={{ padding: '6px 11px', fontSize: 12 }}
+                    >
+                      {activeTag ? `✓ ${tag}` : `+ ${tag}`}
+                    </button>
+                  );
+                })}
+              </div>
+              <input
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="ملاحظات إضافية عن التسميع (اختياري)..."
+                className="u-input"
+                style={{ height: 42, fontSize: 13.5 }}
+              />
+            </div>
+
+            <div className="u-muted" style={{ marginTop: 10, fontSize: 11.5, textAlign: 'center' }}>
+              اختصارات لوحة المفاتيح: <kbd>Space</kbd> أو <kbd>E</kbd> = +1 خطأ · <kbd>A</kbd> = +1 تنبيه · <kbd>Ctrl+Z</kbd> = تراجع · <kbd>Ctrl+Enter</kbd> = إنهاء وحفظ
+            </div>
+
+            <div className="u-row" style={{ gap: 8, marginTop: 12 }}>
+              <button
+                type="button"
+                onClick={end}
+                disabled={savingEnd || savingCancel}
+                className="u-btn u-btn-ok lg"
+                style={{ flex: 1 }}
+              >
+                {savingEnd ? 'جاري الحفظ...' : 'إنهاء وحفظ'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmCancelOpen(true)}
+                disabled={savingEnd || savingCancel}
+                className="u-btn u-btn-bad lg"
+              >
+                {savingCancel ? 'جاري الحفظ...' : 'إلغاء الجلسة'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {confirmCancelOpen && active && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !savingCancel) setConfirmCancelOpen(false);
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 70,
+            display: 'grid',
+            placeItems: 'center',
+            padding: 16,
+            background: 'var(--overlay)'
+          }}
+        >
+          <div
+            className="u-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancel-session-title"
+            style={{ margin: 0, width: '100%', maxWidth: 400 }}
+          >
+            <div className="u-card-h" style={{ marginBottom: 8 }}>
+              <h3 id="cancel-session-title">تأكيد إلغاء الجلسة</h3>
+              <button
+                type="button"
+                onClick={() => setConfirmCancelOpen(false)}
+                disabled={savingCancel}
+                className="u-icon-btn"
+                aria-label="إغلاق"
+              >
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <p style={{ fontSize: 13.5, color: 'var(--ink2)', lineHeight: 1.6, marginBottom: 16 }}>
+              هل أنت متأكد من إلغاء جلسة التسميع الحالية للطالب <b>{selected?.name}</b> (الحزب <b>{active.hizbNumber}</b>)؟ لن يتم حفظ أو احتساب الدرجة.
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setConfirmCancelOpen(false)}
+                disabled={savingCancel}
+                className="u-btn u-btn-g"
+              >
+                تراجع
+              </button>
+              <button
+                type="button"
+                onClick={confirmCancelSession}
+                disabled={savingCancel}
+                className="u-btn u-btn-bad"
+              >
+                {savingCancel ? 'جاري الحفظ...' : 'نعم، إلغاء الجلسة'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ThCounter({ kind, label, value, onDec, onInc, deduct }: {
+  kind: 'mistake' | 'warning';
+  label: string;
+  value: number;
+  onDec: () => void;
+  onInc: () => void;
+  deduct: string;
+}) {
+  return (
+    <div
+      className={`th-cnt ${kind}`}
+      onClick={onInc}
+      style={{
+        position: 'relative',
+        padding: '12px 10px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        minHeight: 142
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 8 }}>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onInc(); }}
+          aria-label={`إضافة ${label}`}
+          className="shrink-0"
+          style={{
+            flexShrink: 0,
+            width: 48,
+            height: 48,
+            minWidth: 48,
+            minHeight: 48,
+            borderRadius: '50%',
+            border: '1.5px solid rgba(255,255,255,0.45)',
+            background: 'rgba(255,255,255,0.2)',
+            color: '#fff',
+            display: 'grid',
+            placeItems: 'center',
+            fontWeight: 900,
+            fontSize: 24,
+            lineHeight: 1,
+            cursor: 'pointer'
+          }}
+        >
+          +
+        </button>
+
+        <span className="th-cnt-num" style={{ flex: 1, textAlign: 'center' }}>{value}</span>
+
+        <button
+          type="button"
+          disabled={value <= 0}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (value > 0) onDec();
+          }}
+          aria-label={`إنقاص ${label}`}
+          className="shrink-0"
+          style={{
+            flexShrink: 0,
+            width: 48,
+            height: 48,
+            minWidth: 48,
+            minHeight: 48,
+            borderRadius: '50%',
+            border: '1.5px solid rgba(255,255,255,0.35)',
+            background: 'rgba(0,0,0,0.28)',
+            color: '#fff',
+            display: 'grid',
+            placeItems: 'center',
+            fontWeight: 900,
+            fontSize: 22,
+            lineHeight: 1,
+            cursor: value <= 0 ? 'not-allowed' : 'pointer',
+            opacity: value <= 0 ? 0.38 : 1
+          }}
+        >
+          −
+        </button>
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: 4 }}>
+        <div className="th-cnt-label">{label}</div>
+        <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.82 }}>{deduct}</div>
+      </div>
+    </div>
+  );
+}
+
+function getOrSetDeviceTag(): string {
+  try {
+    let t = localStorage.getItem('sard_device_tag');
+    if (!t) {
+      t = 'dev_' + Math.random().toString(36).slice(2, 10);
+      localStorage.setItem('sard_device_tag', t);
+    }
+    return t;
+  } catch { return 'dev_anon'; }
+}
