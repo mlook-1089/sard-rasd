@@ -139,17 +139,18 @@ export async function POST(req: Request) {
   const name = (b.name || '').trim();
   if (!name) return NextResponse.json({ error: 'الاسم مطلوب' }, { status: 400 });
 
-  let password = (b.password || '').trim();
+  const nationalId = (b.nationalId || '').trim() || null;
+  let password = (b.password || '').trim() || nationalId || '';
   if (!password) password = randomPassword(6);
   else {
     const collision = await passwordCollides(password);
-    if (collision) return NextResponse.json({ error: 'كلمة المرور مستخدمة بالفعل' }, { status: 409 });
+    if (collision) return NextResponse.json({ error: 'رقم الهوية / كلمة المرور مستخدمة بالفعل' }, { status: 409 });
   }
   const passwordHash = await hash(password);
 
   const [row] = await db.insert(students).values({
     name,
-    nationalId: b.nationalId || null,
+    nationalId,
     parentPhone: b.parentPhone || null,
     level: b.level || null,
     circleId: b.circleId || null,

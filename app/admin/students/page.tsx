@@ -646,8 +646,8 @@ function EditModal({
               <input ref={firstInputRef} value={name} onChange={(e) => setName(e.target.value)} className="u-input" />
             </div>
             <div className="u-field" style={{ marginBottom: 0 }}>
-              <label>الهوية</label>
-              <input dir="ltr" value={nationalId} onChange={(e) => setNationalId(e.target.value)} className="u-input" />
+              <label>رقم الهوية (هو كلمة مرور الطالب)</label>
+              <input dir="ltr" value={nationalId} onChange={(e) => setNationalId(e.target.value)} className="u-input" placeholder="10XXXXXXXX" />
             </div>
             <div className="u-field" style={{ marginBottom: 0 }}>
               <label>رقم ولي الأمر</label>
@@ -672,9 +672,8 @@ function EditModal({
               </select>
             </div>
           </div>
-          <div className="u-field" style={{ marginTop: 12 }}>
-            <label>كلمة مرور الطالب (اتركها فارغة للإبقاء)</label>
-            <input value={password} onChange={(e) => setPassword(e.target.value)} className="u-input" placeholder="•••••••" />
+          <div className="u-muted" style={{ marginTop: 10 }}>
+            يدخل الطالب إلى حسابه مباشرةً باستخدام <b>رقم هويته</b> ككلمة مرور.
           </div>
 
           <div style={{ marginTop: 12 }}>

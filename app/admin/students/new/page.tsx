@@ -69,7 +69,7 @@ function SingleForm({ circles }: { circles: any[] }) {
   return (
     <form onSubmit={submit} className="u-card">
       <div className="u-field"><label>الاسم *</label><input required value={name} onChange={(e) => setName(e.target.value)} className="u-input" /></div>
-      <div className="u-field"><label>رقم الهوية</label><input dir="ltr" value={nationalId} onChange={(e) => setNationalId(e.target.value)} className="u-input" /></div>
+      <div className="u-field"><label>رقم الهوية (هو كلمة مرور دخول الطالب)</label><input dir="ltr" value={nationalId} onChange={(e) => setNationalId(e.target.value)} className="u-input" placeholder="10XXXXXXXX" /></div>
       <div className="u-field"><label>رقم ولي الأمر</label><input type="tel" inputMode="tel" dir="ltr" value={parentPhone} onChange={(e) => setParentPhone(e.target.value.replace(/[^0-9+\s-]/g, ''))} className="u-input" placeholder="05XXXXXXXX" /></div>
       <div className="u-field"><label>المستوى</label><input value={level} onChange={(e) => setLevel(e.target.value)} className="u-input" /></div>
       <div className="u-field">
@@ -79,8 +79,7 @@ function SingleForm({ circles }: { circles: any[] }) {
           {circles.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       </div>
-      <div className="u-field"><label>كلمة المرور (اتركها فارغة للتوليد)</label><input value={password} onChange={(e) => setPassword(e.target.value)} className="u-input" /></div>
-      <p className="u-muted" style={{ marginBottom: 12 }}>بعد الإضافة سيكون الطالب في حالة "بانتظار الأحزاب".</p>
+      <p className="u-muted" style={{ marginBottom: 12 }}>كلمة مرور دخول الطالب هي رقم هويته تلقائياً. بعد الإضافة سيكون الطالب في حالة "بانتظار الأحزاب".</p>
       {msg && <div role={msg.ok ? 'status' : 'alert'} className={`u-note ${msg.ok ? 'ok' : 'bad'}`}>{msg.text}</div>}
       <button type="submit" disabled={saving} className="u-btn u-btn-p w">
         {saving ? 'جاري الحفظ...' : 'إضافة'}

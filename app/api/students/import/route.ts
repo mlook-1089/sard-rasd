@@ -97,11 +97,14 @@ export async function POST(req: Request) {
     const r = rows[i];
     const name = (r[idx.name] || '').trim();
     if (!name) { skipped.push({ name: `صف ${i + 1}`, reason: 'اسم فارغ' }); continue; }
-    let pw = '';
-    for (let t = 0; t < 10; t++) { pw = randomPassword(6); if (!(await passwordCollides(pw))) break; }
+    const nationalId = idx.nid >= 0 ? (r[idx.nid] || '').trim() || null : null;
+    let pw = nationalId || '';
+    if (!pw) {
+      for (let t = 0; t < 10; t++) { pw = randomPassword(6); if (!(await passwordCollides(pw))) break; }
+    }
     await db.insert(students).values({
       name,
-      nationalId: idx.nid >= 0 ? (r[idx.nid] || '').trim() || null : null,
+      nationalId,
       parentPhone: idx.phone >= 0 ? (r[idx.phone] || '').trim() || null : null,
       level: idx.level >= 0 ? (r[idx.level] || '').trim() || null : null,
       circleId: idx.circle >= 0 ? findCircleId(r[idx.circle] || '') : null,

@@ -40,10 +40,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if ('circleId' in b) patch.circleId = b.circleId ? Number(b.circleId) : null;
   if ('committeeId' in b) patch.committeeId = b.committeeId ? Number(b.committeeId) : null;
 
-  if (b.password) {
-    const collision = await passwordCollides(b.password, { kind: 'student', id });
-    if (collision) return NextResponse.json({ error: 'كلمة المرور مستخدمة بالفعل' }, { status: 409 });
-    patch.passwordHash = await hash(b.password);
+  const newPw = (b.password ? String(b.password).trim() : '') || (patch.nationalId ? String(patch.nationalId).trim() : '');
+  if (newPw) {
+    const collision = await passwordCollides(newPw, { kind: 'student', id });
+    if (collision) return NextResponse.json({ error: 'رقم الهوية / كلمة المرور مستخدمة بالفعل' }, { status: 409 });
+    patch.passwordHash = await hash(newPw);
   }
 
   if (Array.isArray(b.hizbs)) {
