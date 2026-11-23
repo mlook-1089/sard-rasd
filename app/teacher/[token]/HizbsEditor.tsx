@@ -99,9 +99,17 @@ export default function HizbsEditor({
     setSel(new Set(savedHizbs));
   }
 
-  function addPreset(hizbs: readonly number[]) {
+  function togglePreset(hizbs: readonly number[]) {
     if (saving) return;
-    setSel((current) => new Set([...current, ...hizbs]));
+    setSel((current) => {
+      const complete = hizbs.every((n) => current.has(n));
+      if (!complete) return new Set([...current, ...hizbs]);
+      const next = new Set(current);
+      for (const n of hizbs) {
+        if (!savedHizbs.includes(n)) next.delete(n);
+      }
+      return next;
+    });
   }
 
   async function save() {
@@ -148,7 +156,7 @@ export default function HizbsEditor({
 
       {open && (
         <div
-          className="fixed inset-0 z-50"
+          className="fixed inset-0 z-50 hizb-editor-modal"
           role="dialog"
           aria-modal="true"
           aria-label={`أحزاب ${studentName}`}
@@ -156,6 +164,7 @@ export default function HizbsEditor({
           onClick={() => !saving && setOpen(false)}
         >
           <div
+            className="hizb-editor-panel"
             style={{
               background: 'var(--card)',
               borderRadius: 20,
@@ -170,13 +179,13 @@ export default function HizbsEditor({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Sticky header */}
-            <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+            <div className="hizb-editor-header" style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
               <div className="u-row u-between" style={{ flexWrap: 'wrap', gap: 10 }}>
-                <div>
+                <div className="hizb-editor-title">
                   <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>أحزاب {studentName}</h3>
                   <p className="u-muted" style={{ margin: '2px 0 0' }}>المحفوظ: <b>{savedHizbs.length}</b> · الإضافة الجديدة: <b>{Math.max(0, sel.size - savedHizbs.length)}</b></p>
                 </div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                <div className="hizb-editor-toolbar" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                   <button
                     type="button"
                     onClick={selectAll}
@@ -210,7 +219,7 @@ export default function HizbsEditor({
             </div>
 
             {/* Scrollable body */}
-            <div style={{ padding: 18, overflowY: 'auto', flex: 1 }}>
+            <div className="hizb-editor-body" style={{ padding: 18, overflowY: 'auto', flex: 1 }}>
               <div className="hizb-presets">
                 <div className="hizb-presets-title">
                   <div><b>اختيارات سريعة</b><span>تضيف المجموعة مباشرة دون التأثير على المحفوظ</span></div>
@@ -222,9 +231,9 @@ export default function HizbsEditor({
                       <button
                         key={preset.id}
                         type="button"
-                        disabled={saving || complete}
+                        disabled={saving}
                         className={`hizb-preset${complete ? ' complete' : ''}`}
-                        onClick={() => addPreset(preset.hizbs)}
+                        onClick={() => togglePreset(preset.hizbs)}
                       >
                         <span>{complete ? '✓' : '+'}</span>
                         <b>{preset.label}</b>
@@ -267,7 +276,7 @@ export default function HizbsEditor({
             </div>
 
             {/* Sticky footer */}
-            <div style={{ padding: '12px 18px', borderTop: '1px solid var(--line)', background: 'var(--card)', display: 'flex', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
+            <div className="hizb-editor-footer" style={{ padding: '12px 18px', borderTop: '1px solid var(--line)', background: 'var(--card)', display: 'flex', justifyContent: 'flex-end', gap: 8, flexShrink: 0 }}>
               <button
                 type="button"
                 onClick={() => !saving && setOpen(false)}
@@ -346,7 +355,7 @@ export function TeacherPortalClient({
     : 0;
 
   return (
-    <div style={{ maxWidth: 1120, margin: '0 auto', padding: '16px' }} className="u-page">
+    <div style={{ maxWidth: 1120, width: '100%', margin: '0 auto', padding: '12px', boxSizing: 'border-box' }} className="u-page">
       <div className="u-hero">
         <div className="l">السلام عليكم ورحمة الله</div>
         <div className="big">
@@ -377,7 +386,7 @@ export function TeacherPortalClient({
         {rows.length === 0 ? (
           <div className="u-empty">لا يوجد طلاب بعد</div>
         ) : (
-          <div className="th-rpt-table-wrap">
+          <div className="th-rpt-table-wrap teacher-report-table">
             <table className="th-rpt-table">
               <thead>
                 <tr>
@@ -404,12 +413,12 @@ export function TeacherPortalClient({
                   const waUrl = wa ? `https://wa.me/${wa}?text=${encodeURIComponent(waText)}` : null;
                   return (
                     <tr key={r.id}>
-                      <td><b>{r.name}</b></td>
-                      <td style={{ color: 'var(--ok)' }}>{r.memorized}</td>
-                      <td>{r.target}</td>
-                      <td style={{ color: 'var(--bad)' }}>{r.errors}</td>
-                      <td style={{ color: 'var(--warn)' }}>{r.alerts}</td>
-                      <td>
+                      <td data-label="الطالب"><b>{r.name}</b></td>
+                      <td data-label="المحفوظ" style={{ color: 'var(--ok)' }}>{r.memorized}</td>
+                      <td data-label="الهدف">{r.target}</td>
+                      <td data-label="الأخطاء" style={{ color: 'var(--bad)' }}>{r.errors}</td>
+                      <td data-label="التنبيهات" style={{ color: 'var(--warn)' }}>{r.alerts}</td>
+                      <td data-label="الإنجاز">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <div className="u-bar light" style={{ minWidth: 60, flex: 1 }}>
                             <i style={{ width: `${r.completion}%` }} />
@@ -417,7 +426,7 @@ export function TeacherPortalClient({
                           <span className="u-num" style={{ fontWeight: 800 }}>{r.completion}%</span>
                         </div>
                       </td>
-                      <td>
+                      <td data-label="الإجراء">
                         <div className="teacher-row-actions">
                           <HizbsEditor
                             token={token}

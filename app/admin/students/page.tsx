@@ -29,7 +29,8 @@ type SortKey = 'name' | 'level' | 'circleName' | 'committeeName' | 'hizbs' | 'st
 
 type ConfirmAction =
   | { kind: 'delete'; student: Row }
-  | { kind: 'bulk-password'; mode: 'numeric' | 'strong' };
+  | { kind: 'bulk-password'; mode: 'numeric' | 'strong' }
+  | { kind: 'bulk-hizbs-lock'; locked: boolean };
 
 const STATUS_PILL: Record<string, { label: string; variant: string }> = {
   waiting_hizbs: { label: 'بانتظار الأحزاب', variant: 'warn' },
@@ -136,6 +137,7 @@ export default function StudentsPage() {
     }
     return Array.from(s).sort((a, b) => a.localeCompare(b, 'ar'));
   }, [rows]);
+  const allHizbsLocked = rows.length > 0 && rows.every((row) => row.hizbsLocked);
 
   function clearFilters() {
     setQ('');
@@ -205,6 +207,16 @@ export default function StudentsPage() {
         const data = await res.json().catch(() => ({}));
         setConfirmAction(null);
         setPwOutput(data.updated || []);
+      } else if (confirmAction.kind === 'bulk-hizbs-lock') {
+        const res = await fetch('/api/students/bulk-hizbs-lock', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ locked: confirmAction.locked })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'تعذر تحديث القفل');
+        setConfirmAction(null);
+        await load();
       }
     } finally {
       setConfirmBusy(false);
@@ -271,6 +283,16 @@ export default function StudentsPage() {
               style={{ height: 38 }}
             >
               ✕ مسح الفلتر
+            </button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={() => setConfirmAction({ kind: 'bulk-hizbs-lock', locked: !allHizbsLocked })}
+              className={`u-btn ${allHizbsLocked ? 'u-btn-g' : 'u-btn-s'} sm`}
+              style={{ height: 38 }}
+            >
+              {allHizbsLocked ? '🔓 فتح قفل أحزاب الجميع' : '🔒 قفل أحزاب جميع الطلاب'}
             </button>
           </div>
         </div>
@@ -461,10 +483,15 @@ function ConfirmModal({
   }, [busy, onCancel]);
 
   const isDelete = action.kind === 'delete';
-  const title = isDelete ? 'تأكيد حذف الطالب' : 'تأكيد توليد كلمات المرور';
+  const isBulkLock = action.kind === 'bulk-hizbs-lock';
+  const title = isDelete ? 'تأكيد حذف الطالب' : isBulkLock ? (action.locked ? 'قفل أحزاب جميع الطلاب' : 'فتح قفل جميع الطلاب') : 'تأكيد توليد كلمات المرور';
   const desc = isDelete
     ? `هل أنت متأكد من حذف الطالب "${action.student.name}"؟`
-    : `سيُعاد توليد كلمات مرور كل الطلاب (${action.mode === 'numeric' ? 'قصيرة' : 'قوية'}). هل تريد المتابعة؟`;
+    : isBulkLock
+      ? action.locked
+        ? 'سيُمنع جميع المعلمين من تعديل أحزاب أي طالب. يمكن فتح القفل لاحقاً من الزر نفسه.'
+        : 'سيُسمح للمعلمين بإضافة أحزاب جديدة لجميع الطلاب.'
+      : `سيُعاد توليد كلمات مرور كل الطلاب (${action.mode === 'numeric' ? 'قصيرة' : 'قوية'}). هل تريد المتابعة؟`;
 
   return (
     <div
@@ -492,7 +519,7 @@ function ConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={busy}
-            className={`u-btn ${isDelete ? 'u-btn-bad' : 'u-btn-p'}`}
+            className={`u-btn ${isDelete ? 'u-btn-bad' : isBulkLock && action.locked ? 'u-btn-s' : 'u-btn-p'}`}
           >
             {busy ? 'جاري الحفظ...' : 'تأكيد'}
           </button>
@@ -615,9 +642,14 @@ function EditModal({
     setHizbs([]);
   }
 
-  function addHizbPreset(presetHizbs: readonly number[]) {
+  function toggleHizbPreset(presetHizbs: readonly number[]) {
     userTouchedHizbsRef.current = true;
-    setHizbs((current) => Array.from(new Set([...current, ...presetHizbs])).sort((a, b) => a - b));
+    setHizbs((current) => {
+      const complete = presetHizbs.every((n) => current.includes(n));
+      return complete
+        ? current.filter((n) => !presetHizbs.includes(n))
+        : Array.from(new Set([...current, ...presetHizbs])).sort((a, b) => a - b);
+    });
   }
 
   return (
@@ -691,7 +723,7 @@ function EditModal({
                 {HIZB_PRESETS.map((preset) => {
                   const complete = preset.hizbs.every((n) => hizbs.includes(n));
                   return (
-                    <button key={preset.id} type="button" disabled={complete} className={`hizb-preset${complete ? ' complete' : ''}`} onClick={() => addHizbPreset(preset.hizbs)}>
+                    <button key={preset.id} type="button" className={`hizb-preset${complete ? ' complete' : ''}`} onClick={() => toggleHizbPreset(preset.hizbs)}>
                       <span>{complete ? '✓' : '+'}</span><b>{preset.label}</b><small>الأحزاب {preset.detail}</small>
                     </button>
                   );

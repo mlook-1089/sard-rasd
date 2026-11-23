@@ -45,7 +45,7 @@ body{ font-family:'IBM Plex Sans Arabic','Tajawal',system-ui,sans-serif !importa
 /* =====================================================================
    مكوّنات الشاشات الجديدة (u-*)
    ===================================================================== */
-.u-page{ padding:4px 0 24px; }
+.u-page{ padding:4px 0 24px; box-sizing:border-box; }
 .u-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin:4px 0 14px; }
 .u-top h1{ font-size:22px; font-weight:700; line-height:1.3; color:var(--ink); }
 .u-top .u-sub{ font-size:12.5px; color:var(--ink2); margin-bottom:2px; }
@@ -638,6 +638,49 @@ html.dark .bg-gradient-to-r.from-brand{
 .admin-hizbs-lock > i{ position:relative; width:42px; height:24px; border-radius:99px; background:var(--line2); transition:.15s; }
 .admin-hizbs-lock > i::after{ content:""; position:absolute; width:18px; height:18px; top:3px; inset-inline-start:3px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.2); transition:.15s; }
 .admin-hizbs-lock.on > i{ background:var(--gold); }.admin-hizbs-lock.on > i::after{ inset-inline-start:21px; }
+
+/* Teacher portal — compact mobile report cards instead of a squeezed table */
+@media(max-width:700px){
+  .teacher-report-table{ max-height:none; overflow:visible; border:0; background:transparent; }
+  .teacher-report-table .th-rpt-table,.teacher-report-table tbody{ display:block; width:100%; }
+  .teacher-report-table thead{ display:none; }
+  .teacher-report-table tbody{ display:grid; gap:10px; }
+  .teacher-report-table .th-rpt-table tbody tr{ display:grid; grid-template-columns:1fr 1fr; gap:0; padding:12px; border:1px solid var(--line); border-radius:16px; background:var(--card); box-shadow:0 4px 14px rgba(0,0,0,.04); }
+  .teacher-report-table .th-rpt-table tbody tr td{ display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; min-height:38px; padding:7px 8px; border:0; border-bottom:1px solid var(--line); background:transparent !important; text-align:end; white-space:normal; }
+  .teacher-report-table .th-rpt-table tbody tr td::before{ content:attr(data-label); color:var(--ink3); font-size:10.5px; font-weight:700; }
+  .teacher-report-table .th-rpt-table tbody tr td:first-child{ grid-column:1/-1; min-height:44px; padding:2px 4px 9px; margin-bottom:3px; border-bottom:1px solid var(--line); font-size:15px; text-align:start; }
+  .teacher-report-table .th-rpt-table tbody tr td:first-child::before{ display:none; }
+  .teacher-report-table .th-rpt-table tbody tr td:nth-child(2n+1):not(:first-child):not(:last-child){ border-inline-start:1px solid var(--line); }
+  .teacher-report-table .th-rpt-table tbody tr td:nth-child(6){ grid-column:1/-1; }
+  .teacher-report-table .th-rpt-table tbody tr td:last-child{ grid-column:1/-1; padding:10px 4px 0; border:0; }
+  .teacher-report-table .th-rpt-table tbody tr td:last-child::before{ display:none; }
+  .teacher-row-actions{ width:100%; min-width:0; justify-content:stretch; }
+  .teacher-row-actions .teacher-hizbs-btn{ flex:1; }
+
+  /* Full-height bottom sheet: every control remains reachable on small phones. */
+  .hizb-editor-modal{ padding:0 !important; place-items:stretch !important; }
+  .hizb-editor-panel{ max-width:none !important; max-height:100dvh !important; height:100dvh; border-radius:0 !important; }
+  .hizb-editor-header{ padding:10px 12px !important; }
+  .hizb-editor-header .u-row{ align-items:flex-start; }
+  .hizb-editor-title{ width:100%; }
+  .hizb-editor-title h3{ font-size:15px !important; }
+  .hizb-editor-toolbar{ width:100%; display:grid !important; grid-template-columns:1fr 1fr 44px; }
+  .hizb-editor-toolbar .u-btn{ width:100%; min-height:40px !important; height:40px; padding:0 8px !important; font-size:11.5px; }
+  .hizb-editor-toolbar .u-icon-btn{ min-height:40px !important; height:40px !important; }
+  .hizb-editor-body{ padding:10px !important; overscroll-behavior:contain; }
+  .hizb-editor-footer{ padding:9px 10px !important; padding-bottom:max(9px,env(safe-area-inset-bottom)) !important; }
+  .hizb-editor-footer .u-btn{ flex:1; }
+  .hizb-editor-body .hizb-presets{ padding:9px; }
+  .hizb-editor-body .hizb-presets-grid{ display:flex; overflow-x:auto; gap:6px; padding-bottom:3px; scroll-snap-type:x proximity; scrollbar-width:none; }
+  .hizb-editor-body .hizb-presets-grid::-webkit-scrollbar{ display:none; }
+  .hizb-editor-body .hizb-preset{ flex:0 0 132px; min-height:54px; scroll-snap-align:start; }
+  .hizb-editor-body .hizb-preset:last-child{ grid-column:auto; }
+  .hizb-editor-body .hizb-lock-legend{ flex-wrap:nowrap; overflow-x:auto; white-space:nowrap; scrollbar-width:none; padding:8px 10px; }
+  .hizb-editor-body .th-hizb-grid{ grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px; }
+  .hizb-editor-body .th-h{ min-height:54px; border-radius:10px; }
+  .hizb-editor-body .th-h-num{ font-size:14px; }
+  .hizb-editor-body .th-h-sub{ font-size:9px; }
+}
 
 /* Generic table inside a u-card also gets a bit of polish */
 .u-card > table,
