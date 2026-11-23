@@ -439,16 +439,20 @@ html.dark .bg-gradient-to-r.from-brand{
 .th-h.on{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand-ink); }
 .th-h.locked{ background:var(--gold-soft); border-color:var(--gold); color:var(--gold); cursor:not-allowed; }
 .th-h.saved{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand-ink); cursor:pointer; }
+.th-h.removed{ background:var(--bad-soft); border-color:var(--bad); color:var(--bad); cursor:pointer; opacity:.8; }
+.th-h.removed .th-h-num{ text-decoration:line-through; }
 .th-h-num{ font-weight:800; font-size:15px; line-height:1.1; }
 .th-h-sub{ font-size:10.5px; color:var(--ink3); margin-top:2px; }
 .th-h.on .th-h-sub, .th-h.locked .th-h-sub{ color:inherit; opacity:.75; }
 .th-h-lock{ position:absolute; top:3px; left:4px; opacity:.8; }
+.th-h-remove{ position:absolute; top:1px; left:4px; font-size:14px; font-weight:900; line-height:1; }
 .hizb-lock-legend{ display:flex; gap:8px 14px; flex-wrap:wrap; margin-bottom:12px; padding:10px 12px; border-radius:14px; background:var(--card2); border:1px solid var(--line); color:var(--ink2); font-size:11.5px; font-weight:700; }
 .hizb-lock-legend span{ display:inline-flex; align-items:center; gap:6px; }
 .hizb-lock-legend i{ width:10px; height:10px; border-radius:50%; display:inline-block; }
 .hizb-lock-legend i.mandatory{ background:var(--gold); }
 .hizb-lock-legend i.saved{ background:var(--brand); }
 .hizb-lock-legend i.new{ background:var(--card); border:1.5px solid var(--line2); }
+.hizb-lock-legend i.remove{ background:var(--bad); }
 .hizb-presets{ margin-bottom:12px; padding:12px; border-radius:16px; background:linear-gradient(135deg,var(--brand-soft),var(--card2)); border:1px solid var(--line); }
 .hizb-presets-title{ display:flex; justify-content:space-between; align-items:center; margin-bottom:9px; }
 .hizb-presets-title b{ display:block; color:var(--brand-ink); font-size:13px; }

@@ -246,22 +246,34 @@ export default function HizbsEditor({
                 <span><i className="mandatory" /> إلزامي من الإدارة</span>
                 <span><i className="saved" /> مضاف سابقاً</span>
                 <span><i className="new" /> إضافة جديدة</span>
+                {savedHizbs.some((n) => !mandatory.includes(n) && !sel.has(n)) && <span><i className="remove" /> سيُحذف عند الحفظ</span>}
               </div>
               <div className="th-hizb-grid">
                 {Array.from({ length: 60 }, (_, i) => i + 1).map((n) => {
                   const on = sel.has(n);
                   const isMandatory = mandatory.includes(n);
                   const isSaved = savedHizbs.includes(n);
+                  const willBeRemoved = isSaved && !isMandatory && !on;
+                  const stateClass = isMandatory
+                    ? ' locked'
+                    : willBeRemoved
+                      ? ' removed'
+                      : isSaved && on
+                        ? ' saved'
+                        : on
+                          ? ' on'
+                          : '';
                   return (
                     <button
                       key={n}
                       onClick={() => toggle(n)}
                       disabled={saving || isMandatory}
-                      className={`th-h${isMandatory ? ' locked' : on ? ' on' : ''}${isSaved && !isMandatory ? ' saved' : ''}`}
+                      className={`th-h${stateClass}`}
                       type="button"
-                      title={isMandatory ? 'حزب إلزامي مقفل من الإدارة' : isSaved ? 'محفوظ سابقاً ويمكن إلغاء اختياره' : undefined}
+                      title={isMandatory ? 'حزب إلزامي مقفل من الإدارة' : willBeRemoved ? 'سيُحذف عند الحفظ' : isSaved ? 'محفوظ سابقاً ويمكن إلغاء اختياره' : undefined}
                     >
                       {isMandatory && <span className="th-h-lock" aria-hidden="true">🔒</span>}
+                      {willBeRemoved && <span className="th-h-remove" aria-hidden="true">×</span>}
                       <span className="th-h-num">{n}</span>
                       <span className="th-h-sub">جزء {juzForHizb(n)}</span>
                     </button>
