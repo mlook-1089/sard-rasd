@@ -178,15 +178,15 @@ function MandatoryHizbsImport() {
             <div className="gold"><span>إجمالي الأحزاب</span><b>{preview.summary.hizbs}</b></div>
           </div>
 
-          <div className="th-rpt-table-wrap mandatory-preview-table">
+          <div className="th-rpt-table-wrap mandatory-preview-table mobile-card-table">
             <table className="th-rpt-table">
               <thead><tr><th>الطالب</th><th>الأحزاب الإجبارية</th><th>الحالة</th><th>الملاحظة</th></tr></thead>
               <tbody>{preview.rows.map((row) => (
                 <tr key={row.rowNumber}>
-                  <td><b>{row.name}</b><small>صف {row.rowNumber}</small></td>
-                  <td><span className="mandatory-hizb-list">{row.hizbs.length ? row.hizbs.join('، ') : '—'}</span></td>
-                  <td><span className={`u-pill ${row.status === 'matched' ? 'ok' : 'warn'}`}>{statusLabel[row.status]}</span></td>
-                  <td>{row.status === 'matched' && row.currentMandatory?.length ? `سيستبدل الإلزامي الحالي (${row.currentMandatory.length})` : row.message}</td>
+                  <td data-label="الطالب" className="mobile-card-title"><b>{row.name}</b><small>صف {row.rowNumber}</small></td>
+                  <td data-label="الأحزاب"><span className="mandatory-hizb-list">{row.hizbs.length ? row.hizbs.join('، ') : '—'}</span></td>
+                  <td data-label="الحالة"><span className={`u-pill ${row.status === 'matched' ? 'ok' : 'warn'}`}>{statusLabel[row.status]}</span></td>
+                  <td data-label="الملاحظة" data-wide="true">{row.status === 'matched' && row.currentMandatory?.length ? `سيستبدل الإلزامي الحالي (${row.currentMandatory.length})` : row.message}</td>
                 </tr>
               ))}</tbody>
             </table>

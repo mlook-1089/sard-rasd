@@ -201,7 +201,7 @@ export default function HizbsEditor({
                     className="u-btn u-btn-g"
                     style={{ minHeight: 44, minWidth: 44, padding: '0 12px' }}
                   >
-                    إبقاء الإجباري فقط
+                    إلغاء تحديد الكل
                   </button>
                   <button
                     type="button"

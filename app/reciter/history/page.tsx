@@ -63,7 +63,7 @@ export default function ReciterHistory() {
         ) : mine.length === 0 ? (
           <div className="u-empty">لا توجد سجلات من هذا الجهاز بعد</div>
         ) : (
-          <div className="th-rpt-table-wrap">
+          <div className="th-rpt-table-wrap mobile-card-table">
             <table className="th-rpt-table">
               <thead>
                 <tr>
@@ -79,17 +79,17 @@ export default function ReciterHistory() {
               <tbody>
                 {mine.map((r) => (
                   <tr key={r.id}>
-                    <td style={{ whiteSpace: 'nowrap' }}>{new Date(r.startedAt).toLocaleDateString('ar')}</td>
-                    <td><b>{r.studentName}</b></td>
-                    <td>{r.hizbNumber}</td>
-                    <td style={{ color: 'var(--bad)' }}>{r.errors}</td>
-                    <td style={{ color: 'var(--warn)' }}>{r.alerts}</td>
-                    <td>
+                    <td data-label="التاريخ" style={{ whiteSpace: 'nowrap' }}>{new Date(r.startedAt).toLocaleDateString('ar')}</td>
+                    <td data-label="الطالب" className="mobile-card-title"><b>{r.studentName}</b></td>
+                    <td data-label="الحزب">{r.hizbNumber}</td>
+                    <td data-label="الأخطاء" style={{ color: 'var(--bad)' }}>{r.errors}</td>
+                    <td data-label="التنبيهات" style={{ color: 'var(--warn)' }}>{r.alerts}</td>
+                    <td data-label="الدرجة">
                       {r.score != null ? (
                         <span className={`u-pill ${r.passed ? 'ok' : 'bad'}`}>{r.score}</span>
                       ) : '—'}
                     </td>
-                    <td>
+                    <td data-label="الإجراء" className="mobile-card-action">
                       <button onClick={() => setEditing(r)} className="u-icon-btn u-icon-btn-info" title="تعديل" aria-label="تعديل">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M4 20h4L19 9a2.5 2.5 0 00-3.536-3.536L4 16v4z"/></svg>
                       </button>

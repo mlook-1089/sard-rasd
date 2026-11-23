@@ -530,7 +530,7 @@ function AutoAssignModal({
               </div>
 
               <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', margin: '14px 0 6px' }}>تفاصيل التعيين</h4>
-              <div className="th-rpt-table-wrap">
+              <div className="th-rpt-table-wrap mobile-card-table">
                 <table className="th-rpt-table">
                   <thead>
                     <tr>
@@ -544,13 +544,13 @@ function AutoAssignModal({
                   <tbody>
                     {plan.rows.map((r) => (
                       <tr key={r.studentId}>
-                        <td style={{ textAlign: 'right' }}><b>{r.studentName}</b></td>
-                        <td>{r.fromCommitteeId ? committees.find((c) => c.id === r.fromCommitteeId)?.name || '—' : '—'}</td>
-                        <td>←</td>
-                        <td style={{ color: r.toCommitteeId ? 'var(--brand-ink)' : 'var(--bad)' }}>
+                        <td data-label="الطالب" className="mobile-card-title" style={{ textAlign: 'right' }}><b>{r.studentName}</b></td>
+                        <td data-label="اللجنة الحالية">{r.fromCommitteeId ? committees.find((c) => c.id === r.fromCommitteeId)?.name || '—' : '—'}</td>
+                        <td data-label="النقل">←</td>
+                        <td data-label="اللجنة المقترحة" style={{ color: r.toCommitteeId ? 'var(--brand-ink)' : 'var(--bad)' }}>
                           <b>{r.toCommitteeName || 'غير قابل للتعيين'}</b>
                         </td>
-                        <td style={{ fontSize: 11.5, color: 'var(--ink2)' }}>{r.reason}</td>
+                        <td data-label="السبب" data-wide="true" style={{ fontSize: 11.5, color: 'var(--ink2)' }}>{r.reason}</td>
                       </tr>
                     ))}
                   </tbody>

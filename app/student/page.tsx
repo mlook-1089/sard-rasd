@@ -142,7 +142,7 @@ export default async function StudentPage() {
           {rawSessions.length === 0 ? (
             <div className="u-empty">لا توجد جلسات بعد.</div>
           ) : (
-            <div className="th-rpt-table-wrap">
+            <div className="th-rpt-table-wrap mobile-card-table">
               <table className="th-rpt-table">
                 <thead>
                   <tr>
@@ -158,19 +158,19 @@ export default async function StudentPage() {
                 <tbody>
                   {rawSessions.map((s) => (
                     <tr key={s.id}>
-                      <td>{fmtDate(s.startedAt)}</td>
-                      <td style={{ fontWeight: 700 }}>{s.hizbNumber}</td>
-                      <td>{s.errors}</td>
-                      <td>{s.alerts}</td>
-                      <td>
+                      <td data-label="التاريخ" className="mobile-card-title">{fmtDate(s.startedAt)}</td>
+                      <td data-label="الحزب" style={{ fontWeight: 700 }}>{s.hizbNumber}</td>
+                      <td data-label="الأخطاء">{s.errors}</td>
+                      <td data-label="التنبيهات">{s.alerts}</td>
+                      <td data-label="الدرجة">
                         {s.score != null ? (
                           <span className={`u-pill ${s.passed ? 'ok' : 'bad'}`}>
                             <span className="u-num">{s.score}</span>
                           </span>
                         ) : '—'}
                       </td>
-                      <td>{s.reciterName}</td>
-                      <td>{fmtDuration(s.durationSeconds)}</td>
+                      <td data-label="المسمع">{s.reciterName}</td>
+                      <td data-label="المدة">{fmtDuration(s.durationSeconds)}</td>
                     </tr>
                   ))}
                 </tbody>
