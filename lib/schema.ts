@@ -117,7 +117,10 @@ export const students = pgTable('students', {
 // ----- Student assigned hizbs (which of 1..60 a student must recite) -----
 export const studentHizbs = pgTable('student_hizbs', {
   studentId: integer('student_id').notNull().references(() => students.id, { onDelete: 'cascade' }),
-  hizbNumber: integer('hizb_number').notNull()
+  hizbNumber: integer('hizb_number').notNull(),
+  // Set by the administration through the mandatory-hizbs import. Teachers can
+  // add assignments, but can never remove an already assigned hizb.
+  isMandatory: boolean('is_mandatory').default(false).notNull()
 }, (t) => ({
   pk: primaryKey({ columns: [t.studentId, t.hizbNumber] })
 }));

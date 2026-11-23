@@ -54,13 +54,32 @@ export async function PUT(
       .filter((n) => Number.isInteger(n) && n >= 1 && n <= 60)
   )).sort((a, b) => a - b);
 
-  await db.delete(studentHizbs).where(eq(studentHizbs.studentId, studentId));
-  if (hizbs.length > 0) {
-    await db.insert(studentHizbs).values(hizbs.map((n) => ({ studentId, hizbNumber: n })));
+  const existing = await db.select().from(studentHizbs).where(eq(studentHizbs.studentId, studentId));
+  const existingSet = new Set(existing.map((h) => h.hizbNumber));
+  const removed = existing.filter((h) => !hizbs.includes(h.hizbNumber));
+  if (removed.length > 0) {
+    return NextResponse.json(
+      { error: 'لا يمكن إنقاص الأحزاب المحفوظة. يمكنك الزيادة فقط.' },
+      { status: 409 }
+    );
   }
 
+  const additions = hizbs.filter((n) => !existingSet.has(n));
+  if (additions.length > 0) {
+    await db
+      .insert(studentHizbs)
+      .values(additions.map((n) => ({ studentId, hizbNumber: n, isMandatory: false })))
+      .onConflictDoNothing();
+  }
+
+  const savedHizbs = Array.from(new Set([...existingSet, ...additions])).sort((a, b) => a - b);
+  const mandatoryHizbs = existing
+    .filter((h) => h.isMandatory)
+    .map((h) => h.hizbNumber)
+    .sort((a, b) => a - b);
+
   const nextStatus =
-    hizbs.length === 0
+    savedHizbs.length === 0
       ? 'waiting_hizbs'
       : student.committeeId
         ? 'active'
@@ -71,7 +90,7 @@ export async function PUT(
   revalidatePath(`/teacher/${token}`);
 
   return NextResponse.json(
-    { ok: true, count: hizbs.length, hizbs, status: nextStatus },
+    { ok: true, count: savedHizbs.length, hizbs: savedHizbs, mandatoryHizbs, status: nextStatus },
     { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
   );
 }

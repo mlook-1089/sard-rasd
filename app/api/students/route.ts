@@ -77,10 +77,16 @@ export async function GET() {
   const activeProgramId = activeProgs[0]?.id ?? null;
 
   const hizbsByStudent = new Map<number, number[]>();
+  const mandatoryHizbsByStudent = new Map<number, number[]>();
   for (const h of allHizbs) {
     const arr = hizbsByStudent.get(h.studentId) || [];
     arr.push(h.hizbNumber);
     hizbsByStudent.set(h.studentId, arr);
+    if (h.isMandatory) {
+      const mandatory = mandatoryHizbsByStudent.get(h.studentId) || [];
+      mandatory.push(h.hizbNumber);
+      mandatoryHizbsByStudent.set(h.studentId, mandatory);
+    }
   }
 
   const statsByStudent = new Map<number, { passedSet: Set<number>; errors: number; alerts: number }>();
@@ -101,6 +107,7 @@ export async function GET() {
   const rows = await Promise.all(
     baseRows.map(async (r) => {
       const hizbs = (hizbsByStudent.get(r.id) || []).slice().sort((a, b) => a - b);
+      const mandatoryHizbs = (mandatoryHizbsByStudent.get(r.id) || []).slice().sort((a, b) => a - b);
       const st = statsByStudent.get(r.id);
       const completedHizbs = st ? Array.from(st.passedSet).sort((a, b) => a - b) : [];
       const memorizedCount = completedHizbs.length;
@@ -118,6 +125,7 @@ export async function GET() {
         ...r,
         status: expectedStatus,
         hizbs,
+        mandatoryHizbs,
         hizbsCount: hizbs.length,
         completedHizbs,
         memorizedCount,

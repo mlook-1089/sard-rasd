@@ -16,7 +16,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   if (!row) return NextResponse.json({ error: 'not found' }, { status: 404 });
   const hz = await db.select().from(studentHizbs).where(eq(studentHizbs.studentId, id));
   const hizbs = hz.map((h) => h.hizbNumber).sort((a, b) => a - b);
-  return NextResponse.json({ student: { ...row, hizbs }, hizbs });
+  const mandatoryHizbs = hz.filter((h) => h.isMandatory).map((h) => h.hizbNumber).sort((a, b) => a - b);
+  return NextResponse.json({ student: { ...row, hizbs, mandatoryHizbs }, hizbs, mandatoryHizbs });
 }
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
@@ -56,11 +57,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           .filter((n: number) => Number.isInteger(n) && n >= 1 && n <= 60)
       )
     ).sort((a, b) => a - b);
+    const current = await db.select().from(studentHizbs).where(eq(studentHizbs.studentId, id));
+    const mandatory = new Set(current.filter((h) => h.isMandatory).map((h) => h.hizbNumber));
     await db.delete(studentHizbs).where(eq(studentHizbs.studentId, id));
     if (list.length > 0) {
       await db
         .insert(studentHizbs)
-        .values(list.map((n) => ({ studentId: id, hizbNumber: n })))
+        .values(list.map((n) => ({ studentId: id, hizbNumber: n, isMandatory: mandatory.has(n) })))
         .onConflictDoNothing();
     }
   }

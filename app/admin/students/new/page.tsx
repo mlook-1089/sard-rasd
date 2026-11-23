@@ -2,20 +2,205 @@
 import { useEffect, useState } from 'react';
 
 export default function NewStudentPage() {
-  const [mode, setMode] = useState<'single' | 'import'>('single');
+  const [mode, setMode] = useState<'single' | 'import' | 'mandatory'>('single');
   const [circles, setCircles] = useState<any[]>([]);
   useEffect(() => { fetch('/api/circles').then((r) => r.json()).then((d) => setCircles(d.rows || [])); }, []);
 
   return (
-    <div className="u-page" style={{ maxWidth: 680, marginInline: 'auto' }}>
+    <div className="u-page" style={{ maxWidth: mode === 'mandatory' ? 980 : 680, marginInline: 'auto' }}>
       <div className="u-top"><div><h1>إضافة طلاب</h1></div></div>
 
       <div className="u-seg" style={{ marginBottom: 12 }}>
         <button onClick={() => setMode('single')} className={mode === 'single' ? 'on' : ''}>إضافة فردية</button>
         <button onClick={() => setMode('import')} className={mode === 'import' ? 'on' : ''}>استيراد من إكسل</button>
+        <button onClick={() => setMode('mandatory')} className={mode === 'mandatory' ? 'on' : ''}>الأحزاب الإجبارية</button>
       </div>
 
-      {mode === 'single' ? <SingleForm circles={circles} /> : <ImportForm />}
+      {mode === 'single' ? <SingleForm circles={circles} /> : mode === 'import' ? <ImportForm /> : <MandatoryHizbsImport />}
+    </div>
+  );
+}
+
+type MandatoryPreviewRow = {
+  rowNumber: number;
+  name: string;
+  hizbs: number[];
+  status: 'matched' | 'not_found' | 'ambiguous' | 'invalid' | 'duplicate';
+  message: string;
+  currentMandatory?: number[];
+};
+
+type MandatoryPreview = {
+  rows: MandatoryPreviewRow[];
+  summary: { total: number; matched: number; issues: number; hizbs: number };
+};
+
+function MandatoryHizbsImport() {
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<MandatoryPreview | null>(null);
+  const [busy, setBusy] = useState<'preview' | 'apply' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<{ applied: number; skipped: number } | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  function chooseFile(next: File | null) {
+    setFile(next);
+    setPreview(null);
+    setDone(null);
+    setError(null);
+  }
+
+  async function send(mode: 'preview' | 'apply') {
+    if (!file || busy) return;
+    setBusy(mode);
+    setError(null);
+    if (mode === 'preview') setDone(null);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`/api/students/mandatory-hizbs/import?mode=${mode}`, { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'تعذر معالجة الملف');
+      if (mode === 'preview') {
+        setPreview(data);
+      } else {
+        setDone({ applied: data.applied || 0, skipped: data.skipped || 0 });
+        setPreview(null);
+      }
+    } catch (e: any) {
+      setError(e?.message || 'فشل الاتصال بالخادم');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function downloadTemplate() {
+    const XLSX = await import('xlsx');
+    const ws = XLSX.utils.aoa_to_sheet([['اسم الطالب', 'الأحزاب الإجبارية']]);
+    (ws as any)['!views'] = [{ RTL: true }];
+    (ws as any)['!cols'] = [{ wch: 32 }, { wch: 34 }];
+    (ws as any)['!autofilter'] = { ref: 'A1:B1' };
+    const help = XLSX.utils.aoa_to_sheet([
+      ['تعليمات التعبئة'],
+      ['1', 'اكتب اسم الطالب كما هو مسجل في المنصة.'],
+      ['2', 'يمكن كتابة الأحزاب: 1، 2، 3 أو كنطاق: 1-5، 8، 10-12.'],
+      ['3', 'يعرض النظام معاينة كاملة قبل الاعتماد.'],
+      ['مثال', 'محمد أحمد | 1-5، 8، 10-12']
+    ]);
+    (help as any)['!views'] = [{ RTL: true }];
+    (help as any)['!cols'] = [{ wch: 16 }, { wch: 70 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'الأحزاب الإجبارية');
+    XLSX.utils.book_append_sheet(wb, help, 'التعليمات');
+    const buffer: ArrayBuffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'قالب-الأحزاب-الإجبارية.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const statusLabel: Record<MandatoryPreviewRow['status'], string> = {
+    matched: 'جاهز',
+    not_found: 'غير موجود',
+    ambiguous: 'اسم متكرر',
+    invalid: 'بيانات غير صالحة',
+    duplicate: 'مكرر بالملف'
+  };
+
+  return (
+    <div className="mandatory-import-shell">
+      <div className="mandatory-import-hero">
+        <div className="mandatory-import-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m4-3.5V6a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1.5M9 4V2m6 2V2"/></svg>
+        </div>
+        <div>
+          <span className="u-pill gold">سياسة مقفلة</span>
+          <h2>تثبيت الأحزاب الإجبارية</h2>
+          <p>ارفع ملفًا واحدًا لكل الطلاب. ستظهر مقفلة للمعلم، ويمكنه الزيادة فقط.</p>
+        </div>
+      </div>
+
+      <div className="mandatory-steps" aria-label="خطوات الاستيراد">
+        <div className="done"><b>1</b><span>تنزيل القالب</span></div>
+        <div className={preview || done ? 'done' : 'active'}><b>2</b><span>رفع ومعاينة</span></div>
+        <div className={done ? 'done' : preview ? 'active' : ''}><b>3</b><span>اعتماد وتثبيت</span></div>
+      </div>
+
+      <div className="u-card" style={{ margin: 0 }}>
+        <div className="mandatory-template-row">
+          <div>
+            <div className="u-name">قالب جاهز ومبسّط</div>
+            <div className="u-muted">عمودان فقط: اسم الطالب، والأحزاب الإجبارية.</div>
+          </div>
+          <button type="button" onClick={downloadTemplate} className="u-btn u-btn-s">
+            <span aria-hidden="true">↓</span> تنزيل قالب Excel
+          </button>
+        </div>
+
+        <label
+          className={`mandatory-dropzone${dragOver ? ' over' : ''}`}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); chooseFile(e.dataTransfer.files[0] || null); }}
+        >
+          <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(e) => chooseFile(e.target.files?.[0] || null)} />
+          <span className="mandatory-drop-icon" aria-hidden="true">↑</span>
+          {file ? <><strong>{file.name}</strong><small>جاهز للفحص قبل الاعتماد</small></> : <><strong>أسقط ملف Excel هنا</strong><small>أو انقر لاختياره من جهازك</small></>}
+        </label>
+
+        {!preview && !done && (
+          <button type="button" onClick={() => send('preview')} disabled={!file || !!busy} className="u-btn u-btn-p w" style={{ marginTop: 12 }}>
+            {busy === 'preview' ? 'جاري فحص الأسماء والأحزاب...' : 'معاينة الملف قبل الاعتماد'}
+          </button>
+        )}
+
+        {error && <div role="alert" className="u-note bad" style={{ marginTop: 12, marginBottom: 0 }}>{error}</div>}
+
+        {done && (
+          <div className="mandatory-success" role="status">
+            <div className="mandatory-success-mark">✓</div>
+            <div><h3>تم التثبيت بنجاح</h3><p>ثُبّتت الأحزاب الإجبارية لـ <b>{done.applied}</b> طالب{done.skipped > 0 ? `، وتم تجاوز ${done.skipped} صف يحتاج مراجعة.` : '.'}</p></div>
+            <button type="button" className="u-btn u-btn-g sm" onClick={() => chooseFile(null)}>رفع ملف آخر</button>
+          </div>
+        )}
+      </div>
+
+      {preview && (
+        <div className="u-card mandatory-preview-card">
+          <div className="u-card-h"><div><h3>معاينة الاعتماد</h3><p>لم يتغير شيء في المنصة بعد.</p></div></div>
+          <div className="mandatory-summary-grid">
+            <div><span>صفوف الملف</span><b>{preview.summary.total}</b></div>
+            <div className="ok"><span>مطابق وجاهز</span><b>{preview.summary.matched}</b></div>
+            <div className={preview.summary.issues ? 'warn' : 'ok'}><span>يحتاج مراجعة</span><b>{preview.summary.issues}</b></div>
+            <div className="gold"><span>إجمالي الأحزاب</span><b>{preview.summary.hizbs}</b></div>
+          </div>
+
+          <div className="th-rpt-table-wrap mandatory-preview-table">
+            <table className="th-rpt-table">
+              <thead><tr><th>الطالب</th><th>الأحزاب الإجبارية</th><th>الحالة</th><th>الملاحظة</th></tr></thead>
+              <tbody>{preview.rows.map((row) => (
+                <tr key={row.rowNumber}>
+                  <td><b>{row.name}</b><small>صف {row.rowNumber}</small></td>
+                  <td><span className="mandatory-hizb-list">{row.hizbs.length ? row.hizbs.join('، ') : '—'}</span></td>
+                  <td><span className={`u-pill ${row.status === 'matched' ? 'ok' : 'warn'}`}>{statusLabel[row.status]}</span></td>
+                  <td>{row.status === 'matched' && row.currentMandatory?.length ? `سيستبدل الإلزامي الحالي (${row.currentMandatory.length})` : row.message}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+
+          {preview.summary.issues > 0 && <div className="u-note warn" style={{ marginTop: 12 }}>سيعتمد النظام الصفوف المطابقة فقط، ويتجاوز الصفوف التي تحتاج مراجعة.</div>}
+          <div className="mandatory-preview-actions">
+            <button type="button" className="u-btn u-btn-g" disabled={!!busy} onClick={() => setPreview(null)}>استبدال الملف</button>
+            <button type="button" className="u-btn u-btn-p" disabled={preview.summary.matched === 0 || !!busy} onClick={() => send('apply')}>
+              {busy === 'apply' ? 'جاري التثبيت...' : `اعتماد وتثيت ${preview.summary.matched} طالب`}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

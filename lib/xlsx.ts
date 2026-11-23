@@ -30,6 +30,7 @@ export function xlsxResponse(filename: string, sheets: SheetSpec[]): Response {
     'تقرير-الحلقات.xlsx': 'circles-report.xlsx',
     'سجل-الرصد.xlsx': 'sessions-report.xlsx',
     'قالب-الطلاب.xlsx': 'students-template.xlsx',
+    'قالب-الأحزاب-الإجبارية.xlsx': 'mandatory-hizbs-template.xlsx',
     'قالب-الحلقات.xlsx': 'circles-template.xlsx',
     'قالب-اللجان.xlsx': 'committees-template.xlsx'
   };

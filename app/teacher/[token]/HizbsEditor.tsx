@@ -10,6 +10,7 @@ export type TeacherStudentRow = {
   committeeId?: number | null;
   status: string;
   hizbsSet: number[];
+  mandatoryHizbs: number[];
   target: number;
   memorized: number;
   errors: number;
@@ -34,12 +35,14 @@ export default function HizbsEditor({
   token,
   studentId,
   initial,
+  mandatory,
   studentName,
   onSaved
 }: {
   token: string;
   studentId: number;
   initial: number[];
+  mandatory: number[];
   studentName: string;
   onSaved?: (newHizbs: number[], newStatus?: string) => void;
 }) {
@@ -63,6 +66,8 @@ export default function HizbsEditor({
 
   function toggle(n: number) {
     if (saving) return;
+    // Every persisted assignment is append-only from the teacher portal.
+    if (savedHizbs.includes(n)) return;
     const next = new Set(sel);
     if (next.has(n)) next.delete(n); else next.add(n);
     setSel(next);
@@ -85,7 +90,7 @@ export default function HizbsEditor({
 
   function clearAll() {
     if (saving) return;
-    setSel(new Set());
+    setSel(new Set(savedHizbs));
   }
 
   async function save() {
@@ -156,7 +161,7 @@ export default function HizbsEditor({
               <div className="u-row u-between" style={{ flexWrap: 'wrap', gap: 10 }}>
                 <div>
                   <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>أحزاب {studentName}</h3>
-                  <p className="u-muted" style={{ margin: '2px 0 0' }}>المختار: <b>{sel.size}</b> / 60</p>
+                  <p className="u-muted" style={{ margin: '2px 0 0' }}>المحفوظ: <b>{savedHizbs.length}</b> · الإضافة الجديدة: <b>{Math.max(0, sel.size - savedHizbs.length)}</b></p>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                   <button
@@ -175,7 +180,7 @@ export default function HizbsEditor({
                     className="u-btn u-btn-g"
                     style={{ minHeight: 44, minWidth: 44, padding: '0 12px' }}
                   >
-                    إلغاء الكل
+                    إلغاء الإضافات
                   </button>
                   <button
                     type="button"
@@ -193,17 +198,26 @@ export default function HizbsEditor({
 
             {/* Scrollable body */}
             <div style={{ padding: 18, overflowY: 'auto', flex: 1 }}>
+              <div className="hizb-lock-legend" aria-label="مفتاح حالات الأحزاب">
+                <span><i className="mandatory" /> إلزامي من الإدارة</span>
+                <span><i className="saved" /> مضاف سابقاً</span>
+                <span><i className="new" /> إضافة جديدة</span>
+              </div>
               <div className="th-hizb-grid">
                 {Array.from({ length: 60 }, (_, i) => i + 1).map((n) => {
                   const on = sel.has(n);
+                  const isMandatory = mandatory.includes(n);
+                  const isSaved = savedHizbs.includes(n);
                   return (
                     <button
                       key={n}
                       onClick={() => toggle(n)}
-                      disabled={saving}
-                      className={`th-h${on ? ' on' : ''}`}
+                      disabled={saving || isSaved}
+                      className={`th-h${isMandatory ? ' locked' : on ? ' on' : ''}${isSaved && !isMandatory ? ' saved' : ''}`}
                       type="button"
+                      title={isMandatory ? 'حزب إلزامي مقفل من الإدارة' : isSaved ? 'حزب مضاف سابقاً ولا يمكن إنقاصه' : undefined}
                     >
+                      {isSaved && <span className="th-h-lock" aria-hidden="true">🔒</span>}
                       <span className="th-h-num">{n}</span>
                     </button>
                   );
@@ -376,6 +390,7 @@ export function TeacherPortalClient({
                       token={token}
                       studentId={r.id}
                       initial={r.hizbsSet}
+                      mandatory={r.mandatoryHizbs}
                       studentName={r.name}
                       onSaved={(newHizbs, newStatus) => handleStudentSaved(r.id, newHizbs, newStatus)}
                     />

@@ -56,6 +56,7 @@ export default async function TeacherPortal({ params }: PageProps) {
   for (const s of studs) {
     const hs = await db.select().from(studentHizbs).where(eq(studentHizbs.studentId, s.id));
     const hizbsSet = hs.map((r) => r.hizbNumber).sort((a, b) => a - b);
+    const mandatoryHizbs = hs.filter((r) => r.isMandatory).map((r) => r.hizbNumber).sort((a, b) => a - b);
     const [agg] = await db
       .select({
         memorized: sql<number>`count(DISTINCT ${sessions.hizbNumber})`,
@@ -90,6 +91,7 @@ export default async function TeacherPortal({ params }: PageProps) {
       committeeId: s.committeeId,
       status: effectiveStatus,
       hizbsSet,
+      mandatoryHizbs,
       target,
       memorized,
       errors,

@@ -76,8 +76,10 @@ async function main() {
   await sql`CREATE TABLE IF NOT EXISTS student_hizbs (
     student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
     hizb_number INTEGER NOT NULL,
+    is_mandatory BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (student_id, hizb_number)
   )`;
+  await sql`ALTER TABLE student_hizbs ADD COLUMN IF NOT EXISTS is_mandatory BOOLEAN NOT NULL DEFAULT FALSE`;
 
   await sql`CREATE TABLE IF NOT EXISTS sessions (
     id SERIAL PRIMARY KEY,

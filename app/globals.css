@@ -437,10 +437,59 @@ html.dark .bg-gradient-to-r.from-brand{
 .th-h:active{ transform:scale(.96); }
 .th-h.on{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand-ink); }
 .th-h.locked{ background:var(--gold-soft); border-color:var(--gold); color:var(--gold); cursor:not-allowed; }
+.th-h.saved{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand-ink); cursor:not-allowed; }
 .th-h-num{ font-weight:800; font-size:15px; line-height:1.1; }
 .th-h-sub{ font-size:10.5px; color:var(--ink3); margin-top:2px; }
 .th-h.on .th-h-sub, .th-h.locked .th-h-sub{ color:inherit; opacity:.75; }
 .th-h-lock{ position:absolute; top:3px; left:4px; opacity:.8; }
+.hizb-lock-legend{ display:flex; gap:8px 14px; flex-wrap:wrap; margin-bottom:12px; padding:10px 12px; border-radius:14px; background:var(--card2); border:1px solid var(--line); color:var(--ink2); font-size:11.5px; font-weight:700; }
+.hizb-lock-legend span{ display:inline-flex; align-items:center; gap:6px; }
+.hizb-lock-legend i{ width:10px; height:10px; border-radius:50%; display:inline-block; }
+.hizb-lock-legend i.mandatory{ background:var(--gold); }
+.hizb-lock-legend i.saved{ background:var(--brand); }
+.hizb-lock-legend i.new{ background:var(--card); border:1.5px solid var(--line2); }
+
+/* ===== Mandatory hizbs — Excel import experience ===== */
+.mandatory-import-shell{ display:grid; gap:14px; }
+.mandatory-import-hero{ position:relative; overflow:hidden; display:flex; align-items:center; gap:16px; padding:20px; border-radius:20px; color:#fff; background:linear-gradient(135deg, var(--brand), #145b78); box-shadow:var(--shadow); }
+.mandatory-import-hero::after{ content:""; position:absolute; width:180px; height:180px; border:34px solid rgba(255,255,255,.06); border-radius:50%; inset-inline-end:-60px; top:-85px; }
+.mandatory-import-hero h2{ position:relative; margin:7px 0 3px; font-size:20px; font-weight:900; }
+.mandatory-import-hero p{ position:relative; margin:0; max-width:580px; color:rgba(255,255,255,.84); font-size:13px; line-height:1.7; }
+.mandatory-import-icon{ position:relative; z-index:1; flex:0 0 auto; width:62px; height:62px; display:grid; place-items:center; border-radius:18px; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2); color:var(--gold-bright); }
+.mandatory-import-icon svg{ width:34px; height:34px; }
+.mandatory-steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:6px; border:1px solid var(--line); border-radius:16px; background:var(--card); }
+.mandatory-steps > div{ display:flex; align-items:center; justify-content:center; gap:8px; min-height:42px; border-radius:12px; color:var(--ink3); font-size:12px; font-weight:800; }
+.mandatory-steps b{ display:grid; place-items:center; width:23px; height:23px; border-radius:50%; background:var(--muted-bg); color:var(--ink2); }
+.mandatory-steps .active{ color:var(--brand-ink); background:var(--brand-soft); }
+.mandatory-steps .active b{ background:var(--brand); color:var(--on-brand); }
+.mandatory-steps .done{ color:var(--ok); }
+.mandatory-steps .done b{ background:var(--ok-soft); color:var(--ok); }
+.mandatory-template-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:14px; margin-bottom:14px; border-bottom:1px solid var(--line); }
+.mandatory-dropzone{ position:relative; display:flex; min-height:168px; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:5px; padding:24px; border:2px dashed var(--line2); border-radius:18px; background:var(--card2); cursor:pointer; transition:.18s ease; }
+.mandatory-dropzone:hover,.mandatory-dropzone.over{ border-color:var(--brand); background:var(--brand-soft); transform:translateY(-1px); }
+.mandatory-dropzone input{ position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+.mandatory-dropzone strong{ color:var(--ink); font-size:15px; }
+.mandatory-dropzone small{ color:var(--ink3); }
+.mandatory-drop-icon{ width:46px; height:46px; display:grid; place-items:center; border-radius:15px; margin-bottom:3px; background:var(--brand-soft); color:var(--brand-ink); font-size:25px; font-weight:900; }
+.mandatory-summary-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px; }
+.mandatory-summary-grid > div{ padding:12px; border-radius:14px; background:var(--card2); border:1px solid var(--line); }
+.mandatory-summary-grid span{ display:block; color:var(--ink3); font-size:11px; font-weight:700; }
+.mandatory-summary-grid b{ display:block; margin-top:4px; color:var(--ink); font-size:22px; font-weight:900; }
+.mandatory-summary-grid .ok b{ color:var(--ok); }.mandatory-summary-grid .warn b{ color:var(--warn); }.mandatory-summary-grid .gold b{ color:var(--gold); }
+.mandatory-preview-card{ margin:0; }
+.mandatory-preview-card .u-card-h p{ margin:2px 0 0; color:var(--ink3); font-size:12px; }
+.mandatory-preview-table{ max-height:360px; }
+.mandatory-preview-table td:first-child small{ display:block; color:var(--ink3); font-size:10px; margin-top:2px; }
+.mandatory-hizb-list{ display:inline-block; max-width:300px; white-space:normal; line-height:1.7; color:var(--brand-ink); font-weight:800; }
+.mandatory-preview-actions{ display:flex; justify-content:flex-end; gap:8px; padding-top:12px; border-top:1px solid var(--line); }
+.mandatory-success{ display:flex; align-items:center; gap:12px; padding:15px; margin-top:12px; border:1px solid color-mix(in srgb,var(--ok) 35%,var(--line)); border-radius:16px; background:var(--ok-soft); color:var(--ok); }
+.mandatory-success-mark{ flex:0 0 auto; width:42px; height:42px; display:grid; place-items:center; border-radius:50%; background:var(--ok); color:white; font-size:23px; font-weight:900; }
+.mandatory-success h3{ margin:0 0 2px; font-size:15px; }.mandatory-success p{ margin:0; font-size:12px; }.mandatory-success .u-btn{ margin-inline-start:auto; }
+@media(max-width:640px){
+  .mandatory-import-hero{ align-items:flex-start; padding:16px; }.mandatory-import-icon{ width:48px; height:48px; border-radius:14px; }.mandatory-import-icon svg{ width:27px; height:27px; }
+  .mandatory-import-hero h2{ font-size:17px; }.mandatory-steps span{ display:none; }.mandatory-summary-grid{ grid-template-columns:1fr 1fr; }
+  .mandatory-template-row,.mandatory-success{ align-items:stretch; flex-direction:column; }.mandatory-success .u-btn{ margin-inline-start:0; }.mandatory-preview-actions{ flex-direction:column-reverse; }.mandatory-preview-actions .u-btn{ width:100%; }
+}
 
 /* ===== تعاهد — وضع الرصد المباشر ===== */
 .th-rec-wrap{ display:grid; gap:14px; }

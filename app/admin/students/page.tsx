@@ -13,6 +13,7 @@ type Row = {
   circleName: string | null;
   committeeName: string | null;
   hizbs?: number[];
+  mandatoryHizbs?: number[];
   hizbsCount?: number;
   completedHizbs?: number[];
   memorizedCount?: number;
@@ -577,8 +578,7 @@ function EditModal({
           level,
           circleId: circleId ? Number(circleId) : null,
           committeeId: committeeId ? Number(committeeId) : null,
-          password: password || undefined,
-          hizbs
+          password: password || undefined
         })
       });
       const data = await res.json().catch(() => ({}));

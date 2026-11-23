@@ -13,7 +13,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const id = Number(params.id);
   const hz = await db.select().from(studentHizbs).where(eq(studentHizbs.studentId, id));
   const hizbs = hz.map((h) => h.hizbNumber).sort((a, b) => a - b);
-  return NextResponse.json({ hizbs });
+  const mandatoryHizbs = hz.filter((h) => h.isMandatory).map((h) => h.hizbNumber).sort((a, b) => a - b);
+  return NextResponse.json({ hizbs, mandatoryHizbs });
 }
 
 /** Only Admin can replace hizbs for a student here (Circle Teacher uses /api/teacher/[token]/students/[id]/hizbs). */
@@ -31,11 +32,14 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     )
   ).sort((a, b) => a - b);
 
+  const existing = await db.select().from(studentHizbs).where(eq(studentHizbs.studentId, id));
+  const mandatory = new Set(existing.filter((h) => h.isMandatory).map((h) => h.hizbNumber));
+
   await db.delete(studentHizbs).where(eq(studentHizbs.studentId, id));
   if (list.length > 0) {
     await db
       .insert(studentHizbs)
-      .values(list.map((n) => ({ studentId: id, hizbNumber: n })))
+      .values(list.map((n) => ({ studentId: id, hizbNumber: n, isMandatory: mandatory.has(n) })))
       .onConflictDoNothing();
   }
 
@@ -52,5 +56,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     }
     await db.update(students).set({ status: nextStatus }).where(eq(students.id, id));
   }
-  return NextResponse.json({ ok: true, hizbs: list, status: nextStatus });
+  return NextResponse.json({
+    ok: true,
+    hizbs: list,
+    mandatoryHizbs: list.filter((n) => mandatory.has(n)),
+    status: nextStatus
+  });
 }
