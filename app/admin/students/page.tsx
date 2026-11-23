@@ -217,22 +217,6 @@ export default function StudentsPage() {
     <div className="u-page">
       <div className="u-top">
         <div><h1>إدارة الطلاب</h1></div>
-        <div className="u-actions">
-          <button
-            type="button"
-            onClick={() => setConfirmAction({ kind: 'bulk-password', mode: 'numeric' })}
-            className="u-btn u-btn-s sm"
-          >
-            توليد قصيرة
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirmAction({ kind: 'bulk-password', mode: 'strong' })}
-            className="u-btn u-btn-p sm"
-          >
-            توليد قوية
-          </button>
-        </div>
       </div>
 
       <div className="u-card">

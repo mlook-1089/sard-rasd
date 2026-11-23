@@ -89,7 +89,13 @@ body{ font-family:'IBM Plex Sans Arabic','Tajawal',system-ui,sans-serif !importa
 .u-btn-ok{ background:var(--ok); color:#fff; }
 .u-btn-bad{ background:var(--bad-soft); color:var(--bad); }
 .u-icon-btn{ width:44px; height:44px; min-width:44px; min-height:44px; border-radius:12px; background:var(--card); border:1px solid var(--line); color:var(--ink2); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; position:relative; flex-shrink:0; }
-.u-icon-btn svg{ width:20px; height:20px; }
+.u-icon-btn svg{ width:20px; height:20px; flex-shrink:0; }
+/* Unified icon size inside buttons — prevents raw SVGs from blowing up */
+.u-btn > svg{ width:18px; height:18px; flex-shrink:0; }
+.u-btn.sm > svg{ width:15px; height:15px; }
+.u-btn.lg > svg{ width:20px; height:20px; }
+/* Icons inside u-item / u-list rows (for actions column) */
+.u-list svg, .u-item svg{ flex-shrink:0; }
 .u-icon-btn .dot{ position:absolute; top:8px; right:9px; width:8px; height:8px; border-radius:50%; background:var(--bad); border:2px solid var(--card); }
 
 .u-list > .u-item{ display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); }
@@ -453,12 +459,87 @@ html.dark .bg-gradient-to-r.from-brand{
 }
 
 /* ===== تعاهد — جدول تقرير الطالب التفصيلي ===== */
-.th-rpt-table-wrap{ max-height:50vh; overflow:auto; border:1px solid var(--line); border-radius:12px; }
-.th-rpt-table{ width:100%; border-collapse:collapse; font-size:13.5px; }
-.th-rpt-table th, .th-rpt-table td{ padding:8px 10px; text-align:center; border-bottom:1px solid var(--line); white-space:nowrap; }
-.th-rpt-table thead th{ background:var(--muted-bg); color:var(--ink2); font-weight:700; font-size:12px; position:sticky; top:0; z-index:1; }
-.th-rpt-table tbody tr.pending{ background:repeating-linear-gradient(45deg, transparent, transparent 10px, var(--muted-bg) 10px, var(--muted-bg) 12px); }
-.th-rpt-table tbody tr:last-child td{ border-bottom:0; }
+/* ========================================================================
+   Tables — unified polish (used everywhere via .th-rpt-table)
+   ========================================================================= */
+.th-rpt-table-wrap{
+  max-height: 62vh;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  -webkit-overflow-scrolling: touch;
+}
+.th-rpt-table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13.5px;
+}
+.th-rpt-table th,
+.th-rpt-table td{
+  padding: 11px 12px;
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+  vertical-align: middle;
+  color: var(--ink);
+}
+/* First column: usually a name — align to start (right in RTL), slightly wider */
+.th-rpt-table th:first-child,
+.th-rpt-table td:first-child{
+  text-align: start;
+  padding-inline-start: 16px;
+  min-width: 140px;
+}
+/* Last column (actions): align to end (left in RTL) */
+.th-rpt-table th:last-child,
+.th-rpt-table td:last-child{
+  padding-inline-end: 16px;
+}
+.th-rpt-table thead th{
+  background: var(--card2);
+  color: var(--ink2);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .01em;
+  text-transform: none;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 2px solid var(--line);
+}
+/* Zebra stripes + hover for readability */
+.th-rpt-table tbody tr:nth-child(odd) td{
+  background: color-mix(in srgb, var(--card2) 55%, var(--card));
+}
+@supports not (background: color-mix(in srgb, red, blue)){
+  .th-rpt-table tbody tr:nth-child(odd) td{ background: var(--card2); }
+}
+.th-rpt-table tbody tr:hover td{ background: var(--brand-soft); }
+.th-rpt-table tbody tr.pending td{
+  background: repeating-linear-gradient(45deg, transparent, transparent 10px, var(--muted-bg) 10px, var(--muted-bg) 12px);
+}
+.th-rpt-table tbody tr:last-child td{ border-bottom: 0; }
+/* Numeric columns breathe better when tabular */
+.th-rpt-table td.u-num, .th-rpt-table td[data-num]{
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+/* Action cells: center small icon-only buttons */
+.th-rpt-table td .u-btn.sm{ padding: 0 10px; height: 32px; }
+
+/* Generic table inside a u-card also gets a bit of polish */
+.u-card > table,
+.u-card table.base-tbl{
+  width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px;
+}
+.u-card table thead th{
+  background: var(--card2); color: var(--ink2); font-weight: 700; font-size: 12px;
+  padding: 10px 12px; border-bottom: 2px solid var(--line); text-align: start;
+}
+.u-card table td{ padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--ink); }
+.u-card table tbody tr:last-child td{ border-bottom: 0; }
 
 /* ===== Additions on top of ibn-kathir design system ===== */
 
