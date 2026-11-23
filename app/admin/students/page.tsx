@@ -297,17 +297,17 @@ export default function StudentsPage() {
                   <div><span className="u-muted">الحلقة: </span><span>{r.circleName || '—'}</span></div>
                   <div><span className="u-muted">اللجنة: </span><span>{r.committeeName || '—'}</span></div>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
-                  <button type="button" onClick={() => setEditing(r)} className="u-btn u-btn-s sm">تعديل</button>
-                  <button type="button" onClick={() => setConfirmAction({ kind: 'delete', student: r })} className="u-btn u-btn-bad sm">حذف</button>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+                  <button type="button" onClick={() => setEditing(r)} className="u-icon-btn u-icon-btn-info" title="تعديل" aria-label="تعديل">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536M4 20h4L19 9a2.5 2.5 0 00-3.536-3.536L4 16v4z"/></svg>
+                  </button>
+                  <button type="button" onClick={() => setConfirmAction({ kind: 'delete', student: r })} className="u-icon-btn u-icon-btn-bad" title="حذف" aria-label="حذف">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
+                  </button>
                   {hasPhone && (
-                    <a
-                      href={buildWhatsAppUrl(r, whatsappTemplate)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="u-btn u-btn-ok sm"
-                    >
-                      📱 واتساب
+                    <a href={buildWhatsAppUrl(r, whatsappTemplate)} target="_blank" rel="noopener noreferrer"
+                      className="u-icon-btn u-icon-btn-whatsapp" title={`واتساب — ${r.parentPhone}`} aria-label="إرسال واتساب">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10.14 10.14 0 0 0 11.9 2a10.08 10.08 0 0 0-8.7 15.17L2 22l4.95-1.17A10.07 10.07 0 0 0 11.9 22a10.08 10.08 0 0 0 7.21-17.1zM11.9 20.14a8.37 8.37 0 0 1-4.27-1.17l-.3-.18-3.1.73.82-3.04-.2-.31a8.37 8.37 0 0 1 7.05-12.83 8.3 8.3 0 0 1 5.9 2.45 8.3 8.3 0 0 1-5.9 14.35zm4.57-6.26c-.25-.12-1.47-.72-1.7-.8-.22-.09-.39-.13-.56.13s-.65.8-.8.97c-.14.17-.3.19-.55.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.1-.5.1-.1.23-.3.34-.44.11-.14.14-.25.21-.42.07-.17.04-.31-.02-.44-.06-.13-.56-1.35-.76-1.85-.2-.48-.4-.42-.56-.42h-.47c-.17 0-.44.06-.67.31-.22.25-.87.85-.87 2.07 0 1.22.9 2.4 1.02 2.57.12.17 1.77 2.72 4.3 3.81.6.26 1.07.42 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.19.21-.58.21-1.08.14-1.19-.06-.1-.23-.16-.47-.28z"/></svg>
                     </a>
                   )}
                 </div>
@@ -383,17 +383,17 @@ export default function StudentsPage() {
                     <td className="py-2 px-2 font-semibold">{hizbCount}/60</td>
                     <td className="py-2 px-2"><span className={`u-pill ${pill.variant}`}>{pill.label}</span></td>
                     <td className="py-2 px-2">
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        <button type="button" onClick={() => setEditing(r)} className="u-btn u-btn-s sm">تعديل</button>
-                        <button type="button" onClick={() => setConfirmAction({ kind: 'delete', student: r })} className="u-btn u-btn-bad sm">حذف</button>
+                      <div style={{ display: 'flex', gap: 4, justifyContent: 'center', alignItems: 'center' }}>
+                        <button type="button" onClick={() => setEditing(r)} className="u-icon-btn u-icon-btn-info" title="تعديل" aria-label="تعديل">
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536M4 20h4L19 9a2.5 2.5 0 00-3.536-3.536L4 16v4z"/></svg>
+                        </button>
+                        <button type="button" onClick={() => setConfirmAction({ kind: 'delete', student: r })} className="u-icon-btn u-icon-btn-bad" title="حذف" aria-label="حذف">
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
+                        </button>
                         {hasPhone && (
-                          <a
-                            href={buildWhatsAppUrl(r, whatsappTemplate)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="u-btn u-btn-ok sm"
-                          >
-                            📱 واتساب
+                          <a href={buildWhatsAppUrl(r, whatsappTemplate)} target="_blank" rel="noopener noreferrer"
+                            className="u-icon-btn u-icon-btn-whatsapp" title={`واتساب — ${r.parentPhone}`} aria-label="إرسال واتساب">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10.14 10.14 0 0 0 11.9 2a10.08 10.08 0 0 0-8.7 15.17L2 22l4.95-1.17A10.07 10.07 0 0 0 11.9 22a10.08 10.08 0 0 0 7.21-17.1zM11.9 20.14a8.37 8.37 0 0 1-4.27-1.17l-.3-.18-3.1.73.82-3.04-.2-.31a8.37 8.37 0 0 1 7.05-12.83 8.3 8.3 0 0 1 5.9 2.45 8.3 8.3 0 0 1-5.9 14.35zm4.57-6.26c-.25-.12-1.47-.72-1.7-.8-.22-.09-.39-.13-.56.13s-.65.8-.8.97c-.14.17-.3.19-.55.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.1-.5.1-.1.23-.3.34-.44.11-.14.14-.25.21-.42.07-.17.04-.31-.02-.44-.06-.13-.56-1.35-.76-1.85-.2-.48-.4-.42-.56-.42h-.47c-.17 0-.44.06-.67.31-.22.25-.87.85-.87 2.07 0 1.22.9 2.4 1.02 2.57.12.17 1.77 2.72 4.3 3.81.6.26 1.07.42 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.19.21-.58.21-1.08.14-1.19-.06-.1-.23-.16-.47-.28z"/></svg>
                           </a>
                         )}
                       </div>

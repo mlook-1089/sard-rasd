@@ -162,7 +162,7 @@ export default function SessionsLogPage() {
         <div><h1>سجل الرصد الشامل</h1></div>
         <div className="u-actions" style={{ marginTop: 0 }}>
           <a href="/api/reports/sessions" className="u-btn u-btn-ok sm" style={{ textDecoration: 'none' }}>
-            <span>📥</span><span>تصدير إكسل</span>
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/></svg><span>تصدير إكسل</span>
           </a>
         </div>
       </div>

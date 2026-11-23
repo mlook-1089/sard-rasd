@@ -96,6 +96,41 @@ body{ font-family:'IBM Plex Sans Arabic','Tajawal',system-ui,sans-serif !importa
 .u-btn.lg > svg{ width:20px; height:20px; }
 /* Icons inside u-item / u-list rows (for actions column) */
 .u-list svg, .u-item svg{ flex-shrink:0; }
+
+/* Icon-only action button color variants — used in table rows and cards */
+.u-icon-btn{ transition: background .15s, color .15s, transform .08s; }
+.u-icon-btn:active{ transform: scale(.94); }
+.u-icon-btn svg{ width:17px; height:17px; }
+.u-icon-btn-info{ background: var(--info-soft); color: var(--info); border-color: transparent; }
+.u-icon-btn-info:hover{ background: var(--info); color: #fff; }
+.u-icon-btn-bad{ background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+.u-icon-btn-bad:hover{ background: var(--bad); color: #fff; }
+.u-icon-btn-ok{ background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.u-icon-btn-ok:hover{ background: var(--ok); color: #fff; }
+.u-icon-btn-whatsapp{ background: #e8f7ee; color: #25D366; border-color: transparent; }
+.u-icon-btn-whatsapp:hover{ background: #25D366; color: #fff; }
+
+/* Unify fonts across the whole app — no element should use system/serif accidentally */
+body, h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, select, textarea,
+table, th, td, label, ul, ol, li, dl, dt, dd, header, footer, main, section, nav, aside, article{
+  font-family: 'IBM Plex Sans Arabic', 'Tajawal', system-ui, -apple-system, sans-serif;
+}
+/* Keep the brand title font for hero/page headings only */
+.font-title, h1.font-title, h2.font-title, h3.font-title, .u-hero .big, .u-top h1{
+  font-family: 'Tajawal', 'IBM Plex Sans Arabic', sans-serif;
+  letter-spacing: -.01em;
+}
+/* Numeric values use tabular-nums wherever shown */
+.u-num, .num, [data-num]{ font-variant-numeric: tabular-nums; }
+
+/* Quick-action tile with icon badge (admin dashboard) */
+.quick-tile{ transition: transform .12s, box-shadow .18s; }
+.quick-tile:hover{ transform: translateY(-1px); box-shadow: 0 6px 16px -8px rgba(15,27,45,.25); }
+.quick-tile-ico{
+  width: 44px; height: 44px; margin: 0 auto 8px;
+  border-radius: 12px;
+  display: grid; place-items: center;
+}
 .u-icon-btn .dot{ position:absolute; top:8px; right:9px; width:8px; height:8px; border-radius:50%; background:var(--bad); border:2px solid var(--card); }
 
 .u-list > .u-item{ display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); }

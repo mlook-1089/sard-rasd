@@ -57,20 +57,28 @@ export default async function AdminHome() {
 
       {/* Quick actions */}
       <div className="u-grid2 md4">
-        <Link href="/admin/students/new" className="u-stat text-center" style={{ textDecoration: 'none' }}>
-          <div className="text-2xl mb-1">➕</div>
+        <Link href="/admin/students/new" className="u-stat text-center quick-tile" style={{ textDecoration: 'none' }}>
+          <div className="quick-tile-ico" style={{ background: 'var(--brand-soft)', color: 'var(--brand-ink)' }}>
+            <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+          </div>
           <div className="l">إضافة طالب</div>
         </Link>
-        <Link href="/admin/waiting-committee" className="u-stat text-center" style={{ textDecoration: 'none' }}>
-          <div className="text-2xl mb-1">🧩</div>
+        <Link href="/admin/waiting-committee" className="u-stat text-center quick-tile" style={{ textDecoration: 'none' }}>
+          <div className="quick-tile-ico" style={{ background: 'var(--info-soft)', color: 'var(--info)' }}>
+            <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+          </div>
           <div className="l">تعيين لجان</div>
         </Link>
-        <Link href="/admin/attendance" className="u-stat text-center" style={{ textDecoration: 'none' }}>
-          <div className="text-2xl mb-1">📋</div>
+        <Link href="/admin/attendance" className="u-stat text-center quick-tile" style={{ textDecoration: 'none' }}>
+          <div className="quick-tile-ico" style={{ background: 'var(--ok-soft)', color: 'var(--ok)' }}>
+            <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+          </div>
           <div className="l">التحضير</div>
         </Link>
-        <Link href="/honor" className="u-stat text-center" style={{ textDecoration: 'none' }}>
-          <div className="text-2xl mb-1">📺</div>
+        <Link href="/honor" className="u-stat text-center quick-tile" style={{ textDecoration: 'none' }}>
+          <div className="quick-tile-ico" style={{ background: 'var(--gold-soft)', color: 'var(--gold)' }}>
+            <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+          </div>
           <div className="l">لوحة الشرف</div>
         </Link>
       </div>
