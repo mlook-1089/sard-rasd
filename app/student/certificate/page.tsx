@@ -38,7 +38,9 @@ export default async function CertificatePage() {
     return (
       <main style={{ minHeight: '100vh', background: 'var(--bg)', display: 'grid', placeItems: 'center', padding: 24 }}>
         <div className="u-card" style={{ maxWidth: 480, textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>📄</div>
+          <div style={{ width: 72, height: 72, margin: '0 auto 12px', borderRadius: 18, display: 'grid', placeItems: 'center', background: 'var(--brand-soft)', color: 'var(--brand-ink)' }}>
+            <svg width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
           <h1 style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', marginBottom: 8 }}>
             لا يمكن إصدار الشهادة
           </h1>

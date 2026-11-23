@@ -53,7 +53,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       sections: [
         { href: '/admin/reports/students', label: 'تقرير الطلاب', icon: icons.chart },
         { href: '/admin/reports/circles', label: 'تقرير الحلقات', icon: icons.chart },
-        { href: '/honor', label: '📺 لوحة الشرف', icon: icons.chart }
+        { href: '/honor', label: 'لوحة الشرف', icon: icons.chart }
       ]
     },
     {

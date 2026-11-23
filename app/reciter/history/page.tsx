@@ -90,7 +90,9 @@ export default function ReciterHistory() {
                       ) : '—'}
                     </td>
                     <td>
-                      <button onClick={() => setEditing(r)} className="u-btn u-btn-s sm">تعديل</button>
+                      <button onClick={() => setEditing(r)} className="u-icon-btn u-icon-btn-info" title="تعديل" aria-label="تعديل">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M4 20h4L19 9a2.5 2.5 0 00-3.536-3.536L4 16v4z"/></svg>
+                      </button>
                     </td>
                   </tr>
                 ))}

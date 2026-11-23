@@ -147,7 +147,9 @@ export default function AdminAttendance() {
           style={{ position: 'sticky', top: 8, zIndex: 20, boxShadow: 'var(--shadow-lg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
         >
           <span>⚠ {errorMsg}</span>
-          <button type="button" onClick={() => setErrorMsg(null)} className="u-btn u-btn-g sm" style={{ padding: '2px 8px' }}>✕</button>
+          <button type="button" onClick={() => setErrorMsg(null)} aria-label="إغلاق" className="u-btn u-btn-g sm" style={{ padding: '2px 8px' }}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
         </div>
       )}
 
@@ -197,7 +199,8 @@ export default function AdminAttendance() {
             className="u-btn u-btn-g sm"
             style={{ height: 38 }}
           >
-            ✕ مسح الفلتر
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            <span>مسح الفلتر</span>
           </button>
 
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginInlineStart: 'auto' }}>

@@ -62,7 +62,10 @@ export default function LiveSessionsPanel({ scope = 'all' as 'all' | 'mine' }) {
   return (
     <div className="u-card">
       <div className="u-card-h">
-        <h3>🔴 الجلسات المباشرة الآن</h3>
+        <h3 style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--bad)', boxShadow: '0 0 0 3px rgba(192,68,60,.18)' }} />
+          الجلسات المباشرة الآن
+        </h3>
         <span className="u-muted">تحديث كل 10 ثوانٍ</span>
       </div>
       {loading ? (

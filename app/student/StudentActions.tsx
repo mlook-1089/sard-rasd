@@ -17,7 +17,8 @@ export default function StudentActions() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <button onClick={openCertificate} className="u-btn u-btn-s sm">
-        <span>📄</span><span>تحميل الشهادة PDF</span>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <span>تحميل الشهادة PDF</span>
       </button>
       <button onClick={logout} className="u-btn u-btn-bad sm">
         خروج

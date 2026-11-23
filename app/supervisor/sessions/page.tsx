@@ -69,7 +69,8 @@ export default function SupSessions() {
         <div><h1>سجل اللجنة</h1></div>
         <div className="u-actions" style={{ marginTop: 0 }}>
           <a href="/api/reports/sessions" className="u-btn u-btn-ok sm">
-            <span>📥</span><span>تصدير إكسل</span>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/></svg>
+            <span>تصدير إكسل</span>
           </a>
         </div>
       </div>
@@ -118,7 +119,8 @@ export default function SupSessions() {
             onClick={() => setQ('')}
             className="u-btn u-btn-g sm"
           >
-            ✕ مسح الفلتر
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            <span>مسح الفلتر</span>
           </button>
         </div>
       </div>
@@ -162,9 +164,13 @@ export default function SupSessions() {
                         ) : '—'}
                       </td>
                       <td>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                          <button type="button" onClick={() => setEditing(r)} className="u-btn u-btn-s sm">تعديل</button>
-                          <button type="button" onClick={() => setDeleting(r)} className="u-btn u-btn-bad sm">حذف</button>
+                        <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                          <button type="button" onClick={() => setEditing(r)} className="u-icon-btn u-icon-btn-info" title="تعديل" aria-label="تعديل">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M4 20h4L19 9a2.5 2.5 0 00-3.536-3.536L4 16v4z"/></svg>
+                          </button>
+                          <button type="button" onClick={() => setDeleting(r)} className="u-icon-btn u-icon-btn-bad" title="حذف" aria-label="حذف">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -200,22 +206,12 @@ export default function SupSessions() {
                   <span style={{ color: 'var(--warn)' }}>التنبيهات: <b>{r.alerts}</b></span>
                 </div>
 
-                <div style={{ display: 'flex', gap: 8, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
-                  <button
-                    type="button"
-                    onClick={() => setEditing(r)}
-                    className="u-btn u-btn-s sm"
-                    style={{ flex: 1, justifyContent: 'center' }}
-                  >
-                    تعديل
+                <div style={{ display: 'flex', gap: 8, paddingTop: 10, borderTop: '1px solid var(--line)', justifyContent: 'flex-end' }}>
+                  <button type="button" onClick={() => setEditing(r)} className="u-icon-btn u-icon-btn-info" title="تعديل" aria-label="تعديل">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M4 20h4L19 9a2.5 2.5 0 00-3.536-3.536L4 16v4z"/></svg>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setDeleting(r)}
-                    className="u-btn u-btn-bad sm"
-                    style={{ flex: 1, justifyContent: 'center' }}
-                  >
-                    حذف
+                  <button type="button" onClick={() => setDeleting(r)} className="u-icon-btn u-icon-btn-bad" title="حذف" aria-label="حذف">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
                   </button>
                 </div>
               </div>

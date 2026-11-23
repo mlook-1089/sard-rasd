@@ -125,7 +125,8 @@ export default function CommitteesPage() {
             className="u-btn u-btn-s"
             style={{ minHeight: 44 }}
           >
-            ⚙ ضبط حدود السعة لكل اللجان
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span>ضبط حدود السعة لكل اللجان</span>
           </button>
           <button
             type="button"
@@ -134,7 +135,8 @@ export default function CommitteesPage() {
             className="u-btn u-btn-p"
             style={{ minHeight: 44 }}
           >
-            ⚡ توزيع تلقائي ذكي
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span>توزيع تلقائي ذكي</span>
           </button>
         </div>
       </div>
@@ -259,8 +261,13 @@ function BulkLimitsModal({
         background: 'var(--card)', borderRadius: 18, border: '1px solid var(--line)', boxShadow: 'var(--shadow-lg)'
       }}>
         <div className="flex justify-between items-center" style={{ padding: 14, borderBottom: '1px solid var(--line)' }}>
-          <h3 className="font-bold">⚙ ضبط حدود السعة على {count} لجنة</h3>
-          <button type="button" onClick={onClose} disabled={applying} aria-label="إغلاق" className="u-icon-btn" style={{ width: 40, height: 40 }}>✕</button>
+          <h3 className="font-bold" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span>ضبط حدود السعة على {count} لجنة</span>
+          </h3>
+          <button type="button" onClick={onClose} disabled={applying} aria-label="إغلاق" className="u-icon-btn" style={{ width: 40, height: 40 }}>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
         </div>
         <div className="p-4 overflow-y-auto" style={{ flex: 1 }}>
           <div className="u-note brand" style={{ marginBottom: 14 }}>
@@ -358,7 +365,8 @@ function CommitteeCard({
 
       <div style={{ marginTop: 10, padding: 10, background: 'var(--card2)', borderRadius: 12, border: '1px solid var(--line)' }}>
         <div className="u-muted" style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: 'var(--brand-ink)' }}>
-          ⚙ حدود السعة (تُستخدم في التوزيع الذكي)
+          <svg width="14" height="14" style={{ display: 'inline', verticalAlign: '-2px', marginInlineEnd: 6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          حدود السعة (تُستخدم في التوزيع الذكي)
         </div>
         <div className="u-grid2" style={{ gap: 8, marginBottom: 8 }}>
           <LimitField label="أدنى طلاب" value={row.minStudents} onSave={(v) => onLimit('minStudents', v)} />
@@ -449,9 +457,14 @@ function AutoAssignModal({
         borderRadius: 18, border: '1px solid var(--line)', boxShadow: 'var(--shadow-lg)'
       }}>
         <div className="flex justify-between items-center" style={{ padding: 14, borderBottom: '1px solid var(--line)' }}>
-          <h3 className="font-bold">⚡ توزيع تلقائي ذكي للطلاب</h3>
+          <h3 className="font-bold" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span>توزيع تلقائي ذكي للطلاب</span>
+          </h3>
           <button type="button" onClick={onClose} disabled={applying} aria-label="إغلاق"
-            className="u-icon-btn" style={{ width: 40, height: 40 }}>✕</button>
+            className="u-icon-btn" style={{ width: 40, height: 40 }}>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
         </div>
 
         <div className="p-4 overflow-y-auto" style={{ flex: 1 }}>
@@ -473,7 +486,10 @@ function AutoAssignModal({
           </label>
 
           {!plan && !loading && (
-            <button type="button" onClick={preview} className="u-btn u-btn-s w">🔍 معاينة الاقتراح</button>
+            <button type="button" onClick={preview} className="u-btn u-btn-s w">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <span>معاينة الاقتراح</span>
+            </button>
           )}
 
           {loading && <div className="u-empty">...جاري الحساب</div>}
@@ -591,7 +607,9 @@ function ConfirmDeleteCommitteeModal({
         style={{ background: 'var(--card)', borderRadius: 18, border: '1px solid var(--line)', boxShadow: 'var(--shadow-lg)' }}>
         <div className="flex justify-between items-center" style={{ padding: 14, borderBottom: '1px solid var(--line)' }}>
           <h3 id="del-committee-title" className="font-bold">تأكيد حذف اللجنة</h3>
-          <button type="button" onClick={onCancel} disabled={saving} aria-label="إغلاق" className="u-icon-btn" style={{ width: 44, height: 44 }}>✕</button>
+          <button type="button" onClick={onCancel} disabled={saving} aria-label="إغلاق" className="u-icon-btn" style={{ width: 44, height: 44 }}>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
         </div>
         <div className="p-4">
           <p style={{ fontSize: 14.5, lineHeight: 1.7, color: 'var(--ink)' }}>

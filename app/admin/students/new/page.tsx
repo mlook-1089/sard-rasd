@@ -167,7 +167,10 @@ function ImportForm() {
         <div><b>ترتيب الأعمدة:</b> الاسم, الهوية, ولي الأمر, المستوى, الحلقة</div>
         <div style={{ opacity: .85, marginTop: 4 }}>اسم الحلقة يجب أن يطابق حلقة موجودة. يدعم .xlsx أو CSV (UTF-8).</div>
       </div>
-      <button type="button" onClick={downloadTemplate} className="u-btn u-btn-s sm" style={{ marginBottom: 12 }}>📄 تنزيل نموذج Excel فارغ</button>
+      <button type="button" onClick={downloadTemplate} className="u-btn u-btn-s sm" style={{ marginBottom: 12 }}>
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/></svg>
+        <span>تنزيل نموذج Excel فارغ</span>
+      </button>
 
       <label
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -181,7 +184,9 @@ function ImportForm() {
           transition: 'background .15s, border-color .15s'
         }}
       >
-        <div style={{ fontSize: 42, marginBottom: 8 }}>📄</div>
+        <div style={{ width: 56, height: 56, margin: '0 auto 8px', borderRadius: 14, background: 'var(--brand-soft)', color: 'var(--brand-ink)', display: 'grid', placeItems: 'center' }}>
+          <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        </div>
         <div className="u-name" style={{ marginBottom: 2 }}>اسحب الملف هنا</div>
         <div className="u-muted" style={{ marginBottom: 12 }}>أو انقر لاختيار ملف (.xlsx أو .csv)</div>
         <input
