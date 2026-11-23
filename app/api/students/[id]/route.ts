@@ -40,6 +40,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
   if ('circleId' in b) patch.circleId = b.circleId ? Number(b.circleId) : null;
   if ('committeeId' in b) patch.committeeId = b.committeeId ? Number(b.committeeId) : null;
+  if ('hizbsLocked' in b) patch.hizbsLocked = Boolean(b.hizbsLocked);
 
   const newPw = (b.password ? String(b.password).trim() : '') || (patch.nationalId ? String(patch.nationalId).trim() : '');
   if (newPw) {

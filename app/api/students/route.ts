@@ -22,6 +22,7 @@ export async function GET() {
     parentPhone: students.parentPhone,
     level: students.level,
     status: students.status,
+    hizbsLocked: students.hizbsLocked,
     circleId: students.circleId,
     committeeId: students.committeeId,
     circleName: circles.name,

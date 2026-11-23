@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { HIZB_PRESETS, juzForHizb } from '@/lib/hizbPresets';
 
 type Row = {
   id: number;
@@ -8,6 +9,7 @@ type Row = {
   parentPhone: string | null;
   level: string | null;
   status: string;
+  hizbsLocked?: boolean;
   circleId: number | null;
   committeeId: number | null;
   circleName: string | null;
@@ -294,7 +296,7 @@ export default function StudentsPage() {
                   <div><span className="u-muted">الهوية: </span><span>{r.nationalId || '—'}</span></div>
                   <div><span className="u-muted">ولي الأمر: </span><span dir="ltr">{r.parentPhone || '—'}</span></div>
                   <div><span className="u-muted">المستوى: </span><span>{r.level || '—'}</span></div>
-                  <div><span className="u-muted">الأحزاب: </span><span className="font-semibold">{hizbCount}/60</span></div>
+                  <div><span className="u-muted">الأحزاب: </span><span className="font-semibold">{hizbCount}/60 {r.hizbsLocked ? '🔒' : ''}</span></div>
                   <div><span className="u-muted">الحلقة: </span><span>{r.circleName || '—'}</span></div>
                   <div><span className="u-muted">اللجنة: </span><span>{r.committeeName || '—'}</span></div>
                 </div>
@@ -381,7 +383,7 @@ export default function StudentsPage() {
                     <td className="py-2 px-2">{r.level || '—'}</td>
                     <td className="py-2 px-2">{r.circleName || '—'}</td>
                     <td className="py-2 px-2">{r.committeeName || '—'}</td>
-                    <td className="py-2 px-2 font-semibold">{hizbCount}/60</td>
+                    <td className="py-2 px-2 font-semibold">{hizbCount}/60 {r.hizbsLocked && <span title="تعديل المعلم مقفل" aria-label="تعديل المعلم مقفل">🔒</span>}</td>
                     <td className="py-2 px-2"><span className={`u-pill ${pill.variant}`}>{pill.label}</span></td>
                     <td className="py-2 px-2">
                       <div style={{ display: 'flex', gap: 4, justifyContent: 'center', alignItems: 'center' }}>
@@ -520,6 +522,7 @@ function EditModal({
   const [circleId, setCircleId] = useState(row.circleId ? String(row.circleId) : '');
   const [committeeId, setCommitteeId] = useState(row.committeeId ? String(row.committeeId) : '');
   const [password, setPassword] = useState('');
+  const [hizbsLocked, setHizbsLocked] = useState(Boolean(row.hizbsLocked));
   const [hizbs, setHizbs] = useState<number[]>(() => (Array.isArray(row.hizbs) ? [...row.hizbs] : []));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -542,8 +545,9 @@ function EditModal({
     fetch(`/api/students/${row.id}`, { cache: 'no-store' })
       .then((r) => r.json())
       .then((d) => {
-        if (active && !userTouchedHizbsRef.current && Array.isArray(d?.hizbs)) {
-          setHizbs(d.hizbs);
+        if (active) {
+          if (!userTouchedHizbsRef.current && Array.isArray(d?.hizbs)) setHizbs(d.hizbs);
+          if (typeof d?.student?.hizbsLocked === 'boolean') setHizbsLocked(d.student.hizbsLocked);
         }
       })
       .catch(() => {});
@@ -578,6 +582,7 @@ function EditModal({
           level,
           circleId: circleId ? Number(circleId) : null,
           committeeId: committeeId ? Number(committeeId) : null,
+          hizbsLocked,
           password: password || undefined
         })
       });
@@ -608,6 +613,11 @@ function EditModal({
   function clearAllHizbs() {
     userTouchedHizbsRef.current = true;
     setHizbs([]);
+  }
+
+  function addHizbPreset(presetHizbs: readonly number[]) {
+    userTouchedHizbsRef.current = true;
+    setHizbs((current) => Array.from(new Set([...current, ...presetHizbs])).sort((a, b) => a - b));
   }
 
   return (
@@ -660,6 +670,13 @@ function EditModal({
             يدخل الطالب إلى حسابه مباشرةً باستخدام <b>رقم هويته</b> ككلمة مرور.
           </div>
 
+          <label className={`admin-hizbs-lock${hizbsLocked ? ' on' : ''}`} style={{ marginTop: 12 }}>
+            <input type="checkbox" checked={hizbsLocked} onChange={(e) => setHizbsLocked(e.target.checked)} />
+            <span className="admin-hizbs-lock-icon" aria-hidden="true">{hizbsLocked ? '🔒' : '🔓'}</span>
+            <span><b>قفل تعديل الأحزاب على المعلم</b><small>{hizbsLocked ? 'المعلم يرى العدد فقط ولا يستطيع فتح شبكة الأحزاب.' : 'المعلم يستطيع إضافة أحزاب جديدة دون إنقاص المحفوظ.'}</small></span>
+            <i aria-hidden="true" />
+          </label>
+
           <div style={{ marginTop: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
               <label className="block text-sm font-semibold">الأحزاب المطلوبة ({hizbs.length}/60)</label>
@@ -668,10 +685,24 @@ function EditModal({
                 <button type="button" onClick={clearAllHizbs} className="u-btn u-btn-g sm">إلغاء الكل</button>
               </div>
             </div>
+            <div className="hizb-presets" style={{ marginBottom: 10 }}>
+              <div className="hizb-presets-title"><div><b>اختيارات سريعة</b><span>إضافة مجموعة أحزاب بضغطة واحدة</span></div></div>
+              <div className="hizb-presets-grid">
+                {HIZB_PRESETS.map((preset) => {
+                  const complete = preset.hizbs.every((n) => hizbs.includes(n));
+                  return (
+                    <button key={preset.id} type="button" disabled={complete} className={`hizb-preset${complete ? ' complete' : ''}`} onClick={() => addHizbPreset(preset.hizbs)}>
+                      <span>{complete ? '✓' : '+'}</span><b>{preset.label}</b><small>الأحزاب {preset.detail}</small>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div className="th-hizb-grid">
               {Array.from({ length: 60 }, (_, i) => i + 1).map((n) => (
                 <button key={n} type="button" onClick={() => toggleHizb(n)} className={`th-h ${hizbs.includes(n) ? 'on' : ''}`}>
                   <span className="th-h-num">{n}</span>
+                  <span className="th-h-sub">جزء {juzForHizb(n)}</span>
                 </button>
               ))}
             </div>

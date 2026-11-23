@@ -66,12 +66,14 @@ async function main() {
     circle_id INTEGER REFERENCES circles(id) ON DELETE SET NULL,
     committee_id INTEGER REFERENCES committees(id) ON DELETE SET NULL,
     password_hash TEXT NOT NULL,
+    hizbs_locked BOOLEAN NOT NULL DEFAULT FALSE,
     status TEXT NOT NULL DEFAULT 'waiting_hizbs',
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
   )`;
   await sql`CREATE INDEX IF NOT EXISTS students_circle_idx ON students(circle_id)`;
   await sql`CREATE INDEX IF NOT EXISTS students_committee_idx ON students(committee_id)`;
   await sql`CREATE INDEX IF NOT EXISTS students_status_idx ON students(status)`;
+  await sql`ALTER TABLE students ADD COLUMN IF NOT EXISTS hizbs_locked BOOLEAN NOT NULL DEFAULT FALSE`;
 
   await sql`CREATE TABLE IF NOT EXISTS student_hizbs (
     student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,

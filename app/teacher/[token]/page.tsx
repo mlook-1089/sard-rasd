@@ -92,6 +92,7 @@ export default async function TeacherPortal({ params }: PageProps) {
       status: effectiveStatus,
       hizbsSet,
       mandatoryHizbs,
+      hizbsLocked: s.hizbsLocked,
       target,
       memorized,
       errors,

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { HIZB_PRESETS, juzForHizb } from '@/lib/hizbPresets';
 
 export type TeacherStudentRow = {
   id: number;
@@ -11,6 +12,7 @@ export type TeacherStudentRow = {
   status: string;
   hizbsSet: number[];
   mandatoryHizbs: number[];
+  hizbsLocked: boolean;
   target: number;
   memorized: number;
   errors: number;
@@ -37,6 +39,7 @@ export default function HizbsEditor({
   initial,
   mandatory,
   studentName,
+  editingLocked = false,
   compact = false,
   onSaved
 }: {
@@ -45,6 +48,7 @@ export default function HizbsEditor({
   initial: number[];
   mandatory: number[];
   studentName: string;
+  editingLocked?: boolean;
   compact?: boolean;
   onSaved?: (newHizbs: number[], newStatus?: string) => void;
 }) {
@@ -95,6 +99,11 @@ export default function HizbsEditor({
     setSel(new Set(savedHizbs));
   }
 
+  function addPreset(hizbs: readonly number[]) {
+    if (saving) return;
+    setSel((current) => new Set([...current, ...hizbs]));
+  }
+
   async function save() {
     if (saving) return;
     setSaving(true);
@@ -129,11 +138,12 @@ export default function HizbsEditor({
       <button
         type="button"
         onClick={openModal}
-        className={`u-btn u-btn-p${compact ? ' sm teacher-hizbs-btn' : ''}`}
+        disabled={editingLocked}
+        className={`u-btn ${editingLocked ? 'u-btn-g' : 'u-btn-p'}${compact ? ' sm teacher-hizbs-btn' : ''}`}
         style={{ minHeight: 44, minWidth: 44 }}
-        title={`تحديد أحزاب ${studentName}`}
+        title={editingLocked ? 'تعديل الأحزاب مقفل من الإدارة' : `تحديد أحزاب ${studentName}`}
       >
-        <span aria-hidden="true">📚</span><span>{compact ? `الأحزاب (${savedHizbs.length})` : `تحديد الأحزاب (${savedHizbs.length})`}</span>
+        <span aria-hidden="true">{editingLocked ? '🔒' : '📚'}</span><span>{editingLocked ? `مقفلة (${savedHizbs.length})` : compact ? `الأحزاب (${savedHizbs.length})` : `تحديد الأحزاب (${savedHizbs.length})`}</span>
       </button>
 
       {open && (
@@ -149,7 +159,7 @@ export default function HizbsEditor({
             style={{
               background: 'var(--card)',
               borderRadius: 20,
-              maxWidth: 560,
+              maxWidth: 760,
               width: '100%',
               maxHeight: '90vh',
               display: 'flex',
@@ -201,6 +211,29 @@ export default function HizbsEditor({
 
             {/* Scrollable body */}
             <div style={{ padding: 18, overflowY: 'auto', flex: 1 }}>
+              <div className="hizb-presets">
+                <div className="hizb-presets-title">
+                  <div><b>اختيارات سريعة</b><span>تضيف المجموعة مباشرة دون التأثير على المحفوظ</span></div>
+                </div>
+                <div className="hizb-presets-grid">
+                  {HIZB_PRESETS.map((preset) => {
+                    const complete = preset.hizbs.every((n) => sel.has(n));
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        disabled={saving || complete}
+                        className={`hizb-preset${complete ? ' complete' : ''}`}
+                        onClick={() => addPreset(preset.hizbs)}
+                      >
+                        <span>{complete ? '✓' : '+'}</span>
+                        <b>{preset.label}</b>
+                        <small>الأحزاب {preset.detail}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <div className="hizb-lock-legend" aria-label="مفتاح حالات الأحزاب">
                 <span><i className="mandatory" /> إلزامي من الإدارة</span>
                 <span><i className="saved" /> مضاف سابقاً</span>
@@ -222,6 +255,7 @@ export default function HizbsEditor({
                     >
                       {isSaved && <span className="th-h-lock" aria-hidden="true">🔒</span>}
                       <span className="th-h-num">{n}</span>
+                      <span className="th-h-sub">جزء {juzForHizb(n)}</span>
                     </button>
                   );
                 })}
@@ -391,6 +425,7 @@ export function TeacherPortalClient({
                             initial={r.hizbsSet}
                             mandatory={r.mandatoryHizbs}
                             studentName={r.name}
+                            editingLocked={r.hizbsLocked}
                             compact
                             onSaved={(newHizbs, newStatus) => handleStudentSaved(r.id, newHizbs, newStatus)}
                           />

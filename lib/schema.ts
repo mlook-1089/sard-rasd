@@ -106,6 +106,7 @@ export const students = pgTable('students', {
   circleId: integer('circle_id').references(() => circles.id, { onDelete: 'set null' }),
   committeeId: integer('committee_id').references(() => committees.id, { onDelete: 'set null' }),
   passwordHash: text('password_hash').notNull(),
+  hizbsLocked: boolean('hizbs_locked').default(false).notNull(),
   status: text('status').default('waiting_hizbs').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull()
 }, (t) => ({

@@ -431,9 +431,10 @@ html.dark .bg-gradient-to-r.from-brand{
 }
 
 /* ===== برنامج «تعاهد» — شبكة الأحزاب في نافذة الإسناد ===== */
-.th-hizb-grid{ display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:6px; }
+.th-hizb-grid{ display:grid; grid-template-columns:repeat(10, minmax(0,1fr)); gap:7px; }
+@media (max-width:700px){ .th-hizb-grid{ grid-template-columns:repeat(6, minmax(0,1fr)); gap:6px; } }
 @media (max-width:480px){ .th-hizb-grid{ grid-template-columns:repeat(5, minmax(0,1fr)); gap:5px; } }
-.th-h{ position:relative; padding:8px 4px; border-radius:12px; border:1.5px solid var(--line); background:var(--card); color:var(--ink); cursor:pointer; font-family:inherit; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:52px; transition:transform .12s, background .15s, border-color .15s; }
+.th-h{ position:relative; padding:8px 4px; border-radius:12px; border:1.5px solid var(--line); background:var(--card); color:var(--ink); cursor:pointer; font-family:inherit; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:58px; transition:transform .12s, background .15s, border-color .15s, box-shadow .15s; }
 .th-h:active{ transform:scale(.96); }
 .th-h.on{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand-ink); }
 .th-h.locked{ background:var(--gold-soft); border-color:var(--gold); color:var(--gold); cursor:not-allowed; }
@@ -448,6 +449,19 @@ html.dark .bg-gradient-to-r.from-brand{
 .hizb-lock-legend i.mandatory{ background:var(--gold); }
 .hizb-lock-legend i.saved{ background:var(--brand); }
 .hizb-lock-legend i.new{ background:var(--card); border:1.5px solid var(--line2); }
+.hizb-presets{ margin-bottom:12px; padding:12px; border-radius:16px; background:linear-gradient(135deg,var(--brand-soft),var(--card2)); border:1px solid var(--line); }
+.hizb-presets-title{ display:flex; justify-content:space-between; align-items:center; margin-bottom:9px; }
+.hizb-presets-title b{ display:block; color:var(--brand-ink); font-size:13px; }
+.hizb-presets-title span{ display:block; color:var(--ink3); font-size:10.5px; margin-top:1px; }
+.hizb-presets-grid{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; }
+.hizb-preset{ position:relative; min-height:58px; padding:7px 23px 7px 7px; border:1px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink); font-family:inherit; cursor:pointer; text-align:start; transition:.15s ease; }
+.hizb-preset:hover{ border-color:var(--brand); transform:translateY(-1px); box-shadow:var(--shadow); }
+.hizb-preset > span{ position:absolute; inset-inline-start:7px; top:8px; width:17px; height:17px; display:grid; place-items:center; border-radius:50%; background:var(--brand); color:var(--on-brand); font-size:12px; font-weight:900; }
+.hizb-preset b{ display:block; color:var(--brand-ink); font-size:11.5px; white-space:nowrap; }
+.hizb-preset small{ display:block; color:var(--ink3); font-size:9.5px; margin-top:2px; white-space:nowrap; }
+.hizb-preset.complete{ background:var(--ok-soft); border-color:color-mix(in srgb,var(--ok) 45%,var(--line)); cursor:default; }
+.hizb-preset.complete > span{ background:var(--ok); }.hizb-preset.complete b{ color:var(--ok); }
+@media(max-width:700px){ .hizb-presets-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }.hizb-preset:last-child{ grid-column:1/-1; } }
 
 /* ===== Mandatory hizbs — Excel import experience ===== */
 .mandatory-import-shell{ display:grid; gap:14px; }
@@ -615,6 +629,15 @@ html.dark .bg-gradient-to-r.from-brand{
 .teacher-row-actions{ display:flex; align-items:center; justify-content:flex-end; gap:6px; min-width:150px; }
 .teacher-row-actions .u-icon-btn{ width:38px; height:38px; min-width:38px; min-height:38px; }
 .teacher-hizbs-btn{ min-height:38px !important; height:38px !important; white-space:nowrap; padding-inline:10px !important; }
+.admin-hizbs-lock{ display:flex; align-items:center; gap:10px; padding:12px; border:1.5px solid var(--line); border-radius:15px; background:var(--card2); cursor:pointer; transition:.15s ease; }
+.admin-hizbs-lock:hover{ border-color:var(--brand); }.admin-hizbs-lock.on{ background:var(--gold-soft); border-color:var(--gold); }
+.admin-hizbs-lock input{ position:absolute; opacity:0; pointer-events:none; }
+.admin-hizbs-lock-icon{ flex:0 0 auto; width:38px; height:38px; display:grid; place-items:center; border-radius:12px; background:var(--brand-soft); font-size:18px; }
+.admin-hizbs-lock.on .admin-hizbs-lock-icon{ background:var(--gold); }
+.admin-hizbs-lock > span:nth-of-type(2){ flex:1; min-width:0; }.admin-hizbs-lock b{ display:block; color:var(--ink); font-size:13px; }.admin-hizbs-lock small{ display:block; color:var(--ink3); font-size:10.5px; margin-top:2px; }
+.admin-hizbs-lock > i{ position:relative; width:42px; height:24px; border-radius:99px; background:var(--line2); transition:.15s; }
+.admin-hizbs-lock > i::after{ content:""; position:absolute; width:18px; height:18px; top:3px; inset-inline-start:3px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.2); transition:.15s; }
+.admin-hizbs-lock.on > i{ background:var(--gold); }.admin-hizbs-lock.on > i::after{ inset-inline-start:21px; }
 
 /* Generic table inside a u-card also gets a bit of polish */
 .u-card > table,

@@ -45,6 +45,12 @@ export async function PUT(
   if (!student || student.circleId !== circle.id) {
     return NextResponse.json({ error: 'student not in circle' }, { status: 404 });
   }
+  if (student.hizbsLocked) {
+    return NextResponse.json(
+      { error: 'تعديل الأحزاب مقفل من إدارة المنصة.' },
+      { status: 403 }
+    );
+  }
 
   const body = (await req.json().catch(() => ({}))) as { hizbs?: unknown };
   const rawHizbs = Array.isArray(body.hizbs) ? body.hizbs : [];
