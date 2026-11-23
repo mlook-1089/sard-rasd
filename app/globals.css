@@ -612,6 +612,9 @@ html.dark .bg-gradient-to-r.from-brand{
 }
 /* Action cells: center small icon-only buttons */
 .th-rpt-table td .u-btn.sm{ padding: 0 10px; height: 32px; }
+.teacher-row-actions{ display:flex; align-items:center; justify-content:flex-end; gap:6px; min-width:150px; }
+.teacher-row-actions .u-icon-btn{ width:38px; height:38px; min-width:38px; min-height:38px; }
+.teacher-hizbs-btn{ min-height:38px !important; height:38px !important; white-space:nowrap; padding-inline:10px !important; }
 
 /* Generic table inside a u-card also gets a bit of polish */
 .u-card > table,
