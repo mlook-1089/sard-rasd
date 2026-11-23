@@ -438,7 +438,7 @@ html.dark .bg-gradient-to-r.from-brand{
 .th-h:active{ transform:scale(.96); }
 .th-h.on{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand-ink); }
 .th-h.locked{ background:var(--gold-soft); border-color:var(--gold); color:var(--gold); cursor:not-allowed; }
-.th-h.saved{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand-ink); cursor:not-allowed; }
+.th-h.saved{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand-ink); cursor:pointer; }
 .th-h-num{ font-weight:800; font-size:15px; line-height:1.1; }
 .th-h-sub{ font-size:10.5px; color:var(--ink3); margin-top:2px; }
 .th-h.on .th-h-sub, .th-h.locked .th-h-sub{ color:inherit; opacity:.75; }
@@ -676,10 +676,11 @@ html.dark .bg-gradient-to-r.from-brand{
   .hizb-editor-body .hizb-preset{ flex:0 0 132px; min-height:54px; scroll-snap-align:start; }
   .hizb-editor-body .hizb-preset:last-child{ grid-column:auto; }
   .hizb-editor-body .hizb-lock-legend{ flex-wrap:nowrap; overflow-x:auto; white-space:nowrap; scrollbar-width:none; padding:8px 10px; }
-  .hizb-editor-body .th-hizb-grid{ grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px; }
-  .hizb-editor-body .th-h{ min-height:54px; border-radius:10px; }
+  .hizb-editor-body .th-hizb-grid{ grid-template-columns:repeat(8,minmax(0,1fr)); gap:4px; }
+  .hizb-editor-body .th-h{ min-height:44px; padding:5px 2px; border-radius:9px; }
   .hizb-editor-body .th-h-num{ font-size:14px; }
-  .hizb-editor-body .th-h-sub{ font-size:9px; }
+  .hizb-editor-body .th-h-sub{ display:none; }
+  .hizb-editor-body .th-h-lock{ top:1px; left:2px; font-size:8px; }
 }
 
 /* Generic table inside a u-card also gets a bit of polish */

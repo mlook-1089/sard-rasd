@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { unstable_noStore as noStore, revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import { circles, students, studentHizbs } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -61,28 +61,33 @@ export async function PUT(
   )).sort((a, b) => a - b);
 
   const existing = await db.select().from(studentHizbs).where(eq(studentHizbs.studentId, studentId));
-  const existingSet = new Set(existing.map((h) => h.hizbNumber));
-  const removed = existing.filter((h) => !hizbs.includes(h.hizbNumber));
-  if (removed.length > 0) {
-    return NextResponse.json(
-      { error: 'لا يمكن إنقاص الأحزاب المحفوظة. يمكنك الزيادة فقط.' },
-      { status: 409 }
-    );
-  }
-
-  const additions = hizbs.filter((n) => !existingSet.has(n));
-  if (additions.length > 0) {
-    await db
-      .insert(studentHizbs)
-      .values(additions.map((n) => ({ studentId, hizbNumber: n, isMandatory: false })))
-      .onConflictDoNothing();
-  }
-
-  const savedHizbs = Array.from(new Set([...existingSet, ...additions])).sort((a, b) => a - b);
   const mandatoryHizbs = existing
     .filter((h) => h.isMandatory)
     .map((h) => h.hizbNumber)
     .sort((a, b) => a - b);
+  const missingMandatory = mandatoryHizbs.filter((n) => !hizbs.includes(n));
+  if (missingMandatory.length > 0) {
+    return NextResponse.json(
+      { error: 'لا يمكن حذف الأحزاب الإجبارية المحددة من الإدارة.' },
+      { status: 409 }
+    );
+  }
+
+  // When the administration has not locked the student, the teacher may freely
+  // edit teacher-owned assignments. Administrative mandatory rows stay intact.
+  await db
+    .delete(studentHizbs)
+    .where(and(eq(studentHizbs.studentId, studentId), eq(studentHizbs.isMandatory, false)));
+
+  const teacherHizbs = hizbs.filter((n) => !mandatoryHizbs.includes(n));
+  if (teacherHizbs.length > 0) {
+    await db
+      .insert(studentHizbs)
+      .values(teacherHizbs.map((n) => ({ studentId, hizbNumber: n, isMandatory: false })))
+      .onConflictDoNothing();
+  }
+
+  const savedHizbs = Array.from(new Set([...mandatoryHizbs, ...teacherHizbs])).sort((a, b) => a - b);
 
   const nextStatus =
     savedHizbs.length === 0

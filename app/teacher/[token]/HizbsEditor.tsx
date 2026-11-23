@@ -72,8 +72,7 @@ export default function HizbsEditor({
 
   function toggle(n: number) {
     if (saving) return;
-    // Every persisted assignment is append-only from the teacher portal.
-    if (savedHizbs.includes(n)) return;
+    if (mandatory.includes(n)) return;
     const next = new Set(sel);
     if (next.has(n)) next.delete(n); else next.add(n);
     setSel(next);
@@ -96,7 +95,7 @@ export default function HizbsEditor({
 
   function clearAll() {
     if (saving) return;
-    setSel(new Set(savedHizbs));
+    setSel(new Set(mandatory));
   }
 
   function togglePreset(hizbs: readonly number[]) {
@@ -106,7 +105,7 @@ export default function HizbsEditor({
       if (!complete) return new Set([...current, ...hizbs]);
       const next = new Set(current);
       for (const n of hizbs) {
-        if (!savedHizbs.includes(n)) next.delete(n);
+        if (!mandatory.includes(n)) next.delete(n);
       }
       return next;
     });
@@ -183,7 +182,7 @@ export default function HizbsEditor({
               <div className="u-row u-between" style={{ flexWrap: 'wrap', gap: 10 }}>
                 <div className="hizb-editor-title">
                   <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>أحزاب {studentName}</h3>
-                  <p className="u-muted" style={{ margin: '2px 0 0' }}>المحفوظ: <b>{savedHizbs.length}</b> · الإضافة الجديدة: <b>{Math.max(0, sel.size - savedHizbs.length)}</b></p>
+                  <p className="u-muted" style={{ margin: '2px 0 0' }}>الحالي: <b>{savedHizbs.length}</b> · بعد الحفظ: <b>{sel.size}</b></p>
                 </div>
                 <div className="hizb-editor-toolbar" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                   <button
@@ -202,7 +201,7 @@ export default function HizbsEditor({
                     className="u-btn u-btn-g"
                     style={{ minHeight: 44, minWidth: 44, padding: '0 12px' }}
                   >
-                    إلغاء الإضافات
+                    إبقاء الإجباري فقط
                   </button>
                   <button
                     type="button"
@@ -222,7 +221,7 @@ export default function HizbsEditor({
             <div className="hizb-editor-body" style={{ padding: 18, overflowY: 'auto', flex: 1 }}>
               <div className="hizb-presets">
                 <div className="hizb-presets-title">
-                  <div><b>اختيارات سريعة</b><span>تضيف المجموعة مباشرة دون التأثير على المحفوظ</span></div>
+                  <div><b>اختيارات سريعة</b><span>اضغط مرة للإضافة ومرة أخرى للإلغاء</span></div>
                 </div>
                 <div className="hizb-presets-grid">
                   {HIZB_PRESETS.map((preset) => {
@@ -257,12 +256,12 @@ export default function HizbsEditor({
                     <button
                       key={n}
                       onClick={() => toggle(n)}
-                      disabled={saving || isSaved}
+                      disabled={saving || isMandatory}
                       className={`th-h${isMandatory ? ' locked' : on ? ' on' : ''}${isSaved && !isMandatory ? ' saved' : ''}`}
                       type="button"
-                      title={isMandatory ? 'حزب إلزامي مقفل من الإدارة' : isSaved ? 'حزب مضاف سابقاً ولا يمكن إنقاصه' : undefined}
+                      title={isMandatory ? 'حزب إلزامي مقفل من الإدارة' : isSaved ? 'محفوظ سابقاً ويمكن إلغاء اختياره' : undefined}
                     >
-                      {isSaved && <span className="th-h-lock" aria-hidden="true">🔒</span>}
+                      {isMandatory && <span className="th-h-lock" aria-hidden="true">🔒</span>}
                       <span className="th-h-num">{n}</span>
                       <span className="th-h-sub">جزء {juzForHizb(n)}</span>
                     </button>
