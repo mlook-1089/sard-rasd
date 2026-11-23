@@ -1543,35 +1543,6 @@ export default function RecordFlow({
               />
             </div>
 
-            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink2)', marginBottom: 8 }}>
-                ملاحظات سريعة
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                {QUICK_NOTE_TAGS.map((tag) => {
-                  const activeTag = notes.split('،').map((p) => p.trim()).includes(tag);
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => toggleQuickNoteTag(tag)}
-                      className={`u-chip ${activeTag ? 'on' : ''}`}
-                      style={{ padding: '6px 11px', fontSize: 12 }}
-                    >
-                      {activeTag ? `✓ ${tag}` : `+ ${tag}`}
-                    </button>
-                  );
-                })}
-              </div>
-              <input
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="ملاحظات إضافية عن التسميع (اختياري)..."
-                className="u-input"
-                style={{ height: 42, fontSize: 13.5 }}
-              />
-            </div>
-
             <div className="u-muted" style={{ marginTop: 10, fontSize: 11.5, textAlign: 'center' }}>
               اختصارات لوحة المفاتيح: <kbd>Space</kbd> أو <kbd>E</kbd> = +1 خطأ · <kbd>A</kbd> = +1 تنبيه · <kbd>Ctrl+Z</kbd> = تراجع · <kbd>Ctrl+Enter</kbd> = إنهاء وحفظ
             </div>
