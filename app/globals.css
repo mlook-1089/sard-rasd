@@ -632,6 +632,31 @@ html.dark .bg-gradient-to-r.from-brand{
 .th-rpt-table td .u-btn.sm{ padding: 0 10px; height: 32px; }
 .teacher-row-actions{ display:flex; align-items:center; justify-content:flex-end; gap:6px; min-width:150px; }
 .teacher-row-actions .u-icon-btn{ width:38px; height:38px; min-width:38px; min-height:38px; }
+.teacher-student-name{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; width:100%; padding:7px 9px; margin:-7px -9px; border:0; border-radius:10px; background:transparent; color:var(--ink); text-align:start; cursor:pointer; transition:background .18s ease,color .18s ease; }
+.teacher-student-name span{ font-weight:800; font-size:13px; }
+.teacher-student-name small{ color:var(--brand); font-size:10px; font-weight:700; }
+.teacher-student-name:hover{ background:var(--brand-soft); }
+.student-results-modal{ background:var(--overlay); display:grid; place-items:center; padding:18px; overflow:hidden; }
+.student-results-panel{ width:min(1040px,100%); max-height:92dvh; display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--line); border-radius:22px; background:var(--card); box-shadow:var(--shadow-lg); }
+.student-results-head{ flex:0 0 auto; display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding:18px 20px 15px; border-bottom:1px solid var(--line); background:linear-gradient(135deg,var(--brand-soft),var(--card) 60%); }
+.student-results-head h3{ margin:2px 0 3px; color:var(--ink); font-size:20px; }
+.student-results-head p{ margin:0; color:var(--ink3); font-size:12px; }
+.student-results-kicker{ color:var(--brand); font-size:10px; font-weight:800; }
+.student-results-stats{ flex:0 0 auto; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; padding:12px 20px; border-bottom:1px solid var(--line); background:var(--card2); }
+.student-results-stats div{ display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; padding:9px 11px; border:1px solid var(--line); border-radius:12px; background:var(--card); }
+.student-results-stats span{ color:var(--ink3); font-size:10.5px; font-weight:700; }
+.student-results-stats b{ color:var(--ink); font-size:16px; }
+.student-results-stats b.ok{ color:var(--ok); }
+.student-results-body{ flex:1 1 auto; min-height:0; padding:14px 20px 20px; overflow:auto; overscroll-behavior:contain; }
+.student-results-table{ max-height:none; }
+.student-results-table .th-rpt-table th,.student-results-table .th-rpt-table td{ white-space:nowrap; }
+.student-results-table .th-rpt-table tbody tr.pending td{ color:var(--ink3); }
+.student-hizb-number{ display:inline-grid; place-items:center; width:27px; height:27px; margin-inline-end:7px; border-radius:9px; background:var(--brand-soft); color:var(--brand); font-weight:900; }
+.result-ok{ color:var(--ok); }
+.result-bad{ color:var(--bad); }
+.result-warn{ color:var(--warn); }
+.student-results-state{ min-height:190px; display:flex; align-items:center; justify-content:center; gap:10px; color:var(--ink3); font-weight:700; }
+.student-results-spinner{ width:20px; height:20px; border:2px solid var(--line); border-top-color:var(--brand); border-radius:50%; animation:spin .8s linear infinite; }
 .teacher-hizbs-btn{ min-height:38px !important; height:38px !important; white-space:nowrap; padding-inline:10px !important; }
 .admin-hizbs-lock{ display:flex; align-items:center; gap:10px; padding:12px; border:1.5px solid var(--line); border-radius:15px; background:var(--card2); cursor:pointer; transition:.15s ease; }
 .admin-hizbs-lock:hover{ border-color:var(--brand); }.admin-hizbs-lock.on{ background:var(--gold-soft); border-color:var(--gold); }
@@ -660,6 +685,19 @@ html.dark .bg-gradient-to-r.from-brand{
   .teacher-report-table .th-rpt-table tbody tr td:last-child::before{ display:none; }
   .teacher-row-actions{ width:100%; min-width:0; justify-content:stretch; }
   .teacher-row-actions .teacher-hizbs-btn{ flex:1; }
+  .teacher-student-name{ margin:-2px 0; padding:7px 4px; }
+  .teacher-student-name span{ font-size:15px; }
+  .student-results-modal{ padding:0; place-items:stretch; }
+  .student-results-panel{ width:100%; height:100dvh; max-height:none; border:0; border-radius:0; }
+  .student-results-head{ padding:14px 14px 12px; }
+  .student-results-head h3{ font-size:17px; }
+  .student-results-stats{ grid-template-columns:repeat(2,minmax(0,1fr)); padding:9px 10px; gap:6px; }
+  .student-results-stats div{ padding:8px 9px; }
+  .student-results-body{ padding:10px; }
+  .student-results-table{ overflow:visible; border:0; background:transparent; }
+  .student-results-table .th-rpt-table tbody tr{ gap:0; }
+  .student-results-table .th-rpt-table tbody tr td{ white-space:normal; }
+  .teacher-report-table .student-results-table .th-rpt-table tbody tr td:last-child::before{ display:block; }
 
   /* Full-height bottom sheet: every control remains reachable on small phones. */
   .hizb-editor-modal{ padding:0 !important; place-items:stretch !important; }
@@ -700,8 +738,8 @@ html.dark .bg-gradient-to-r.from-brand{
   .u-stat .v{ font-size:21px; }
   .u-note{ border-radius:12px; padding:9px 11px; }
 
-  [role="dialog"].fixed.inset-0:not(.hizb-editor-modal){ padding:8px !important; align-items:flex-end !important; }
-  [role="dialog"].fixed.inset-0:not(.hizb-editor-modal) > div{ width:100% !important; max-height:94dvh !important; border-radius:18px 18px 12px 12px !important; }
+  [role="dialog"].fixed.inset-0:not(.hizb-editor-modal):not(.student-results-modal){ padding:8px !important; align-items:flex-end !important; }
+  [role="dialog"].fixed.inset-0:not(.hizb-editor-modal):not(.student-results-modal) > div{ width:100% !important; max-height:94dvh !important; border-radius:18px 18px 12px 12px !important; }
 
   .mobile-card-table{ max-height:none; overflow:visible; border:0; background:transparent; }
   .mobile-card-table .th-rpt-table,.mobile-card-table tbody{ display:block; width:100%; }

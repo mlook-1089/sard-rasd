@@ -20,6 +20,25 @@ export type TeacherStudentRow = {
   completion: number;
 };
 
+type StudentSessionResult = {
+  id: number;
+  hizbNumber: number;
+  reciterName: string;
+  startedAt: string;
+  endedAt: string | null;
+  durationSeconds: number | null;
+  errors: number;
+  alerts: number;
+  score: number | null;
+  passed: boolean | null;
+};
+
+type HizbResultRow = {
+  hizbNumber: number;
+  latest: StudentSessionResult | null;
+  attempts: number;
+};
+
 function waNumber(raw: string | null | undefined): string | null {
   if (!raw) return null;
   let d = raw.replace(/\D/g, '');
@@ -31,6 +50,163 @@ function waNumber(raw: string | null | undefined): string | null {
 
 function fillTemplate(tpl: string, vars: Record<string, string | number>): string {
   return tpl.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ''));
+}
+
+function formatResultDate(raw: string): string {
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('ar-SA', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).format(date);
+}
+
+function StudentResultsDialog({ token, student }: { token: string; student: TeacherStudentRow }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [resultRows, setResultRows] = useState<HizbResultRow[]>([]);
+
+  async function loadResults() {
+    setOpen(true);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/teacher/${token}/students/${student.id}/results`, { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'تعذر تحميل نتائج الطالب');
+
+      const records: StudentSessionResult[] = Array.isArray(data.sessions) ? data.sessions : [];
+      const assigned: number[] = Array.isArray(data.assignedHizbs) ? data.assignedHizbs : [];
+      const hizbNumbers = Array.from(new Set([
+        ...assigned,
+        ...records.map((record) => Number(record.hizbNumber))
+      ])).filter((n) => Number.isInteger(n) && n >= 1 && n <= 60).sort((a, b) => a - b);
+
+      setResultRows(hizbNumbers.map((hizbNumber) => {
+        const attempts = records.filter((record) => record.hizbNumber === hizbNumber);
+        return { hizbNumber, latest: attempts[0] ?? null, attempts: attempts.length };
+      }));
+    } catch (e: any) {
+      setError(e.message || 'تعذر تحميل نتائج الطالب');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const completed = resultRows.filter((row) => row.latest).length;
+  const passed = resultRows.filter((row) => row.latest?.passed === true).length;
+  const scored = resultRows.filter((row) => row.latest?.score != null);
+  const average = scored.length
+    ? Math.round(scored.reduce((sum, row) => sum + Number(row.latest?.score ?? 0), 0) / scored.length)
+    : null;
+
+  return (
+    <>
+      <button type="button" className="teacher-student-name" onClick={loadResults} title={`عرض نتائج ${student.name}`}>
+        <span>{student.name}</span>
+        <small>عرض النتائج</small>
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 student-results-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`نتائج ${student.name}`}
+          onClick={() => setOpen(false)}
+        >
+          <div className="student-results-panel" onClick={(event) => event.stopPropagation()}>
+            <div className="student-results-head">
+              <div>
+                <span className="student-results-kicker">سجل الطالب</span>
+                <h3>{student.name}</h3>
+                <p>آخر نتيجة مسجلة لكل حزب، مع عدد المحاولات.</p>
+              </div>
+              <button type="button" className="u-icon-btn" onClick={() => setOpen(false)} aria-label="إغلاق النتائج">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            {!loading && !error && (
+              <div className="student-results-stats">
+                <div><span>الأحزاب</span><b>{resultRows.length}</b></div>
+                <div><span>تم تسميعها</span><b>{completed}</b></div>
+                <div><span>مجتاز</span><b className="ok">{passed}</b></div>
+                <div><span>متوسط الدرجة</span><b>{average == null ? '—' : `${average}%`}</b></div>
+              </div>
+            )}
+
+            <div className="student-results-body">
+              {loading ? (
+                <div className="student-results-state"><span className="student-results-spinner" />جاري تحميل النتائج...</div>
+              ) : error ? (
+                <div className="u-note bad">{error}</div>
+              ) : resultRows.length === 0 ? (
+                <div className="u-empty">لا توجد أحزاب أو نتائج مسجلة لهذا الطالب</div>
+              ) : (
+                <div className="th-rpt-table-wrap mobile-card-table student-results-table">
+                  <table className="th-rpt-table">
+                    <thead>
+                      <tr>
+                        <th>الحزب</th>
+                        <th>النتيجة</th>
+                        <th>الأخطاء</th>
+                        <th>التنبيهات</th>
+                        <th>الدرجة</th>
+                        <th>المسمّع</th>
+                        <th>المحاولات</th>
+                        <th>التاريخ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {resultRows.map((row) => {
+                        const record = row.latest;
+                        return (
+                          <tr key={row.hizbNumber} className={!record ? 'pending' : undefined}>
+                            <td data-label="الحزب" className="mobile-card-title">
+                              <span className="student-hizb-number">{row.hizbNumber}</span>
+                              <b>الحزب {row.hizbNumber}</b>
+                            </td>
+                            <td data-label="النتيجة">
+                              {!record ? <span className="u-pill">لم يُسمّع</span> : record.passed ? <span className="u-pill ok">مجتاز</span> : <span className="u-pill bad">لم يجتز</span>}
+                            </td>
+                            <td data-label="الأخطاء"><b className={record && record.errors > 0 ? 'result-bad' : ''}>{record?.errors ?? '—'}</b></td>
+                            <td data-label="التنبيهات"><b className={record && record.alerts > 0 ? 'result-warn' : ''}>{record?.alerts ?? '—'}</b></td>
+                            <td data-label="الدرجة">
+                              {record?.score == null ? '—' : <b className={record.passed ? 'result-ok' : 'result-bad'}>{record.score}%</b>}
+                            </td>
+                            <td data-label="المسمّع"><b>{record?.reciterName || '—'}</b></td>
+                            <td data-label="المحاولات">{row.attempts || '—'}</td>
+                            <td data-label="التاريخ">{record ? formatResultDate(record.startedAt) : '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 
 export default function HizbsEditor({
@@ -424,7 +600,7 @@ export function TeacherPortalClient({
                   const waUrl = wa ? `https://wa.me/${wa}?text=${encodeURIComponent(waText)}` : null;
                   return (
                     <tr key={r.id}>
-                      <td data-label="الطالب"><b>{r.name}</b></td>
+                      <td data-label="الطالب"><StudentResultsDialog token={token} student={r} /></td>
                       <td data-label="المحفوظ" style={{ color: 'var(--ok)' }}>{r.memorized}</td>
                       <td data-label="الهدف">{r.target}</td>
                       <td data-label="الأخطاء" style={{ color: 'var(--bad)' }}>{r.errors}</td>
