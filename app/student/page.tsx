@@ -130,7 +130,7 @@ export default async function StudentPage() {
 
         <section className="u-grid2 md4">
           <div className="u-stat"><div className="l">الهدف</div><div className="v">{target}</div></div>
-          <div className="u-stat"><div className="l">المحفوظ</div><div className="v" style={{ color: 'var(--ok)' }}>{memorized}</div></div>
+          <div className="u-stat"><div className="l">المنجز</div><div className="v" style={{ color: 'var(--ok)' }}>{memorized}</div></div>
           <div className="u-stat"><div className="l">الترتيب العام</div><div className="v" style={{ color: 'var(--gold)' }}>{rankOverall > 0 ? <span dir="ltr" style={{ display: 'inline-block', unicodeBidi: 'isolate' }}>{rankOverall} / {ranked.length}</span> : '—'}</div></div>
           <div className="u-stat"><div className="l">ترتيبك في مستواك</div><div className="v" style={{ color: 'var(--info)' }}>{rankInLevel > 0 ? <span dir="ltr" style={{ display: 'inline-block', unicodeBidi: 'isolate' }}>{rankInLevel} / {inLevel.length}</span> : '—'}</div></div>
         </section>

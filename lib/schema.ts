@@ -34,7 +34,7 @@ export const settings = pgTable('settings', {
     sessions: 'جلسات التسميع'
   }),
   whatsappTemplate: text('whatsapp_template').default(
-    'السلام عليكم ورحمة الله\nتقرير الطالب {name}\nالمحفوظ: {memorized} / {hizbs}\nالأخطاء: {errors} | التنبيهات: {alerts}\nنسبة الإنجاز: {completion}%'
+    'السلام عليكم ورحمة الله\nتقرير الطالب {name}\nالمنجز: {memorized} / {hizbs}\nالأخطاء: {errors} | التنبيهات: {alerts}\nنسبة الإنجاز: {completion}%'
   ).notNull(),
   adminPasswordHash: text('admin_password_hash').notNull(),
   reciterPasswordHash: text('reciter_password_hash').notNull(),

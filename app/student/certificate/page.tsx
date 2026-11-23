@@ -227,7 +227,7 @@ export default async function CertificatePage() {
               <div className="cert-stats">
                 <div className="cert-stat">
                   <div className="cert-stat-v" style={{ color: '#ffffff' }}>{memorized}</div>
-                  <div className="cert-stat-l" style={{ color: '#f1f5f9' }}>الأحزاب المحفوظة</div>
+                  <div className="cert-stat-l" style={{ color: '#f1f5f9' }}>الأحزاب المنجزة</div>
                 </div>
                 <div className="cert-stat">
                   <div className="cert-stat-v" style={{ color: '#ffffff' }}>{target}</div>

@@ -47,7 +47,7 @@ export default async function TeacherPortal({ params }: PageProps) {
 
   const [set] = await db.select().from(settings).where(eq(settings.id, 1)).limit(1);
   const waTemplate = set?.whatsappTemplate ??
-    'السلام عليكم\nتقرير الطالب {name}\nالمحفوظ: {memorized} / {hizbs}\nالأخطاء: {errors} | التنبيهات: {alerts}\nنسبة الإنجاز: {completion}%';
+    'السلام عليكم\nتقرير الطالب {name}\nالمنجز: {memorized} / {hizbs}\nالأخطاء: {errors} | التنبيهات: {alerts}\nنسبة الإنجاز: {completion}%';
 
   const studs = await db.select().from(students).where(eq(students.circleId, circle.id)).orderBy(students.id);
 

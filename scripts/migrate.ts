@@ -181,6 +181,13 @@ async function main() {
     await sql`ALTER TABLE attendance ALTER COLUMN created_at DROP NOT NULL`;
   } catch (e) { /* ok */ }
 
+  // Keep the user-facing progress term consistent across existing installations.
+  await sql`
+    UPDATE settings
+    SET whatsapp_template = REPLACE(whatsapp_template, 'المحفوظ', 'المنجز')
+    WHERE whatsapp_template LIKE '%المحفوظ%'
+  `;
+
   console.log('[sard] migrate complete (v2 programs)');
 }
 

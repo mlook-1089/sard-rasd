@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import ExportButton from '@/components/ExportButton';
 
 const DEFAULT_WA_TEMPLATE =
-  'السلام عليكم ورحمة الله\nتقرير الطالب {name}\nالمحفوظ: {memorized} / {hizbs}\nالأخطاء: {errors} | التنبيهات: {alerts}\nنسبة الإنجاز: {completion}%';
+  'السلام عليكم ورحمة الله\nتقرير الطالب {name}\nالمنجز: {memorized} / {hizbs}\nالأخطاء: {errors} | التنبيهات: {alerts}\nنسبة الإنجاز: {completion}%';
 
 function buildWhatsAppUrl(phone: string | null | undefined, text: string): string {
   const encoded = encodeURIComponent(text);

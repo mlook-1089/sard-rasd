@@ -286,7 +286,7 @@ function StudentDetail({ student, program, onBack }: { student: Student; program
 
       <div className="u-grid2 md4" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
         <div className="u-stat"><div className="l">الهدف</div><div className="v">{hizbsTarget}</div></div>
-        <div className="u-stat"><div className="l">المحفوظ</div><div className="v" style={{ color: 'var(--ok)' }}>{memorized}</div></div>
+        <div className="u-stat"><div className="l">المنجز</div><div className="v" style={{ color: 'var(--ok)' }}>{memorized}</div></div>
         <div className="u-stat"><div className="l">عدد الجلسات</div><div className="v">{inProgram.length}</div></div>
         <div className="u-stat">
           <div className="l">{completed.length > 0 ? 'متوسط الدرجة' : 'عدد الأخطاء'}</div>

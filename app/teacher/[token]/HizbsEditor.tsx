@@ -559,7 +559,7 @@ export function TeacherPortalClient({
           <div className="v">{rows.length}</div>
         </div>
         <div className="u-stat">
-          <div className="l">المحفوظ / الهدف</div>
+          <div className="l">المنجز / الهدف</div>
           <div className="v sm"><span className="u-num">{totalMem}</span> / <span className="u-num">{totalTarget}</span></div>
         </div>
         <div className="u-stat">
@@ -578,7 +578,7 @@ export function TeacherPortalClient({
               <thead>
                 <tr>
                   <th>الطالب</th>
-                  <th>المحفوظ</th>
+                  <th>المنجز</th>
                   <th>الهدف</th>
                   <th>الأخطاء</th>
                   <th>التنبيهات</th>
@@ -601,7 +601,7 @@ export function TeacherPortalClient({
                   return (
                     <tr key={r.id}>
                       <td data-label="الطالب"><StudentResultsDialog token={token} student={r} /></td>
-                      <td data-label="المحفوظ" style={{ color: 'var(--ok)' }}>{r.memorized}</td>
+                      <td data-label="المنجز" style={{ color: 'var(--ok)' }}>{r.memorized}</td>
                       <td data-label="الهدف">{r.target}</td>
                       <td data-label="الأخطاء" style={{ color: 'var(--bad)' }}>{r.errors}</td>
                       <td data-label="التنبيهات" style={{ color: 'var(--warn)' }}>{r.alerts}</td>

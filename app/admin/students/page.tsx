@@ -39,7 +39,7 @@ const STATUS_PILL: Record<string, { label: string; variant: string }> = {
 };
 
 const DEFAULT_WA_TEMPLATE =
-  'السلام عليكم ورحمة الله\nتقرير الطالب {name}\nالمحفوظ: {memorized} / {hizbs}\nالأخطاء: {errors} | التنبيهات: {alerts}\nنسبة الإنجاز: {completion}%';
+  'السلام عليكم ورحمة الله\nتقرير الطالب {name}\nالمنجز: {memorized} / {hizbs}\nالأخطاء: {errors} | التنبيهات: {alerts}\nنسبة الإنجاز: {completion}%';
 
 function formatSaudiPhone(raw: string): string {
   const ascii = (raw || '')
@@ -705,7 +705,7 @@ function EditModal({
           <label className={`admin-hizbs-lock${hizbsLocked ? ' on' : ''}`} style={{ marginTop: 12 }}>
             <input type="checkbox" checked={hizbsLocked} onChange={(e) => setHizbsLocked(e.target.checked)} />
             <span className="admin-hizbs-lock-icon" aria-hidden="true">{hizbsLocked ? '🔒' : '🔓'}</span>
-            <span><b>قفل تعديل الأحزاب على المعلم</b><small>{hizbsLocked ? 'المعلم يرى العدد فقط ولا يستطيع فتح شبكة الأحزاب.' : 'المعلم يستطيع إضافة أحزاب جديدة دون إنقاص المحفوظ.'}</small></span>
+            <span><b>قفل تعديل الأحزاب على المعلم</b><small>{hizbsLocked ? 'المعلم يرى العدد فقط ولا يستطيع فتح شبكة الأحزاب.' : 'المعلم يستطيع تعديل الأحزاب غير الإجبارية.'}</small></span>
             <i aria-hidden="true" />
           </label>
 
