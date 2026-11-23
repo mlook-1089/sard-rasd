@@ -29,6 +29,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if ('minStudents' in b) patch.minStudents = clampInt(b.minStudents);
   if ('maxHizbs' in b) patch.maxHizbs = clampInt(b.maxHizbs);
   if ('minHizbs' in b) patch.minHizbs = clampInt(b.minHizbs);
+  if ('maxPerCircle' in b) patch.maxPerCircle = clampInt(b.maxPerCircle);
   // Sanity: min cannot exceed max
   if (patch.maxStudents != null && patch.minStudents != null && patch.minStudents > patch.maxStudents) {
     patch.minStudents = patch.maxStudents;

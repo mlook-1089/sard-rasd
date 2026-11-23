@@ -26,6 +26,7 @@ export type CommitteeInput = {
   minStudents: number | null;
   maxHizbs: number | null;
   minHizbs: number | null;
+  maxPerCircle: number | null;  // hard cap on students from any single circle
 };
 
 export type Options = {
@@ -93,6 +94,7 @@ export function computeAssignments(
     minStudents: number | null;
     maxHizbs: number | null;
     minHizbs: number | null;
+    maxPerCircle: number | null;
     students: number;
     hizbs: number;
     circleCounts: Map<number, number>;   // circleId -> count
@@ -108,6 +110,7 @@ export function computeAssignments(
       id: c.id, name: c.name,
       maxStudents: c.maxStudents, minStudents: c.minStudents,
       maxHizbs: c.maxHizbs, minHizbs: c.minHizbs,
+      maxPerCircle: c.maxPerCircle,
       students: 0, hizbs: 0,
       circleCounts: new Map(), levelCounts: new Map(),
       studentsBefore: 0, hizbsBefore: 0
@@ -155,6 +158,11 @@ export function computeAssignments(
     // Hard caps
     if (st.maxStudents != null && st.students + 1 > st.maxStudents) return null;
     if (st.maxHizbs != null && st.hizbs + s.hizbCount > st.maxHizbs) return null;
+    // Diversity hard cap: no circle may exceed maxPerCircle in this committee
+    if (st.maxPerCircle != null && s.circleId != null) {
+      const curSameCircle = st.circleCounts.get(s.circleId) || 0;
+      if (curSameCircle + 1 > st.maxPerCircle) return null;
+    }
 
     // Load penalties (lower is better → lower penalty)
     const studentLoad = w.load * st.students;

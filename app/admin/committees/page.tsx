@@ -10,6 +10,7 @@ type Committee = {
   minStudents: number | null;
   maxHizbs: number | null;
   minHizbs: number | null;
+  maxPerCircle: number | null;
 };
 
 type PlanRow = {
@@ -36,6 +37,7 @@ export default function CommitteesPage() {
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showAutoAssign, setShowAutoAssign] = useState(false);
+  const [showBulkLimits, setShowBulkLimits] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -85,7 +87,7 @@ export default function CommitteesPage() {
     } finally { setSavingId(null); }
   }
 
-  async function setLimit(id: number, field: 'maxStudents' | 'minStudents' | 'maxHizbs' | 'minHizbs', valueStr: string) {
+  async function setLimit(id: number, field: 'maxStudents' | 'minStudents' | 'maxHizbs' | 'minHizbs' | 'maxPerCircle', valueStr: string) {
     setErr(null);
     const value = valueStr.trim() === '' ? null : Math.max(0, Math.floor(Number(valueStr) || 0));
     setSavingId(id);
@@ -115,7 +117,16 @@ export default function CommitteesPage() {
     <div className="u-page">
       <div className="u-top">
         <div><h1>اللجان</h1></div>
-        <div className="u-actions">
+        <div className="u-actions" style={{ flexWrap: 'wrap', gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => setShowBulkLimits(true)}
+            disabled={rows.length === 0}
+            className="u-btn u-btn-s"
+            style={{ minHeight: 44 }}
+          >
+            ⚙ ضبط حدود السعة لكل اللجان
+          </button>
           <button
             type="button"
             onClick={() => setShowAutoAssign(true)}
@@ -175,6 +186,128 @@ export default function CommitteesPage() {
           onApplied={async () => { setShowAutoAssign(false); await load(); }}
         />
       )}
+
+      {showBulkLimits && (
+        <BulkLimitsModal
+          count={rows.length}
+          onClose={() => setShowBulkLimits(false)}
+          onApplied={async () => { setShowBulkLimits(false); await load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function BulkLimitsModal({
+  count, onClose, onApplied
+}: {
+  count: number;
+  onClose: () => void;
+  onApplied: () => void;
+}) {
+  const [maxStudents, setMaxStudents] = useState('');
+  const [minStudents, setMinStudents] = useState('');
+  const [maxHizbs, setMaxHizbs] = useState('');
+  const [minHizbs, setMinHizbs] = useState('');
+  const [maxPerCircle, setMaxPerCircle] = useState('');
+  const [applying, setApplying] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [done, setDone] = useState<null | { updated: number }>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !applying) onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose, applying]);
+
+  function toValue(s: string): number | null | undefined {
+    if (s === '') return undefined;  // ignore field entirely
+    const n = Math.max(0, Math.floor(Number(s) || 0));
+    return n;
+  }
+
+  async function apply() {
+    setErr(null);
+    const payload: any = {};
+    const m1 = toValue(maxStudents); if (m1 !== undefined) payload.maxStudents = m1;
+    const m2 = toValue(minStudents); if (m2 !== undefined) payload.minStudents = m2;
+    const m3 = toValue(maxHizbs);    if (m3 !== undefined) payload.maxHizbs = m3;
+    const m4 = toValue(minHizbs);    if (m4 !== undefined) payload.minHizbs = m4;
+    const m5 = toValue(maxPerCircle); if (m5 !== undefined) payload.maxPerCircle = m5;
+    if (Object.keys(payload).length === 0) {
+      setErr('اكتب قيمة في حقل واحد على الأقل');
+      return;
+    }
+    setApplying(true);
+    try {
+      const res = await fetch('/api/committees/bulk-limits', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const d = await res.json();
+      if (!res.ok) { setErr(d.error || `فشل التطبيق (HTTP ${res.status})`); return; }
+      setDone({ updated: d.updated });
+      setTimeout(onApplied, 1200);
+    } finally { setApplying(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 grid place-items-center p-4 z-50" style={{ background: 'var(--overlay)' }}
+      role="dialog" aria-modal="true" onClick={(e) => e.target === e.currentTarget && !applying && onClose()}>
+      <div className="w-full flex flex-col" style={{
+        maxWidth: 520, maxHeight: '92vh',
+        background: 'var(--card)', borderRadius: 18, border: '1px solid var(--line)', boxShadow: 'var(--shadow-lg)'
+      }}>
+        <div className="flex justify-between items-center" style={{ padding: 14, borderBottom: '1px solid var(--line)' }}>
+          <h3 className="font-bold">⚙ ضبط حدود السعة على {count} لجنة</h3>
+          <button type="button" onClick={onClose} disabled={applying} aria-label="إغلاق" className="u-icon-btn" style={{ width: 40, height: 40 }}>✕</button>
+        </div>
+        <div className="p-4 overflow-y-auto" style={{ flex: 1 }}>
+          <div className="u-note brand" style={{ marginBottom: 14 }}>
+            اترك أي حقل فارغاً لتجاهله. القيمة الصفر = بلا حد في ذلك الحقل. التعديل يُطبَّق على كل اللجان مرة واحدة ويستبدل قيمها الحالية.
+          </div>
+
+          <div className="u-grid2" style={{ gap: 10, marginBottom: 10 }}>
+            <label className="u-field" style={{ marginBottom: 0 }}>
+              <span>الحد الأدنى للطلاب</span>
+              <input type="number" min={0} step={1} value={minStudents} onChange={(e) => setMinStudents(e.target.value)} className="u-input" placeholder="اتركه فارغاً" />
+            </label>
+            <label className="u-field" style={{ marginBottom: 0 }}>
+              <span>الحد الأعلى للطلاب</span>
+              <input type="number" min={0} step={1} value={maxStudents} onChange={(e) => setMaxStudents(e.target.value)} className="u-input" placeholder="اتركه فارغاً" />
+            </label>
+            <label className="u-field" style={{ marginBottom: 0 }}>
+              <span>الحد الأدنى للأحزاب</span>
+              <input type="number" min={0} step={1} value={minHizbs} onChange={(e) => setMinHizbs(e.target.value)} className="u-input" placeholder="اتركه فارغاً" />
+            </label>
+            <label className="u-field" style={{ marginBottom: 0 }}>
+              <span>الحد الأعلى للأحزاب</span>
+              <input type="number" min={0} step={1} value={maxHizbs} onChange={(e) => setMaxHizbs(e.target.value)} className="u-input" placeholder="اتركه فارغاً" />
+            </label>
+          </div>
+
+          <label className="u-field">
+            <span>أعلى طلاب من كل حلقة في اللجنة (للتنوع)</span>
+            <input type="number" min={0} step={1} value={maxPerCircle} onChange={(e) => setMaxPerCircle(e.target.value)} className="u-input" placeholder="مثلاً 3 = لا تجمع أكثر من 3 من نفس الحلقة" />
+            <p className="u-muted" style={{ marginTop: 6, fontSize: 12 }}>
+              قيد <b>صلب</b>: الخوارزمية لن تضع في لجنة واحدة طلاباً أكثر من هذا من نفس الحلقة. اترك فارغاً لإلغاء القيد.
+            </p>
+          </label>
+
+          {err && <div className="u-note bad" style={{ marginTop: 10 }}>⚠ {err}</div>}
+          {done && <div className="u-note ok" style={{ marginTop: 10 }}>✓ طُبِّق على <b>{done.updated}</b> لجنة</div>}
+        </div>
+        <div className="flex justify-end gap-2" style={{ padding: 12, borderTop: '1px solid var(--line)' }}>
+          <button type="button" onClick={onClose} disabled={applying} className="u-btn u-btn-g" style={{ minHeight: 44 }}>
+            {done ? 'إغلاق' : 'إلغاء'}
+          </button>
+          {!done && (
+            <button type="button" onClick={apply} disabled={applying} className="u-btn u-btn-p" style={{ minHeight: 44 }}>
+              {applying ? 'يُطبَّق...' : 'تطبيق على الكل'}
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -185,7 +318,7 @@ function CommitteeCard({
   row: Committee;
   saving: boolean;
   onRename: (val: string, el: HTMLInputElement) => void;
-  onLimit: (field: 'maxStudents' | 'minStudents' | 'maxHizbs' | 'minHizbs', val: string) => void;
+  onLimit: (field: 'maxStudents' | 'minStudents' | 'maxHizbs' | 'minHizbs' | 'maxPerCircle', val: string) => void;
   onDelete: () => void;
 }) {
   const studentsPct = row.maxStudents ? Math.min(100, Math.round((row.studentsCount / row.maxStudents) * 100)) : 0;
@@ -223,15 +356,22 @@ function CommitteeCard({
         </div>
       )}
 
-      <details style={{ marginTop: 10 }}>
-        <summary className="u-muted" style={{ cursor: 'pointer', fontSize: 12.5, fontWeight: 600 }}>⚙ حدود السعة (للتوزيع الذكي)</summary>
-        <div className="u-grid2" style={{ marginTop: 8, gap: 8, marginBottom: 0 }}>
+      <div style={{ marginTop: 10, padding: 10, background: 'var(--card2)', borderRadius: 12, border: '1px solid var(--line)' }}>
+        <div className="u-muted" style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: 'var(--brand-ink)' }}>
+          ⚙ حدود السعة (تُستخدم في التوزيع الذكي)
+        </div>
+        <div className="u-grid2" style={{ gap: 8, marginBottom: 8 }}>
           <LimitField label="أدنى طلاب" value={row.minStudents} onSave={(v) => onLimit('minStudents', v)} />
           <LimitField label="أعلى طلاب" value={row.maxStudents} onSave={(v) => onLimit('maxStudents', v)} />
           <LimitField label="أدنى أحزاب" value={row.minHizbs} onSave={(v) => onLimit('minHizbs', v)} />
           <LimitField label="أعلى أحزاب" value={row.maxHizbs} onSave={(v) => onLimit('maxHizbs', v)} />
         </div>
-      </details>
+        <LimitField
+          label="أعلى طلاب من كل حلقة (للتنوع)"
+          value={row.maxPerCircle}
+          onSave={(v) => onLimit('maxPerCircle', v)}
+        />
+      </div>
 
       <button type="button" onClick={onDelete} className="u-btn u-btn-bad sm" style={{ marginTop: 10 }}>حذف</button>
     </div>

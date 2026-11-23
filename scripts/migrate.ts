@@ -46,6 +46,8 @@ async function main() {
   await sql`ALTER TABLE committees ADD COLUMN IF NOT EXISTS min_students INTEGER`;
   await sql`ALTER TABLE committees ADD COLUMN IF NOT EXISTS max_hizbs INTEGER`;
   await sql`ALTER TABLE committees ADD COLUMN IF NOT EXISTS min_hizbs INTEGER`;
+  // v4: diversity cap per circle
+  await sql`ALTER TABLE committees ADD COLUMN IF NOT EXISTS max_per_circle INTEGER`;
 
   await sql`CREATE TABLE IF NOT EXISTS supervisors (
     id SERIAL PRIMARY KEY,

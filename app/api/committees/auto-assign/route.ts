@@ -42,7 +42,8 @@ export async function POST(req: Request) {
     maxStudents: c.maxStudents,
     minStudents: c.minStudents,
     maxHizbs: c.maxHizbs,
-    minHizbs: c.minHizbs
+    minHizbs: c.minHizbs,
+    maxPerCircle: c.maxPerCircle
   }));
 
   // Fetch candidate students.

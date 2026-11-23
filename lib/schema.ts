@@ -76,6 +76,8 @@ export const committees = pgTable('committees', {
   minStudents: integer('min_students'),      // nullable = no floor
   maxHizbs: integer('max_hizbs'),            // sum of assigned hizbs across students
   minHizbs: integer('min_hizbs'),
+  // Diversity cap: no single circle can contribute more than N students to this committee
+  maxPerCircle: integer('max_per_circle'),
   createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
