@@ -67,6 +67,8 @@ export default function MushafPreviewPage() {
   const [sheetFor, setSheetFor] = useState<{ surah: number; ayah: number } | null>(null);
   const [showJson, setShowJson] = useState(false);
   const [fitReady, setFitReady] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [timerRunning, setTimerRunning] = useState(false);
   const mushafTextRef = useRef<HTMLDivElement | null>(null);
 
   // Load Amiri font once
@@ -137,6 +139,12 @@ export default function MushafPreviewPage() {
     if (next) ensurePageFont(next.pageNumber);
     if (prev) ensurePageFont(prev.pageNumber);
   }, [page, pageIndex, pages]);
+
+  useEffect(() => {
+    if (!timerRunning) return;
+    const timer = window.setInterval(() => setElapsedSeconds((seconds) => seconds + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [timerRunning]);
 
   // Fast fit: measure ONCE at large font, calc exact scale, apply once.
   useEffect(() => {
@@ -237,6 +245,21 @@ export default function MushafPreviewPage() {
     setMarks([]);
   };
 
+  const changeHizb = (nextHizb: number) => {
+    setHizb(nextHizb);
+    setMarks([]);
+    setSheetFor(null);
+    setElapsedSeconds(0);
+    setTimerRunning(false);
+  };
+
+  const resetTimer = () => {
+    setTimerRunning(false);
+    setElapsedSeconds(0);
+  };
+
+  const formattedTime = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:${String(elapsedSeconds % 60).padStart(2, '0')}`;
+
   const canPrev = pageIndex > 0;
   const canNext = pageIndex < pages.length - 1;
 
@@ -261,7 +284,7 @@ export default function MushafPreviewPage() {
     : 'serif';
 
   return (
-    <div className="u-page" style={{ paddingBottom: 160 }}>
+    <div className="u-page" style={{ paddingBottom: 40 }}>
       <style dangerouslySetInnerHTML={{ __html: `
         .mushaf-card {
           --mus-paper: #FBF6E9;
@@ -291,30 +314,43 @@ export default function MushafPreviewPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 10px;
           position: relative;
           background: var(--mus-band);
           color: var(--mus-band-ink);
-          padding: 10px 12px;
-          min-height: 40px;
+          padding: 8px 134px 8px 108px;
+          min-height: 58px;
           border-bottom: 2px solid var(--mus-gold);
         }
         .mus-band .mus-orn { color: var(--mus-gold); font-size: 14px; line-height: 1; opacity: .9; }
         .mus-band .mus-sura { font-family: 'IBM Plex Sans Arabic', serif; font-size: 17px; font-weight: 700; }
-        .mus-band .mus-page-num {
-          position: absolute;
-          inset-inline-end: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          font-size: 12px;
-          font-weight: 700;
-          font-family: 'IBM Plex Sans Arabic', sans-serif;
-          background: color-mix(in srgb, var(--mus-gold) 22%, transparent);
-          border: 1px solid color-mix(in srgb, var(--mus-gold) 60%, transparent);
-          color: var(--mus-band-ink);
-          padding: 4px 10px;
-          border-radius: 9px;
+        .mus-band-center { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+        .mus-band-title { display: flex; align-items: center; justify-content: center; gap: 9px; white-space: nowrap; }
+        .mus-band-counts {
+          position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+          display: flex; align-items: center; justify-content: center; gap: 4px;
         }
+        .mus-band-count {
+          display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 99px;
+          font-family: 'IBM Plex Sans Arabic', sans-serif; font-size: 10px; font-weight: 800;
+          font-variant-numeric: tabular-nums; border: 1px solid rgba(255,255,255,.12);
+        }
+        .mus-band-count.error { color: #FFD8D5; background: rgba(176,48,56,.3); }
+        .mus-band-count.alert { color: #FFE6B2; background: rgba(183,121,31,.3); }
+        .mus-band-timer {
+          position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+          direction: ltr; display: flex; align-items: center; gap: 4px; padding: 4px;
+          border-radius: 12px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16);
+          font-family: 'IBM Plex Sans Arabic', sans-serif;
+        }
+        .mus-band-timer time { min-width: 48px; text-align: center; color: var(--mus-band-ink); font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: .03em; }
+        .mus-band-timer button {
+          width: 30px; height: 30px; min-width: 30px; min-height: 30px; display: grid; place-items: center;
+          border: 0; border-radius: 9px; cursor: pointer; background: rgba(255,255,255,.12); color: var(--mus-band-ink);
+        }
+        .mus-band-timer button.primary { background: var(--mus-gold); color: #fff; }
+        .mus-band-timer button:disabled { opacity: .35; cursor: not-allowed; }
+        .mus-band-timer svg { width: 15px; height: 15px; }
+        .mus-band-timer.running { box-shadow: 0 0 0 2px rgba(176,48,56,.28); }
 
         .mus-text {
           margin: 0;
@@ -388,69 +424,73 @@ export default function MushafPreviewPage() {
           background: linear-gradient(to left, transparent, var(--mus-gold), transparent);
         }
 
-        .mus-foot {
-          display: flex;
-          align-items: center;
-          gap: 9px;
-          padding: 8px 12px;
-          border-top: 1px dashed var(--mus-line);
-          background: color-mix(in srgb, var(--mus-gold) 8%, var(--mus-paper));
-          font-size: 11.5px;
-          color: color-mix(in srgb, var(--mus-ink) 65%, transparent);
-          font-family: 'IBM Plex Sans Arabic', sans-serif;
-          justify-content: space-between;
-          flex-wrap: wrap;
-        }
-        .mus-nav { display: inline-flex; gap: 6px; }
-        .mus-nav button {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          background: var(--mus-paper);
-          color: var(--mus-ink);
-          border: 1px solid var(--mus-line);
-          border-radius: 20px;
-          padding: 6px 14px;
-          font-size: 12.5px;
-          font-weight: 700;
-          font-family: inherit;
-          cursor: pointer;
-          min-height: 34px;
-        }
-        .mus-nav button:hover:not(:disabled) {
-          background: color-mix(in srgb, var(--mus-gold) 16%, var(--mus-paper));
-          border-color: var(--mus-gold);
-        }
-        .mus-nav button:disabled { opacity: .35; cursor: not-allowed; }
-        .mus-nav button svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-        .mus-progress { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--mus-ink); }
+        .preview-workspace { max-width: 780px; margin-inline: auto; }
+        .preview-setup { max-width: 780px; margin-inline: auto; }
 
-        .counter-fab {
-          position: fixed;
-          bottom: calc(76px + env(safe-area-inset-bottom));
-          right: 12px;
-          left: 12px;
-          z-index: 45;
-          display: flex;
-          gap: 8px;
-          background: var(--card);
-          border: 1px solid var(--line);
-          border-radius: 16px;
-          padding: 10px 14px;
-          box-shadow: var(--shadow-lg);
-          justify-content: space-between;
+        .mus-pagination {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
           align-items: center;
+          gap: 8px;
+          padding: 10px;
+          border-top: 1px solid var(--mus-line);
+          background: color-mix(in srgb, var(--mus-gold) 8%, var(--mus-paper));
+          font-family: 'IBM Plex Sans Arabic', sans-serif;
         }
+        .mus-page-button {
+          min-height: 46px; padding: 7px 12px; border-radius: 13px; border: 1px solid var(--mus-line);
+          display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+          background: var(--mus-paper); color: var(--mus-ink); font-family: inherit;
+          font-size: 13px; font-weight: 800; cursor: pointer;
+        }
+        .mus-page-button:hover:not(:disabled) { border-color: var(--mus-gold); background: color-mix(in srgb, var(--mus-gold) 15%, var(--mus-paper)); }
+        .mus-page-button:disabled { opacity: .35; cursor: not-allowed; }
+        .mus-page-button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .mus-progress { min-width: 62px; text-align: center; color: var(--mus-ink); }
+        .mus-progress b { display: block; font-size: 13px; font-variant-numeric: tabular-nums; }
+        .mus-progress small { display: block; margin-top: 1px; font-size: 10px; opacity: .65; }
+
+        .ms-seg.is-selected {
+          background: color-mix(in srgb, var(--brand-soft) 72%, transparent);
+          outline: 2px solid var(--brand-ink); outline-offset: 2px;
+          border-radius: 5px;
+        }
+        .ms-seg:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 2px; }
+
+        .preview-sheet-backdrop { position: fixed; inset: 0; z-index: 65; background: var(--overlay); }
+        .preview-sheet {
+          position: fixed; right: 0; left: 0; bottom: 0; z-index: 66;
+          max-height: 86dvh; overflow-y: auto; padding: 8px 14px calc(16px + env(safe-area-inset-bottom));
+          border-radius: 24px 24px 0 0; background: var(--card); box-shadow: var(--shadow-lg);
+        }
+        .preview-sheet .grab { width: 42px; height: 4px; border-radius: 99px; background: var(--line2); margin: 3px auto 12px; }
+        .mark-sheet-head { text-align: center; margin-bottom: 12px; }
+        .mark-sheet-head h3 { margin: 0; color: var(--ink); font-size: 16px; }
+        .mark-sheet-head p { margin: 3px 0 0; color: var(--ink3); font-size: 12px; }
+        .mark-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .mark-action {
+          min-height: 76px; border: 0; border-radius: 16px; display: flex; flex-direction: column;
+          align-items: center; justify-content: center; gap: 6px; font-family: inherit; font-size: 14px;
+          font-weight: 800; cursor: pointer;
+        }
+        .mark-action svg { width: 25px; height: 25px; }
+        .mark-action.error { background: var(--bad-soft); color: var(--bad); }
+        .mark-action.alert { background: var(--warn-soft); color: var(--warn); }
+        .mark-secondary { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .mark-secondary .u-btn { flex: 1 1 150px; }
         @media (min-width: 768px) {
-          .counter-fab { bottom: 16px; right: auto; left: 50%; transform: translateX(-50%); min-width: 360px; }
+          .preview-sheet { right: auto; left: 50%; width: min(520px, calc(100vw - 32px)); transform: translateX(-50%); }
         }
-        .counter-fab .pills { display: flex; gap: 6px; }
-        .counter-fab .pill {
-          display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px;
-          border-radius: 99px; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
+        @media (max-width: 520px) {
+          .mus-band { padding: 8px 122px 8px 102px; }
+          .mus-band .mus-sura { font-size: 14px; }
+          .mus-band-timer { right: 6px; }
+          .mus-band-counts { left: 6px; gap: 3px; }
+          .mus-band-timer time { min-width: 42px; font-size: 13px; }
+          .mus-band-timer button { width: 27px; height: 27px; min-width: 27px; min-height: 27px; }
+          .mus-band-count { padding: 1px 6px; font-size: 9px; }
+          .mus-page-button { padding-inline: 8px; }
         }
-        .counter-fab .pill.error { background: var(--bad-soft); color: var(--bad); }
-        .counter-fab .pill.alert { background: var(--warn-soft); color: var(--warn); }
       ` }} />
 
       <div className="u-top">
@@ -460,13 +500,13 @@ export default function MushafPreviewPage() {
         </div>
       </div>
 
-      <div className="u-card">
+      <div className="u-card preview-setup">
         <div className="u-field" style={{ marginBottom: 0 }}>
           <label>الحزب المسموع</label>
           <select
             className="u-input"
             value={hizb}
-            onChange={(e) => setHizb(Number(e.target.value))}
+            onChange={(e) => changeHizb(Number(e.target.value))}
           >
             {Array.from({ length: 60 }, (_, i) => i + 1).map((n) => (
               <option key={n} value={n}>الحزب {toArabicDigits(n)}</option>
@@ -480,7 +520,7 @@ export default function MushafPreviewPage() {
           <button className="u-btn u-btn-s sm" onClick={() => setShowJson(true)} disabled={marks.length === 0}>
             عرض البيانات (JSON)
           </button>
-          <div style={{ marginRight: 'auto', color: 'var(--ink3)', fontSize: 12, alignSelf: 'center' }}>
+          <div style={{ width: '100%', color: 'var(--ink3)', fontSize: 12, alignSelf: 'center' }}>
             اضغط على الآية لتسجيل خطأ أو تنبيه
           </div>
         </div>
@@ -498,12 +538,44 @@ export default function MushafPreviewPage() {
       )}
 
       {!loading && !error && page && (
-        <div className="mushaf-card">
+        <div className="mushaf-card preview-workspace">
           <div className="mus-band">
-            <span className="mus-orn">۞</span>
-            <span className="mus-sura">سورة {page.primarySurah.name}</span>
-            <span className="mus-orn">۞</span>
-            <span className="mus-page-num">صفحة {toArabicDigits(page.pageNumber)}</span>
+            <div className={`mus-band-timer ${timerRunning ? 'running' : ''}`} aria-label="مؤقت التسميع">
+              <button
+                type="button"
+                className="primary"
+                onClick={() => setTimerRunning((running) => !running)}
+                aria-label={timerRunning ? 'إيقاف مؤقت التسميع مؤقتاً' : 'بدء مؤقت التسميع'}
+                title={timerRunning ? 'إيقاف مؤقت' : 'بدء'}
+              >
+                {timerRunning ? (
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h3v14H7zM14 5h3v14h-3z" /></svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
+                )}
+              </button>
+              <time>{formattedTime}</time>
+              <button
+                type="button"
+                onClick={resetTimer}
+                disabled={elapsedSeconds === 0}
+                aria-label="تصفير مؤقت التسميع"
+                title="تصفير المؤقت"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 4v6h6M20 20v-6h-6M5.1 15a8 8 0 0 0 13.2 2.6L20 14M4 10l1.7-3.6A8 8 0 0 1 18.9 9" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </button>
+            </div>
+            <div className="mus-band-center">
+              <div className="mus-band-title">
+                <span className="mus-orn">۞</span>
+                <span className="mus-sura">سورة {page.primarySurah.name}</span>
+                <span className="mus-orn">۞</span>
+              </div>
+            </div>
+            <div className="mus-band-counts" aria-label="عداد العلامات">
+              <span className="mus-band-count error">{toArabicDigits(errorCount)} خطأ</span>
+              <span className="mus-band-count alert">{toArabicDigits(alertCount)} تنبيه</span>
+            </div>
           </div>
 
           <div
@@ -541,6 +613,7 @@ export default function MushafPreviewPage() {
                     const hasAlt = ms.some((m) => m.type === 'alert');
                     const cls = [
                       'ms-seg',
+                      sheetFor?.surah === seg.surah && sheetFor?.ayah === seg.ayah && 'is-selected',
                       hasErr && hasAlt && 'm-both',
                       hasErr && !hasAlt && 'm-error',
                       hasAlt && !hasErr && 'm-alert'
@@ -551,6 +624,15 @@ export default function MushafPreviewPage() {
                         key={`seg-${line.lineNumber}-${si}`}
                         className={cls}
                         onClick={() => setSheetFor({ surah: seg.surah, ayah: seg.ayah })}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`سورة ${page.surahsOnPage.find((s) => s.number === seg.surah)?.name || seg.surah}، الآية ${seg.ayah}`}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setSheetFor({ surah: seg.surah, ayah: seg.ayah });
+                          }
+                        }}
                       >
                         {segText}
                       </span>
@@ -561,128 +643,74 @@ export default function MushafPreviewPage() {
             })}
           </div>
 
-          <div className="mus-foot">
-            <div className="mus-nav">
-              <button
-                onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
-                disabled={!canPrev}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>
-                السابقة
-              </button>
-              <button
-                onClick={() => setPageIndex((i) => Math.min(pages.length - 1, i + 1))}
-                disabled={!canNext}
-              >
-                التالية
-                <svg width="18" height="18" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg>
-              </button>
+          <div className="mus-pagination">
+            <button
+              className="mus-page-button"
+              onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
+              disabled={!canPrev}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+              السابقة
+            </button>
+            <div className="mus-progress" aria-label={`الصفحة ${pageIndex + 1} من ${pages.length || 1}`}>
+              <b>{toArabicDigits(pageIndex + 1)} / {toArabicDigits(pages.length || 1)}</b>
+              <small>صفحة {toArabicDigits(page.pageNumber)}</small>
             </div>
-            <span className="mus-progress">
-              {toArabicDigits(pageIndex + 1)} / {toArabicDigits(pages.length || 1)}
-            </span>
+            <button
+              className="mus-page-button"
+              onClick={() => setPageIndex((i) => Math.min(pages.length - 1, i + 1))}
+              disabled={!canNext}
+            >
+              التالية
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
           </div>
         </div>
       )}
 
-      <div className="counter-fab">
-        <div className="pills">
-          <span className="pill error">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
-            </svg>
-            {toArabicDigits(errorCount)} خطأ
-          </span>
-          <span className="pill alert">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" strokeLinejoin="round" strokeLinecap="round" />
-            </svg>
-            {toArabicDigits(alertCount)} تنبيه
-          </span>
-        </div>
-        <span style={{ fontSize: 12, color: 'var(--ink3)' }}>
-          {pages.length > 0 && `صفحة ${toArabicDigits(page?.pageNumber || 0)}`}
-        </span>
-      </div>
-
-      <div
-        className={`u-sheet-bg ${sheetFor ? 'show' : ''}`}
-        onClick={() => setSheetFor(null)}
-      />
-      <div className={`u-sheet ${sheetFor ? 'show' : ''}`}>
-        <div className="grab" />
-        {sheetFor && (
-          <>
-            <div style={{
-              textAlign: 'center', padding: '4px 0 14px', fontSize: 14,
-              color: 'var(--ink2)', fontWeight: 600
-            }}>
-              الآية {toArabicDigits(sheetFor.ayah)} · سورة {sheetMeta?.surahName}
-              {activeAyahMarks.length > 0 && (
-                <div style={{ fontSize: 12, marginTop: 4, color: 'var(--ink3)' }}>
-                  مسجّل عليها: {toArabicDigits(activeAyahMarks.filter((m) => m.type === 'error').length)} خطأ ·{' '}
-                  {toArabicDigits(activeAyahMarks.filter((m) => m.type === 'alert').length)} تنبيه
-                </div>
-              )}
+      {sheetFor && (
+        <>
+          <div className="preview-sheet-backdrop" onClick={() => setSheetFor(null)} />
+          <section className="preview-sheet" role="dialog" aria-modal="true" aria-labelledby="mark-sheet-title">
+            <div className="grab" />
+            <div className="mark-sheet-head">
+              <h3 id="mark-sheet-title">سورة {sheetMeta?.surahName} · الآية {toArabicDigits(sheetFor.ayah)}</h3>
+              <p>
+                صفحة {toArabicDigits(page?.pageNumber || 0)}
+                {activeAyahMarks.length > 0 && (
+                  <> · مسجّل {toArabicDigits(activeAyahMarks.filter((m) => m.type === 'error').length)} خطأ و{toArabicDigits(activeAyahMarks.filter((m) => m.type === 'alert').length)} تنبيه</>
+                )}
+              </p>
             </div>
-            <div className="u-menu">
-              <button onClick={() => addMark('error')}>
-                <span className="ic" style={{ background: 'var(--bad-soft)', color: 'var(--bad)' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
-                  </svg>
-                </span>
-                <span>تسجيل خطأ</span>
+            <div className="mark-action-grid">
+              <button className="mark-action error" onClick={() => addMark('error')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" /></svg>
+                تسجيل خطأ
               </button>
-              <button onClick={() => addMark('alert')}>
-                <span className="ic" style={{ background: 'var(--warn-soft)', color: 'var(--warn)' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" strokeLinejoin="round" strokeLinecap="round" />
-                  </svg>
-                </span>
-                <span>تسجيل تنبيه</span>
-              </button>
-              {activeAyahMarks.length > 0 && (
-                <>
-                  <button onClick={undoLastForAyah} className="danger">
-                    <span className="ic">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M3 7v6h6M21 17a9 9 0 0 0-15-6.7L3 13" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </span>
-                    <span>تراجع عن آخر علامة</span>
-                  </button>
-                  {activeAyahMarks.length > 1 && (
-                    <button onClick={clearAyahMarks} className="danger">
-                      <span className="ic">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </span>
-                      <span>مسح جميع علامات هذه الآية</span>
-                    </button>
-                  )}
-                </>
-              )}
-              <button onClick={() => setSheetFor(null)}>
-                <span className="ic">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
-                  </svg>
-                </span>
-                <span>إلغاء</span>
+              <button className="mark-action alert" onClick={() => addMark('alert')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" strokeLinejoin="round" strokeLinecap="round" /></svg>
+                تسجيل تنبيه
               </button>
             </div>
-          </>
-        )}
-      </div>
+            <div className="mark-secondary">
+              {activeAyahMarks.length > 0 && (
+                <button className="u-btn u-btn-g" onClick={undoLastForAyah}>تراجع عن آخر علامة</button>
+              )}
+              {activeAyahMarks.length > 1 && (
+                <button className="u-btn u-btn-bad" onClick={clearAyahMarks}>مسح علامات الآية</button>
+              )}
+              <button className="u-btn u-btn-g" onClick={() => setSheetFor(null)}>إلغاء</button>
+            </div>
+          </section>
+        </>
+      )}
 
       {showJson && (
         <>
-          <div className="u-sheet-bg show" onClick={() => setShowJson(false)} />
-          <div className="u-sheet show">
+          <div className="preview-sheet-backdrop" onClick={() => setShowJson(false)} />
+          <section className="preview-sheet" role="dialog" aria-modal="true" aria-labelledby="json-sheet-title">
             <div className="grab" />
-            <h3 style={{ textAlign: 'center', fontSize: 15, margin: '0 0 12px', fontWeight: 700 }}>
+            <h3 id="json-sheet-title" style={{ textAlign: 'center', fontSize: 15, margin: '0 0 12px', fontWeight: 700 }}>
               بيانات العلامات (ستُحفظ مع الجلسة لاحقاً)
             </h3>
             <pre style={{
@@ -703,7 +731,7 @@ export default function MushafPreviewPage() {
             <button className="u-btn u-btn-p w" onClick={() => setShowJson(false)} style={{ marginTop: 12 }}>
               إغلاق
             </button>
-          </div>
+          </section>
         </>
       )}
     </div>
