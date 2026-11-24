@@ -14,7 +14,8 @@ export default function AppShell({
   userName,
   userRoleLabel,
   nav,
-  children
+  children,
+  hideBottomNav = false
 }: {
   title: string;
   subtitle?: string;
@@ -23,6 +24,8 @@ export default function AppShell({
   userRoleLabel?: string;
   nav: NavItem[];
   children: React.ReactNode;
+  /** When true, hide the mobile bottom nav and position the hamburger on the right (start in RTL). */
+  hideBottomNav?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname() || '';
@@ -238,6 +241,20 @@ export default function AppShell({
       <div className="app-main flex flex-col min-h-screen">
         {/* Mobile header */}
         <div className="u-header md:hidden" style={{ gap: 12 }}>
+          {hideBottomNav && (
+            <button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              className="u-icon-btn"
+              aria-label="قائمة"
+              aria-expanded={sheetOpen}
+              style={{ width: 44, height: 44, minWidth: 44, minHeight: 44, marginInlineEnd: 4, flexShrink: 0 }}
+            >
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          )}
           <div className="u-brand">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13" />
@@ -247,18 +264,20 @@ export default function AppShell({
             <div className="u-hname truncate">{title}</div>
             {subtitle && <div className="u-hsub truncate">{subtitle}</div>}
           </div>
-          <button
-            type="button"
-            onClick={() => setSheetOpen(true)}
-            className="u-icon-btn"
-            aria-label="قائمة"
-            aria-expanded={sheetOpen}
-            style={{ width: 44, height: 44, minWidth: 44, minHeight: 44, marginInlineStart: 4, flexShrink: 0 }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+          {!hideBottomNav && (
+            <button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              className="u-icon-btn"
+              aria-label="قائمة"
+              aria-expanded={sheetOpen}
+              style={{ width: 44, height: 44, minWidth: 44, minHeight: 44, marginInlineStart: 4, flexShrink: 0 }}
+            >
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Page content */}
@@ -285,7 +304,7 @@ export default function AppShell({
         </main>
 
         {/* Mobile bottom nav */}
-        {mobileItems.length > 0 && (
+        {!hideBottomNav && mobileItems.length > 0 && (
           <nav className="u-nav md:hidden">
             {mobileItems.map((n) => {
               const active = isActive(n.href);

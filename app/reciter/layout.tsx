@@ -24,6 +24,7 @@ export default async function ReciterLayout({ children }: { children: React.Reac
       userName="المسمع"
       userRoleLabel="حساب موحّد"
       nav={nav}
+      hideBottomNav
     >
       <ActiveProgramBanner />
       {children}
