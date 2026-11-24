@@ -69,7 +69,7 @@ export default function SupSessions() {
         <div><h1>سجل اللجنة</h1></div>
         <div className="u-actions" style={{ marginTop: 0 }}>
           <a href="/api/reports/sessions" className="u-btn u-btn-ok sm">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/></svg>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/></svg>
             <span>تصدير إكسل</span>
           </a>
         </div>
@@ -111,7 +111,7 @@ export default function SupSessions() {
       <div className="u-card">
         <div className="u-row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <div className="u-search" style={{ flex: '1 1 220px', marginBottom: 0 }}>
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="بحث باسم الطالب أو المسمع أو الحزب..." />
           </div>
           <button
@@ -119,7 +119,7 @@ export default function SupSessions() {
             onClick={() => setQ('')}
             className="u-btn u-btn-g sm"
           >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             <span>مسح الفلتر</span>
           </button>
         </div>
@@ -166,10 +166,10 @@ export default function SupSessions() {
                       <td>
                         <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
                           <button type="button" onClick={() => setEditing(r)} className="u-icon-btn u-icon-btn-info" title="تعديل" aria-label="تعديل">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M4 20h4L19 9a2.5 2.5 0 00-3.536-3.536L4 16v4z"/></svg>
+                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M4 20h4L19 9a2.5 2.5 0 00-3.536-3.536L4 16v4z"/></svg>
                           </button>
                           <button type="button" onClick={() => setDeleting(r)} className="u-icon-btn u-icon-btn-bad" title="حذف" aria-label="حذف">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
+                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
                           </button>
                         </div>
                       </td>
@@ -208,10 +208,10 @@ export default function SupSessions() {
 
                 <div style={{ display: 'flex', gap: 8, paddingTop: 10, borderTop: '1px solid var(--line)', justifyContent: 'flex-end' }}>
                   <button type="button" onClick={() => setEditing(r)} className="u-icon-btn u-icon-btn-info" title="تعديل" aria-label="تعديل">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M4 20h4L19 9a2.5 2.5 0 00-3.536-3.536L4 16v4z"/></svg>
+                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M4 20h4L19 9a2.5 2.5 0 00-3.536-3.536L4 16v4z"/></svg>
                   </button>
                   <button type="button" onClick={() => setDeleting(r)} className="u-icon-btn u-icon-btn-bad" title="حذف" aria-label="حذف">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
+                    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
                   </button>
                 </div>
               </div>
@@ -289,7 +289,7 @@ function DeleteConfirmModal({ row, onClose, onDeleted, onError }: {
         <div className="u-card-h" style={{ marginBottom: 10 }}>
           <h3 id="del-modal-title">تأكيد حذف السجل</h3>
           <button type="button" onClick={onClose} disabled={saving} className="u-icon-btn" aria-label="إغلاق">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
         <div style={{ marginBottom: 16, lineHeight: 1.6 }}>
@@ -369,7 +369,7 @@ function EditRecordModal({ row, onClose, onSaved, onError }: {
         <div className="u-card-h" style={{ marginBottom: 10 }}>
           <h3>تعديل الأخطاء والتنبيهات</h3>
           <button type="button" onClick={onClose} disabled={saving} className="u-icon-btn" aria-label="إغلاق">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
         <div style={{ overflowY: 'auto', flex: 1 }}>

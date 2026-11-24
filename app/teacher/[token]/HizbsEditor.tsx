@@ -139,7 +139,7 @@ function StudentResultsDialog({ token, student }: { token: string; student: Teac
                 <p>آخر نتيجة مسجلة لكل حزب، مع عدد المحاولات.</p>
               </div>
               <button type="button" className="u-icon-btn" onClick={() => setOpen(false)} aria-label="إغلاق النتائج">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
 
@@ -323,10 +323,9 @@ export default function HizbsEditor({
         onClick={openModal}
         disabled={editingLocked}
         className={`u-btn ${editingLocked ? 'u-btn-g' : 'u-btn-p'}${compact ? ' sm teacher-hizbs-btn' : ''}`}
-        style={{ minHeight: 44, minWidth: 44 }}
         title={editingLocked ? 'تعديل الأحزاب مقفل من الإدارة' : `تحديد أحزاب ${studentName}`}
       >
-        <span aria-hidden="true">{editingLocked ? '🔒' : '📚'}</span><span>{editingLocked ? `مقفلة (${savedHizbs.length})` : compact ? `الأحزاب (${savedHizbs.length})` : `تحديد الأحزاب (${savedHizbs.length})`}</span>
+        <span aria-hidden="true" style={{ fontSize: 13 }}>{editingLocked ? '🔒' : '📚'}</span><span>{editingLocked ? `مقفلة (${savedHizbs.length})` : compact ? `الأحزاب (${savedHizbs.length})` : `تحديد الأحزاب (${savedHizbs.length})`}</span>
       </button>
 
       {open && (
@@ -365,8 +364,7 @@ export default function HizbsEditor({
                     type="button"
                     onClick={selectAll}
                     disabled={saving}
-                    className="u-btn u-btn-s"
-                    style={{ minHeight: 44, minWidth: 44, padding: '0 12px' }}
+                    className="u-btn u-btn-s sm"
                   >
                     تحديد الكل
                   </button>
@@ -374,8 +372,7 @@ export default function HizbsEditor({
                     type="button"
                     onClick={clearAll}
                     disabled={saving}
-                    className="u-btn u-btn-g"
-                    style={{ minHeight: 44, minWidth: 44, padding: '0 12px' }}
+                    className="u-btn u-btn-g sm"
                   >
                     إلغاء تحديد الكل
                   </button>
@@ -385,9 +382,8 @@ export default function HizbsEditor({
                     disabled={saving}
                     aria-label="إغلاق"
                     className="u-icon-btn"
-                    style={{ minHeight: 44, minWidth: 44, width: 44, height: 44 }}
                   >
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
               </div>
@@ -469,7 +465,7 @@ export default function HizbsEditor({
                 onClick={() => !saving && setOpen(false)}
                 disabled={saving}
                 className="u-btn u-btn-g"
-                style={{ minHeight: 44, minWidth: 72 }}
+                style={{ minWidth: 72 }}
               >
                 إلغاء
               </button>
@@ -478,7 +474,7 @@ export default function HizbsEditor({
                 onClick={save}
                 disabled={saving}
                 className="u-btn u-btn-p"
-                style={{ minHeight: 44, minWidth: 96 }}
+                style={{ minWidth: 96 }}
               >
                 {saving ? 'جاري الحفظ...' : 'حفظ'}
               </button>
@@ -635,7 +631,7 @@ export function TeacherPortalClient({
                               aria-label={`إرسال تقرير ${r.name} عبر واتساب`}
                               style={{ textDecoration: 'none' }}
                             >
-                              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10.14 10.14 0 0 0 11.9 2a10.08 10.08 0 0 0-8.7 15.17L2 22l4.95-1.17A10.07 10.07 0 0 0 11.9 22a10.08 10.08 0 0 0 7.21-17.1zM11.9 20.14a8.37 8.37 0 0 1-4.27-1.17l-.3-.18-3.1.73.82-3.04-.2-.31a8.37 8.37 0 0 1 7.05-12.83 8.3 8.3 0 0 1 5.9 2.45 8.3 8.3 0 0 1-5.9 14.35zm4.57-6.26c-.25-.12-1.47-.72-1.7-.8-.22-.09-.39-.13-.56.13s-.65.8-.8.97c-.14.17-.3.19-.55.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.1-.5.1-.1.23-.3.34-.44.11-.14.14-.25.21-.42.07-.17.04-.31-.02-.44-.06-.13-.56-1.35-.76-1.85-.2-.48-.4-.42-.56-.42h-.47c-.17 0-.44.06-.67.31-.22.25-.87.85-.87 2.07 0 1.22.9 2.4 1.02 2.57.12.17 1.77 2.72 4.3 3.81.6.26 1.07.42 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.19.21-.58.21-1.08.14-1.19-.06-.1-.23-.16-.47-.28z"/></svg>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10.14 10.14 0 0 0 11.9 2a10.08 10.08 0 0 0-8.7 15.17L2 22l4.95-1.17A10.07 10.07 0 0 0 11.9 22a10.08 10.08 0 0 0 7.21-17.1zM11.9 20.14a8.37 8.37 0 0 1-4.27-1.17l-.3-.18-3.1.73.82-3.04-.2-.31a8.37 8.37 0 0 1 7.05-12.83 8.3 8.3 0 0 1 5.9 2.45 8.3 8.3 0 0 1-5.9 14.35zm4.57-6.26c-.25-.12-1.47-.72-1.7-.8-.22-.09-.39-.13-.56.13s-.65.8-.8.97c-.14.17-.3.19-.55.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.1-.5.1-.1.23-.3.34-.44.11-.14.14-.25.21-.42.07-.17.04-.31-.02-.44-.06-.13-.56-1.35-.76-1.85-.2-.48-.4-.42-.56-.42h-.47c-.17 0-.44.06-.67.31-.22.25-.87.85-.87 2.07 0 1.22.9 2.4 1.02 2.57.12.17 1.77 2.72 4.3 3.81.6.26 1.07.42 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.19.21-.58.21-1.08.14-1.19-.06-.1-.23-.16-.47-.28z"/></svg>
                             </a>
                           )}
                         </div>

@@ -266,7 +266,7 @@ function BulkLimitsModal({
             <span>ضبط حدود السعة على {count} لجنة</span>
           </h3>
           <button type="button" onClick={onClose} disabled={applying} aria-label="إغلاق" className="u-icon-btn" style={{ width: 40, height: 40 }}>
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
         <div className="p-4 overflow-y-auto" style={{ flex: 1 }}>
@@ -463,7 +463,7 @@ function AutoAssignModal({
           </h3>
           <button type="button" onClick={onClose} disabled={applying} aria-label="إغلاق"
             className="u-icon-btn" style={{ width: 40, height: 40 }}>
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
 
@@ -608,7 +608,7 @@ function ConfirmDeleteCommitteeModal({
         <div className="flex justify-between items-center" style={{ padding: 14, borderBottom: '1px solid var(--line)' }}>
           <h3 id="del-committee-title" className="font-bold">تأكيد حذف اللجنة</h3>
           <button type="button" onClick={onCancel} disabled={saving} aria-label="إغلاق" className="u-icon-btn" style={{ width: 44, height: 44 }}>
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
         <div className="p-4">

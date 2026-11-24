@@ -114,7 +114,7 @@ function MandatoryHizbsImport() {
     <div className="mandatory-import-shell">
       <div className="mandatory-import-hero">
         <div className="mandatory-import-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m4-3.5V6a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1.5M9 4V2m6 2V2"/></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m4-3.5V6a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1.5M9 4V2m6 2V2"/></svg>
         </div>
         <div>
           <span className="u-pill gold">سياسة مقفلة</span>
@@ -369,8 +369,8 @@ function ImportForm() {
           transition: 'background .15s, border-color .15s'
         }}
       >
-        <div style={{ width: 56, height: 56, margin: '0 auto 8px', borderRadius: 14, background: 'var(--brand-soft)', color: 'var(--brand-ink)', display: 'grid', placeItems: 'center' }}>
-          <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <div style={{ width: 42, height: 42, margin: '0 auto 8px', borderRadius: 12, background: 'var(--brand-soft)', color: 'var(--brand-ink)', display: 'grid', placeItems: 'center' }}>
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         </div>
         <div className="u-name" style={{ marginBottom: 2 }}>اسحب الملف هنا</div>
         <div className="u-muted" style={{ marginBottom: 12 }}>أو انقر لاختيار ملف (.xlsx أو .csv)</div>

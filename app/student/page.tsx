@@ -71,7 +71,7 @@ export default async function StudentPage() {
           justifyContent: 'center',
           background: 'var(--card)',
           borderBottom: '1px solid var(--line)',
-          padding: 'calc(10px + env(safe-area-inset-top)) 16px 10px',
+          padding: 'calc(8px + env(safe-area-inset-top)) 12px 8px',
           position: 'sticky',
           top: 0,
           zIndex: 20,
@@ -83,25 +83,25 @@ export default async function StudentPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 12,
+            gap: 8,
             width: '100%',
             maxWidth: 1024,
             flexWrap: 'wrap'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: '1 1 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: '1 1 auto' }}>
             <div style={{
-              width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+              width: 32, height: 32, borderRadius: 9, flexShrink: 0,
               background: 'var(--brand)', color: 'var(--gold-bright)',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-              <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13" />
               </svg>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="truncate" style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.25 }}>بوابة الطالب</div>
-              <div className="truncate" style={{ fontSize: 12, color: 'var(--ink3)' }}>تقريرك المباشر</div>
+              <div className="truncate" style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.25 }}>بوابة الطالب</div>
+              <div className="truncate" style={{ fontSize: 11, color: 'var(--ink3)' }}>تقريرك المباشر</div>
             </div>
           </div>
           <StudentActions />

@@ -91,7 +91,7 @@ export default function ReciterHistory() {
                     </td>
                     <td data-label="الإجراء" className="mobile-card-action">
                       <button onClick={() => setEditing(r)} className="u-icon-btn u-icon-btn-info" title="تعديل" aria-label="تعديل">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M4 20h4L19 9a2.5 2.5 0 00-3.536-3.536L4 16v4z"/></svg>
+                        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M4 20h4L19 9a2.5 2.5 0 00-3.536-3.536L4 16v4z"/></svg>
                       </button>
                     </td>
                   </tr>
@@ -168,7 +168,7 @@ function EditRecordModal({ row, deviceTag, reciterName, onClose, onSaved, onErro
         <div className="u-card-h" style={{ marginBottom: 10 }}>
           <h3>تعديل الأخطاء والتنبيهات</h3>
           <button onClick={onClose} className="u-icon-btn" aria-label="إغلاق">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
         <div style={{ overflowY: 'auto', flex: 1 }}>

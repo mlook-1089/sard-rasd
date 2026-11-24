@@ -168,13 +168,13 @@ export default function AppShell({
     <div className="app-shell">
       {/* Desktop sidebar — RTL: start-0 puts it on the RIGHT side where Arabic readers expect it */}
       <aside
-        className="hidden md:flex fixed inset-y-0 start-0 z-40 flex-col"
+        className="app-sidebar hidden md:flex fixed inset-y-0 start-0 z-40 flex-col"
         style={{ width: 260, background: 'var(--card)', borderInlineEnd: '1px solid var(--line)' }}
       >
         {/* Brand header — fixed */}
         <div className="shrink-0 p-5 text-center" style={{ borderBottom: '1px solid var(--line)' }}>
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl mb-2 overflow-hidden" style={{ color: 'var(--brand-ink)', background: 'var(--brand-soft)' }}>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg width="24" height="24" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
@@ -202,7 +202,7 @@ export default function AppShell({
                     ? { background: 'var(--brand-soft)', color: 'var(--brand-ink)' }
                     : { color: 'var(--ink2)' }}
                 >
-                  <span className="w-5 h-5 flex items-center justify-center shrink-0">{n.icon}</span>
+                  <span className="app-sidebar-ic w-5 h-5 flex items-center justify-center shrink-0">{n.icon}</span>
                   <span className="flex-1 truncate">{n.label}</span>
                 </Link>
               );
@@ -228,8 +228,8 @@ export default function AppShell({
               <p className="text-xs font-bold truncate" style={{ color: 'var(--ink)' }}>{userName || title}</p>
               {userRoleLabel && <p className="text-[10px] truncate" style={{ color: 'var(--ink3)' }}>{userRoleLabel}</p>}
             </div>
-            <button onClick={logout} className="p-2 rounded-lg transition" style={{ color: 'var(--ink3)', minWidth: 38, minHeight: 38 }} title="خروج" aria-label="خروج">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onClick={logout} className="p-2 rounded-lg transition" style={{ color: 'var(--ink3)', minWidth: 36, minHeight: 36 }} title="خروج" aria-label="خروج">
+              <svg width="16" height="16" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </button>
@@ -240,7 +240,7 @@ export default function AppShell({
       {/* Main content wrapper */}
       <div className="app-main flex flex-col min-h-screen">
         {/* Mobile header */}
-        <div className="u-header md:hidden" style={{ gap: 12 }}>
+        <div className="u-header md:hidden">
           {hideBottomNav && (
             <button
               type="button"
@@ -248,15 +248,15 @@ export default function AppShell({
               className="u-icon-btn"
               aria-label="قائمة"
               aria-expanded={sheetOpen}
-              style={{ width: 44, height: 44, minWidth: 44, minHeight: 44, marginInlineEnd: 4, flexShrink: 0 }}
+              style={{ marginInlineEnd: 2, flexShrink: 0 }}
             >
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
           )}
           <div className="u-brand">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13" />
             </svg>
           </div>
@@ -271,9 +271,9 @@ export default function AppShell({
               className="u-icon-btn"
               aria-label="قائمة"
               aria-expanded={sheetOpen}
-              style={{ width: 44, height: 44, minWidth: 44, minHeight: 44, marginInlineStart: 4, flexShrink: 0 }}
+              style={{ marginInlineStart: 2, flexShrink: 0 }}
             >
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
@@ -281,7 +281,7 @@ export default function AppShell({
         </div>
 
         {/* Page content */}
-        <main className="flex-1 px-4 pt-2 md:p-6 w-full" style={{ maxWidth: '1120px', marginInline: 'auto' }}>
+        <main className="flex-1 px-3 pt-1.5 md:p-6 w-full" style={{ maxWidth: '1120px', marginInline: 'auto' }}>
           {activeNav?.sections && activeNav.sections.length > 1 && (
             <nav className="u-subnav" aria-label={`أقسام ${activeNav.label}`}>
               {activeNav.sections.map((sec) => {
@@ -317,7 +317,7 @@ export default function AppShell({
             })}
             <button className={sheetOpen ? 'on' : ''} onClick={() => setSheetOpen(true)}>
               <span className="ic">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </span>
@@ -343,9 +343,8 @@ export default function AppShell({
               onClick={() => setSheetOpen(false)}
               className="u-icon-btn"
               aria-label="إغلاق"
-              style={{ width: 44, height: 44, minWidth: 44, minHeight: 44 }}
             >
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
           <div className="u-menu">
@@ -365,7 +364,7 @@ export default function AppShell({
             })}
             <button className="danger" onClick={() => { setSheetOpen(false); logout(); }}>
               <span className="ic">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
               </span>

@@ -567,7 +567,7 @@ export default function MushafPreviewPage() {
                 onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
                 disabled={!canPrev}
               >
-                <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>
                 السابقة
               </button>
               <button
@@ -575,7 +575,7 @@ export default function MushafPreviewPage() {
                 disabled={!canNext}
               >
                 التالية
-                <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg>
               </button>
             </div>
             <span className="mus-progress">

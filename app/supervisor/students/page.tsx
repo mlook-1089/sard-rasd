@@ -93,7 +93,7 @@ export default function SupStudentsReport() {
       <div className="u-card">
         <div className="u-row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <div className="u-search" style={{ flex: '1 1 220px', marginBottom: 0 }}>
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ابحث باسم الطالب..." />
           </div>
           <button
@@ -101,7 +101,7 @@ export default function SupStudentsReport() {
             onClick={() => setQ('')}
             className="u-btn u-btn-g sm"
           >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             <span>مسح الفلتر</span>
           </button>
         </div>
@@ -183,7 +183,7 @@ export default function SupStudentsReport() {
                 onClick={() => setSel(s)}
               >
                 <div className="u-item" style={{ padding: 0, borderBottom: 0, flexWrap: 'wrap', gap: 10 }}>
-                  <div className="u-avatar lg" style={{ flexShrink: 0 }}>{s.name?.[0] || '؟'}</div>
+                  <div className="u-avatar" style={{ flexShrink: 0 }}>{s.name?.[0] || '؟'}</div>
                   <div className="u-grow" style={{ minWidth: 140 }}>
                     <div className="u-name" style={{ wordBreak: 'normal', overflowWrap: 'break-word' }}>{s.name}</div>
                     <div className="u-muted">

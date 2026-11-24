@@ -123,7 +123,7 @@ export default function SupAttendance() {
         >
           <span>⚠ {errorMsg}</span>
           <button type="button" onClick={() => setErrorMsg(null)} className="u-icon-btn" title="إغلاق" aria-label="إغلاق" style={{ width: 32, height: 32 }}>
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
       )}
@@ -162,7 +162,7 @@ export default function SupAttendance() {
             onClick={() => setQ('')}
             className="u-btn u-btn-g sm"
           >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             <span>مسح الفلتر</span>
           </button>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginInlineStart: 'auto' }}>

@@ -199,7 +199,7 @@ export default function SessionsLogPage() {
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12, alignItems: 'center' }}>
         <div className="u-search" style={{ flex: '1 1 220px', marginBottom: 0 }}>
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -447,7 +447,7 @@ function ConfirmDeleteModal({ row, onClose, onDeleted, onError }: {
         <div className="u-card-h" style={{ marginBottom: 10 }}>
           <h3>تأكيد حذف السجل</h3>
           <button onClick={onClose} className="u-icon-btn" aria-label="إغلاق" disabled={deleting}>
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
         <p style={{ marginBottom: 16, lineHeight: 1.6 }}>
@@ -520,7 +520,7 @@ function EditRecordModal({ row, onClose, onSaved, onError }: {
         <div className="u-card-h" style={{ marginBottom: 10 }}>
           <h3>تعديل الأخطاء والتنبيهات</h3>
           <button onClick={onClose} className="u-icon-btn" aria-label="إغلاق" disabled={saving}>
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
         <div style={{ overflowY: 'auto', flex: 1 }}>

@@ -848,20 +848,20 @@ export default function RecordFlow({
                 style={{
                   background: '#ffffff',
                   border: '1.5px solid #cbd5e1',
-                  borderRadius: 16,
-                  padding: '14px 18px',
+                  borderRadius: 14,
+                  padding: '10px 14px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: 12,
+                  gap: 10,
                   boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)'
                 }}
               >
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', lineHeight: 1.25 }}>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: '#0f172a', lineHeight: 1.25 }}>
                     {selected.name}
                   </div>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: '#64748b', marginTop: 3 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginTop: 2 }}>
                     {circleOrLevel} · {assignedList.length} أحزاب · <span dir="ltr">{assignedList.length}/{gradedCount}</span>
                   </div>
                 </div>
@@ -872,13 +872,13 @@ export default function RecordFlow({
                     background: '#07476e',
                     color: '#ffffff',
                     border: 'none',
-                    borderRadius: 12,
-                    padding: '10px 18px',
-                    fontSize: 14,
+                    borderRadius: 10,
+                    padding: '7px 13px',
+                    fontSize: 12.5,
                     fontWeight: 800,
                     cursor: 'pointer',
                     flexShrink: 0,
-                    minHeight: 42
+                    minHeight: 34
                   }}
                 >
                   {showPicker ? 'إخفاء القائمة' : 'تبديل الطالب'}
@@ -920,7 +920,7 @@ export default function RecordFlow({
             </div>
 
             <div className="u-search">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="بحث عن طالب..." />
             </div>
 
@@ -1025,35 +1025,35 @@ export default function RecordFlow({
                   style={{
                     background: 'linear-gradient(180deg, #e4eff8 0%, #f4f9fd 65%, #ffffff 100%)',
                     borderInlineStart: '4px solid #60a5fa',
-                    padding: '18px 20px',
+                    padding: '12px 14px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     flexWrap: 'wrap',
-                    gap: 16
+                    gap: 10
                   }}
                 >
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 800, color: '#07476e', marginBottom: 2 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: '#07476e', marginBottom: 2 }}>
                       {circleOrLevel}
                     </div>
-                    <div style={{ fontSize: 27, fontWeight: 900, color: '#0f172a', lineHeight: 1.2 }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', lineHeight: 1.2 }}>
                       {selected.name}
                     </div>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: '#64748b', marginTop: 6 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: '#64748b', marginTop: 3 }}>
                       {assignedList.length} أحزاب · <span dir="ltr">{assignedList.length}/{gradedCount}</span>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                       <span
                         style={{
                           background: '#d1fae5',
                           color: '#15803d',
                           borderRadius: 999,
-                          padding: '3px 14px',
-                          fontSize: 13,
+                          padding: '2px 10px',
+                          fontSize: 11.5,
                           fontWeight: 800,
                           textAlign: 'center',
                           whiteSpace: 'nowrap'
@@ -1066,8 +1066,8 @@ export default function RecordFlow({
                           background: '#fee2e2',
                           color: '#b91c1c',
                           borderRadius: 999,
-                          padding: '3px 14px',
-                          fontSize: 13,
+                          padding: '2px 10px',
+                          fontSize: 11.5,
                           fontWeight: 800,
                           textAlign: 'center',
                           whiteSpace: 'nowrap'
@@ -1080,7 +1080,7 @@ export default function RecordFlow({
                     <div
                       dir="ltr"
                       style={{
-                        fontSize: 38,
+                        fontSize: 26,
                         fontWeight: 900,
                         color: pctColor,
                         lineHeight: 1,
@@ -1097,20 +1097,20 @@ export default function RecordFlow({
                   style={{
                     background: '#063954',
                     color: '#ffffff',
-                    padding: '12px 20px',
+                    padding: '9px 14px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: 12
+                    gap: 10
                   }}
                 >
-                  <span style={{ fontSize: 16.5, fontWeight: 800 }}>الأحزاب المحددة</span>
+                  <span style={{ fontSize: 14, fontWeight: 800 }}>الأحزاب المحددة</span>
                 </div>
 
                 {/* Hizb Cards Grid */}
-                <div style={{ padding: '18px 20px', background: '#ffffff' }}>
+                <div style={{ padding: '12px 14px', background: '#ffffff' }}>
                   {!defaultReciterName && (
-                    <div className="u-field" style={{ marginBottom: 14 }}>
+                    <div className="u-field" style={{ marginBottom: 12 }}>
                       <label>اسمك كمسمع</label>
                       <input
                         value={reciterName}
@@ -1134,8 +1134,8 @@ export default function RecordFlow({
                       <div
                         style={{
                           display: 'grid',
-                          gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-                          gap: 12
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(94px, 1fr))',
+                          gap: 8
                         }}
                       >
                         {assignedList.map((n) => {
@@ -1157,33 +1157,33 @@ export default function RecordFlow({
                                 style={{
                                   background: '#e6f4ea',
                                   border: '1.5px solid #a7f3d0',
-                                  borderRadius: 14,
-                                  padding: '12px 14px',
+                                  borderRadius: 11,
+                                  padding: '8px 10px',
                                   display: 'flex',
                                   flexDirection: 'column',
                                   alignItems: 'flex-start',
                                   justifyContent: 'space-between',
-                                  minHeight: 96,
+                                  minHeight: 72,
                                   cursor: 'pointer',
                                   textAlign: 'start'
                                 }}
                               >
-                                <span style={{ fontSize: 14, fontWeight: 800, color: '#1e293b' }}>
+                                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#1e293b' }}>
                                   الحزب {n}
                                 </span>
                                 <span
                                   className="u-num"
                                   style={{
-                                    fontSize: 26,
+                                    fontSize: 20,
                                     fontWeight: 900,
                                     color: '#15803d',
-                                    lineHeight: 1.2,
-                                    margin: '4px 0'
+                                    lineHeight: 1.15,
+                                    margin: '2px 0'
                                   }}
                                 >
                                   {res.score}
                                 </span>
-                                <span style={{ fontSize: 12.5, fontWeight: 700, color: '#64748b' }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b' }}>
                                   {errLabel}
                                 </span>
                               </button>
@@ -1200,33 +1200,33 @@ export default function RecordFlow({
                                 style={{
                                   background: '#fdecec',
                                   border: '1.5px solid #f5c2c7',
-                                  borderRadius: 14,
-                                  padding: '12px 14px',
+                                  borderRadius: 11,
+                                  padding: '8px 10px',
                                   display: 'flex',
                                   flexDirection: 'column',
                                   alignItems: 'flex-start',
                                   justifyContent: 'space-between',
-                                  minHeight: 96,
+                                  minHeight: 72,
                                   cursor: 'pointer',
                                   textAlign: 'start'
                                 }}
                               >
-                                <span style={{ fontSize: 14, fontWeight: 800, color: '#1e293b' }}>
+                                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#1e293b' }}>
                                   الحزب {n}
                                 </span>
                                 <span
                                   className="u-num"
                                   style={{
-                                    fontSize: 26,
+                                    fontSize: 20,
                                     fontWeight: 900,
                                     color: '#b91c1c',
-                                    lineHeight: 1.2,
-                                    margin: '4px 0'
+                                    lineHeight: 1.15,
+                                    margin: '2px 0'
                                   }}
                                 >
                                   {res.score}
                                 </span>
-                                <span style={{ fontSize: 12.5, fontWeight: 700, color: '#64748b' }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b' }}>
                                   {errLabel}
                                 </span>
                               </button>
@@ -1244,35 +1244,35 @@ export default function RecordFlow({
                               }}
                               style={{
                                 background: isChosen ? '#e0f2fe' : '#f8fafc',
-                                border: isChosen ? '2.5px solid #07476e' : '1.5px dashed #cbd5e1',
-                                boxShadow: isChosen ? '0 0 0 3px rgba(7, 71, 110, 0.15)' : 'none',
-                                borderRadius: 14,
-                                padding: '12px 14px',
+                                border: isChosen ? '2px solid #07476e' : '1.5px dashed #cbd5e1',
+                                boxShadow: isChosen ? '0 0 0 2px rgba(7, 71, 110, 0.14)' : 'none',
+                                borderRadius: 11,
+                                padding: '8px 10px',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'flex-start',
                                 justifyContent: 'space-between',
-                                minHeight: 96,
+                                minHeight: 72,
                                 cursor: 'pointer',
                                 textAlign: 'start'
                               }}
                             >
-                              <span style={{ fontSize: 14, fontWeight: 800, color: isChosen ? '#07476e' : '#334155' }}>
+                              <span style={{ fontSize: 12.5, fontWeight: 800, color: isChosen ? '#07476e' : '#334155' }}>
                                 الحزب {n}
                               </span>
                               <span
                                 style={{
-                                  fontSize: 24,
+                                  fontSize: 18,
                                   fontWeight: 700,
                                   color: isChosen ? '#07476e' : '#64748b',
-                                  lineHeight: 1.2,
-                                  margin: '4px 0'
+                                  lineHeight: 1.15,
+                                  margin: '2px 0'
                                 }}
                               >
                                 —
                               </span>
-                              <span style={{ fontSize: 12.5, fontWeight: 700, color: isChosen ? '#07476e' : '#64748b' }}>
-                                {isChosen ? 'محدّد للرصد ✓' : 'رصد'}
+                              <span style={{ fontSize: 11, fontWeight: 700, color: isChosen ? '#07476e' : '#64748b' }}>
+                                {isChosen ? 'محدّد ✓' : 'رصد'}
                               </span>
                             </button>
                           );
@@ -1331,7 +1331,7 @@ export default function RecordFlow({
                       className="u-icon-btn"
                       aria-label="إغلاق"
                     >
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                   </div>
 
@@ -1601,7 +1601,7 @@ export default function RecordFlow({
                 className="u-icon-btn"
                 aria-label="إغلاق"
               >
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
             <p style={{ fontSize: 13.5, color: 'var(--ink2)', lineHeight: 1.6, marginBottom: 16 }}>
@@ -1646,15 +1646,15 @@ function ThCounter({ kind, label, value, onDec, onInc, deduct }: {
       onClick={onInc}
       style={{
         position: 'relative',
-        padding: '12px 10px',
+        padding: '10px 8px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'space-between',
-        minHeight: 142
+        minHeight: 108
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 6 }}>
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onInc(); }}
@@ -1662,10 +1662,10 @@ function ThCounter({ kind, label, value, onDec, onInc, deduct }: {
           className="shrink-0"
           style={{
             flexShrink: 0,
-            width: 48,
-            height: 48,
-            minWidth: 48,
-            minHeight: 48,
+            width: 36,
+            height: 36,
+            minWidth: 36,
+            minHeight: 36,
             borderRadius: '50%',
             border: '1.5px solid rgba(255,255,255,0.45)',
             background: 'rgba(255,255,255,0.2)',
@@ -1673,7 +1673,7 @@ function ThCounter({ kind, label, value, onDec, onInc, deduct }: {
             display: 'grid',
             placeItems: 'center',
             fontWeight: 900,
-            fontSize: 24,
+            fontSize: 18,
             lineHeight: 1,
             cursor: 'pointer'
           }}
@@ -1694,10 +1694,10 @@ function ThCounter({ kind, label, value, onDec, onInc, deduct }: {
           className="shrink-0"
           style={{
             flexShrink: 0,
-            width: 48,
-            height: 48,
-            minWidth: 48,
-            minHeight: 48,
+            width: 36,
+            height: 36,
+            minWidth: 36,
+            minHeight: 36,
             borderRadius: '50%',
             border: '1.5px solid rgba(255,255,255,0.35)',
             background: 'rgba(0,0,0,0.28)',
@@ -1705,7 +1705,7 @@ function ThCounter({ kind, label, value, onDec, onInc, deduct }: {
             display: 'grid',
             placeItems: 'center',
             fontWeight: 900,
-            fontSize: 22,
+            fontSize: 18,
             lineHeight: 1,
             cursor: value <= 0 ? 'not-allowed' : 'pointer',
             opacity: value <= 0 ? 0.38 : 1
@@ -1715,9 +1715,9 @@ function ThCounter({ kind, label, value, onDec, onInc, deduct }: {
         </button>
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: 4 }}>
+      <div style={{ textAlign: 'center', marginTop: 2 }}>
         <div className="th-cnt-label">{label}</div>
-        <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.82 }}>{deduct}</div>
+        <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.82 }}>{deduct}</div>
       </div>
     </div>
   );
