@@ -88,6 +88,7 @@ export default function MushafPreviewPage() {
   const [studentsError, setStudentsError] = useState<string | null>(null);
   const [setupMissing, setSetupMissing] = useState(false);
   const [sessionStarted, setSessionStarted] = useState(!isReciterPreview);
+  const [finishConfirmOpen, setFinishConfirmOpen] = useState(false);
   const mushafTextRef = useRef<HTMLDivElement | null>(null);
   const mushafCardRef = useRef<HTMLDivElement | null>(null);
   const swipeRef = useRef({ startX: 0, startY: 0, moved: false });
@@ -214,7 +215,7 @@ export default function MushafPreviewPage() {
 
   // Fast fit: measure ONCE at large font, calc exact scale, apply once.
   useEffect(() => {
-    if (!page) return;
+    if (!page || (isReciterPreview && !sessionStarted)) return;
     const el = mushafTextRef.current;
     if (!el) return;
 
@@ -278,7 +279,7 @@ export default function MushafPreviewPage() {
       if (resizeTimer) clearTimeout(resizeTimer);
       window.removeEventListener('resize', debouncedResize);
     };
-  }, [page]);
+  }, [page, isReciterPreview, sessionStarted]);
 
   const errorCount = marks.filter((m) => m.type === 'error').length;
   const alertCount = marks.filter((m) => m.type === 'alert').length;
@@ -353,18 +354,19 @@ export default function MushafPreviewPage() {
     setPageIndex(0);
     setElapsedSeconds(0);
     setSessionStarted(true);
+    setFinishConfirmOpen(false);
     setTimerRunning(true);
     window.setTimeout(() => mushafCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   };
 
-  const returnToPreviewSetup = () => {
-    if (marks.length > 0 && !confirm('العودة لاختيار الطالب؟ ستُمسح علامات التجربة الحالية.')) return;
+  const finishPreviewSession = () => {
+    setFinishConfirmOpen(false);
     setSessionStarted(false);
     setTimerRunning(false);
     setElapsedSeconds(0);
     setMarks([]);
     setSheetFor(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 60);
   };
 
   const formattedTime = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:${String(elapsedSeconds % 60).padStart(2, '0')}`;
@@ -589,10 +591,7 @@ export default function MushafPreviewPage() {
         .preview-hizb-option strong { font-size: 18px; line-height: 1.15; }
         .preview-hizb-option small { font-size: 11px; font-weight: 700; }
         .preview-start-wrap { grid-column: 1 / -1; padding-top: 8px; border-top: 1px solid var(--line); }
-        .preview-session-info {
-          max-width: 780px; margin-inline: auto; display: flex; align-items: center; justify-content: space-between;
-          gap: 12px; padding: 10px 14px;
-        }
+        .preview-session-info { max-width: 780px; margin-inline: auto; padding: 10px 14px; }
         .preview-session-info b { display: block; color: var(--ink); font-size: 14px; }
         .preview-session-info small { color: var(--ink3); font-size: 12px; }
 
@@ -619,10 +618,16 @@ export default function MushafPreviewPage() {
         .mus-progress b { display: block; font-size: 13px; font-variant-numeric: tabular-nums; }
         .mus-progress small { display: block; margin-top: 1px; font-size: 10px; opacity: .65; }
         .mus-swipe-zone { touch-action: pan-y; }
-        .mus-swipe-hint {
-          padding: 5px 10px 7px; color: color-mix(in srgb, var(--mus-ink) 65%, transparent);
-          text-align: center; font-family: 'IBM Plex Sans Arabic', sans-serif; font-size: 10px; font-weight: 700;
+        .mus-session-end { padding: 8px 10px 10px; background: color-mix(in srgb, var(--mus-gold) 5%, var(--mus-paper)); }
+        .mus-session-end button {
+          width: 100%; min-height: 42px; border: 1px solid color-mix(in srgb, var(--bad) 24%, var(--mus-line));
+          border-radius: 12px; background: transparent; color: var(--bad); font-family: 'IBM Plex Sans Arabic', sans-serif;
+          font-size: 12px; font-weight: 800; cursor: pointer;
         }
+        .finish-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+        .finish-summary div { padding: 10px; border-radius: 12px; background: var(--muted-bg); text-align: center; }
+        .finish-summary b { display: block; color: var(--ink); font-size: 15px; }
+        .finish-summary small { display: block; margin-top: 2px; color: var(--ink3); font-size: 10px; }
 
         .ms-seg.is-selected {
           background: color-mix(in srgb, var(--brand-soft) 72%, transparent);
@@ -683,7 +688,6 @@ export default function MushafPreviewPage() {
             <b>{selectedStudent?.name}</b>
             <small>الحزب {toArabicDigits(hizb)} · تجربة لا تُحفظ</small>
           </div>
-          <button type="button" className="u-btn u-btn-g sm" onClick={returnToPreviewSetup}>تغيير الطالب أو الحزب</button>
         </div>
       ) : (
         <div className="u-card preview-setup">
@@ -888,8 +892,6 @@ export default function MushafPreviewPage() {
             })}
           </div>
 
-          <div className="mus-swipe-hint">اسحب يميناً للصفحة التالية · ويساراً للصفحة السابقة</div>
-
           <div className="mus-pagination">
             <button
               className="mus-page-button"
@@ -912,6 +914,11 @@ export default function MushafPreviewPage() {
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
             </button>
           </div>
+          {isReciterPreview && (
+            <div className="mus-session-end">
+              <button type="button" onClick={() => setFinishConfirmOpen(true)}>إنهاء الجلسة</button>
+            </div>
+          )}
         </div>
       )}
 
@@ -984,6 +991,27 @@ export default function MushafPreviewPage() {
             <button className="u-btn u-btn-p w" onClick={() => setShowJson(false)} style={{ marginTop: 12 }}>
               إغلاق
             </button>
+          </section>
+        </>
+      )}
+
+      {finishConfirmOpen && (
+        <>
+          <div className="preview-sheet-backdrop" onClick={() => setFinishConfirmOpen(false)} />
+          <section className="preview-sheet" role="dialog" aria-modal="true" aria-labelledby="finish-sheet-title">
+            <div className="grab" />
+            <div className="mark-sheet-head">
+              <h3 id="finish-sheet-title">إنهاء جلسة {selectedStudent?.name}</h3>
+              <p>الحزب {toArabicDigits(hizb)} · هذه تجربة ولن يُحفظ الرصد</p>
+            </div>
+            <div className="finish-summary">
+              <div><b>{formattedTime}</b><small>المدة</small></div>
+              <div><b>{toArabicDigits(errorCount)} / {toArabicDigits(alertCount)}</b><small>خطأ / تنبيه</small></div>
+            </div>
+            <div className="mark-secondary">
+              <button className="u-btn u-btn-bad" onClick={finishPreviewSession}>إنهاء والعودة للاختيار</button>
+              <button className="u-btn u-btn-g" onClick={() => setFinishConfirmOpen(false)}>متابعة التسميع</button>
+            </div>
           </section>
         </>
       )}
