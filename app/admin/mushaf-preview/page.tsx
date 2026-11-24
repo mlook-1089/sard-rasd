@@ -381,29 +381,27 @@ export default function MushafPreviewPage() {
     });
   };
 
-  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (event.touches.length !== 1) return;
-    const touch = event.touches[0];
-    swipeRef.current = { startX: touch.clientX, startY: touch.clientY, moved: false };
+  const handleSwipeStart = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!event.isPrimary) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    swipeRef.current = { startX: event.clientX, startY: event.clientY, moved: false };
   };
 
-  const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (event.touches.length !== 1) return;
-    const touch = event.touches[0];
-    const deltaX = touch.clientX - swipeRef.current.startX;
-    const deltaY = touch.clientY - swipeRef.current.startY;
+  const handleSwipeMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!event.isPrimary) return;
+    const deltaX = event.clientX - swipeRef.current.startX;
+    const deltaY = event.clientY - swipeRef.current.startY;
     if (Math.abs(deltaX) > 14 && Math.abs(deltaX) > Math.abs(deltaY) * 1.15) {
       swipeRef.current.moved = true;
       suppressAyahTapUntilRef.current = Date.now() + 450;
     }
   };
 
-  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
-    const touch = event.changedTouches[0];
-    if (!touch) return;
+  const handleSwipeEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!event.isPrimary) return;
     const { startX, startY, moved } = swipeRef.current;
-    const deltaX = touch.clientX - startX;
-    const deltaY = touch.clientY - startY;
+    const deltaX = event.clientX - startX;
+    const deltaY = event.clientY - startY;
     if (!moved || Math.abs(deltaX) < 58 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.25) return;
 
     suppressAyahTapUntilRef.current = Date.now() + 450;
@@ -787,9 +785,10 @@ export default function MushafPreviewPage() {
         <div
           className="mushaf-card preview-workspace mus-swipe-zone"
           ref={mushafCardRef}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
+          onPointerDown={handleSwipeStart}
+          onPointerMove={handleSwipeMove}
+          onPointerUp={handleSwipeEnd}
+          onPointerCancel={() => { swipeRef.current.moved = false; }}
         >
           <div className="mus-band">
             <div className={`mus-band-timer ${timerRunning ? 'running' : ''}`} aria-label="مؤقت التسميع">
