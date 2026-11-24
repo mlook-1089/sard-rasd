@@ -49,7 +49,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       href: '/admin/reports/students',
       label: 'التقارير',
       icon: icons.chart,
-      mobile: true,
       sections: [
         { href: '/admin/reports/students', label: 'تقرير الطلاب', icon: icons.chart },
         { href: '/admin/reports/circles', label: 'تقرير الحلقات', icon: icons.chart },

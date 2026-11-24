@@ -1662,10 +1662,10 @@ function ThCounter({ kind, label, value, onDec, onInc, deduct }: {
           className="shrink-0"
           style={{
             flexShrink: 0,
-            width: 36,
-            height: 36,
-            minWidth: 36,
-            minHeight: 36,
+            width: 44,
+            height: 44,
+            minWidth: 44,
+            minHeight: 44,
             borderRadius: '50%',
             border: '1.5px solid rgba(255,255,255,0.45)',
             background: 'rgba(255,255,255,0.2)',
@@ -1673,7 +1673,7 @@ function ThCounter({ kind, label, value, onDec, onInc, deduct }: {
             display: 'grid',
             placeItems: 'center',
             fontWeight: 900,
-            fontSize: 18,
+            fontSize: 22,
             lineHeight: 1,
             cursor: 'pointer'
           }}
@@ -1694,10 +1694,10 @@ function ThCounter({ kind, label, value, onDec, onInc, deduct }: {
           className="shrink-0"
           style={{
             flexShrink: 0,
-            width: 36,
-            height: 36,
-            minWidth: 36,
-            minHeight: 36,
+            width: 44,
+            height: 44,
+            minWidth: 44,
+            minHeight: 44,
             borderRadius: '50%',
             border: '1.5px solid rgba(255,255,255,0.35)',
             background: 'rgba(0,0,0,0.28)',
@@ -1705,7 +1705,7 @@ function ThCounter({ kind, label, value, onDec, onInc, deduct }: {
             display: 'grid',
             placeItems: 'center',
             fontWeight: 900,
-            fontSize: 18,
+            fontSize: 22,
             lineHeight: 1,
             cursor: value <= 0 ? 'not-allowed' : 'pointer',
             opacity: value <= 0 ? 0.38 : 1
