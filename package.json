@@ -8,7 +8,8 @@
     "start": "next start",
     "db:push": "drizzle-kit push",
     "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts",
-    "db:seed": "tsx --env-file=.env.local scripts/seed.ts"
+    "db:seed": "tsx --env-file=.env.local scripts/seed.ts",
+    "mushaf:fetch": "tsx scripts/fetch-mushaf-pages.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.9.5",
