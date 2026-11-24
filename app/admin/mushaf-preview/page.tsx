@@ -385,7 +385,6 @@ export default function MushafPreviewPage() {
 
   const handleSwipeStart = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!event.isPrimary) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
     swipeRef.current = { startX: event.clientX, startY: event.clientY, moved: false };
   };
 
