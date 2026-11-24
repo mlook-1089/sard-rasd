@@ -13,6 +13,7 @@ export default async function ReciterLayout({ children }: { children: React.Reac
   const nav = [
     { href: '/reciter', label: 'الإعدادات', icon: icons.settings, mobile: true },
     { href: '/reciter/record', label: 'رصد التسميع', icon: icons.mic, mobile: true },
+    { href: '/reciter/mushaf-preview', label: 'تجربة المصحف', icon: icons.book },
     { href: '/reciter/history', label: 'سجلاتي', icon: icons.list, mobile: true }
   ];
 

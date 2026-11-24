@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { pagesForHizb } from '@/lib/hizbPages';
 
 type Segment = {
@@ -21,6 +22,15 @@ type Page = {
 
 type MarkType = 'error' | 'alert';
 type Mark = { id: string; surah: number; ayah: number; type: MarkType };
+type PreviewStudent = {
+  id: number;
+  name: string;
+  level: string | null;
+  circleName: string | null;
+  assigned: number[];
+  remaining: number[];
+  attendanceStatus: 'present' | 'absent' | 'unset';
+};
 
 const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
 const toArabicDigits = (n: number) =>
@@ -58,6 +68,9 @@ async function fetchPage(pageNum: number): Promise<Page> {
 }
 
 export default function MushafPreviewPage() {
+  const pathname = usePathname() || '';
+  const router = useRouter();
+  const isReciterPreview = pathname.startsWith('/reciter/');
   const [hizb, setHizb] = useState(1);
   const [pages, setPages] = useState<Page[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
@@ -69,6 +82,11 @@ export default function MushafPreviewPage() {
   const [fitReady, setFitReady] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
+  const [previewStudents, setPreviewStudents] = useState<PreviewStudent[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<number | ''>('');
+  const [studentsLoading, setStudentsLoading] = useState(false);
+  const [studentsError, setStudentsError] = useState<string | null>(null);
+  const [setupMissing, setSetupMissing] = useState(false);
   const mushafTextRef = useRef<HTMLDivElement | null>(null);
 
   // Load Amiri font once
@@ -80,6 +98,50 @@ export default function MushafPreviewPage() {
     link.href = 'https://fonts.googleapis.com/css2?family=Amiri:wght@700&display=swap';
     document.head.appendChild(link);
   }, []);
+
+  useEffect(() => {
+    if (!isReciterPreview) return;
+    let cancelled = false;
+    let committeeId = 0;
+    try {
+      const setup = JSON.parse(localStorage.getItem('sard_reciter_setup') || '{}');
+      committeeId = Math.max(0, Math.floor(Number(setup.committeeId) || 0));
+    } catch {}
+
+    if (!committeeId) {
+      setSetupMissing(true);
+      setStudentsLoading(false);
+      return;
+    }
+
+    setSetupMissing(false);
+    setStudentsLoading(true);
+    setStudentsError(null);
+    fetch(`/api/students/for-record?committeeId=${committeeId}`, { cache: 'no-store' })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'تعذر تحميل الطلاب');
+        return data;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        const rows = (data.students || []) as PreviewStudent[];
+        setPreviewStudents(rows);
+        const first = rows.find((student) => student.assigned.length > 0) || rows[0];
+        if (first) {
+          setSelectedStudentId(first.id);
+          if (first.assigned.length > 0) setHizb(first.remaining[0] || first.assigned[0]);
+        }
+      })
+      .catch((loadError) => {
+        if (!cancelled) setStudentsError(loadError?.message || 'تعذر تحميل الطلاب');
+      })
+      .finally(() => {
+        if (!cancelled) setStudentsLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [isReciterPreview]);
 
   // Fetch pages + fonts for selected hizb
   useEffect(() => {
@@ -216,6 +278,9 @@ export default function MushafPreviewPage() {
 
   const errorCount = marks.filter((m) => m.type === 'error').length;
   const alertCount = marks.filter((m) => m.type === 'alert').length;
+  const selectedStudent = previewStudents.find((student) => student.id === selectedStudentId) || null;
+  const availableHizbs = selectedStudent?.assigned || [];
+  const previewReady = !isReciterPreview || Boolean(selectedStudent && availableHizbs.length > 0);
 
   const marksFor = (s: number, a: number) =>
     marks.filter((m) => m.surah === s && m.ayah === a);
@@ -226,12 +291,21 @@ export default function MushafPreviewPage() {
     setMarks((p) => [...p, { id, surah: sheetFor.surah, ayah: sheetFor.ayah, type }]);
     setSheetFor(null);
   };
-  const undoLastForAyah = () => {
+  const removeLastMarkOfType = (type: MarkType) => {
     if (!sheetFor) return;
-    const existing = marksFor(sheetFor.surah, sheetFor.ayah);
-    if (existing.length === 0) { setSheetFor(null); return; }
-    const last = existing[existing.length - 1];
-    setMarks((p) => p.filter((m) => m.id !== last.id));
+    setMarks((current) => {
+      let removeIndex = -1;
+      for (let index = current.length - 1; index >= 0; index -= 1) {
+        const mark = current[index];
+        if (mark.surah === sheetFor.surah && mark.ayah === sheetFor.ayah && mark.type === type) {
+          removeIndex = index;
+          break;
+        }
+      }
+      return removeIndex === -1
+        ? current
+        : current.filter((_, index) => index !== removeIndex);
+    });
     setSheetFor(null);
   };
   const clearAyahMarks = () => {
@@ -251,6 +325,19 @@ export default function MushafPreviewPage() {
     setSheetFor(null);
     setElapsedSeconds(0);
     setTimerRunning(false);
+  };
+
+  const changePreviewStudent = (studentId: number) => {
+    setSelectedStudentId(studentId);
+    const student = previewStudents.find((row) => row.id === studentId);
+    const nextHizb = student?.remaining[0] || student?.assigned[0];
+    if (nextHizb) changeHizb(nextHizb);
+    else {
+      setMarks([]);
+      setSheetFor(null);
+      setElapsedSeconds(0);
+      setTimerRunning(false);
+    }
   };
 
   const resetTimer = () => {
@@ -278,6 +365,8 @@ export default function MushafPreviewPage() {
     ? { surahName: page?.surahsOnPage.find((s) => s.number === sheetFor.surah)?.name || `سورة ${sheetFor.surah}` }
     : null;
   const activeAyahMarks = sheetFor ? marksFor(sheetFor.surah, sheetFor.ayah) : [];
+  const activeErrorMarks = activeAyahMarks.filter((mark) => mark.type === 'error').length;
+  const activeAlertMarks = activeAyahMarks.filter((mark) => mark.type === 'alert').length;
 
   const pageFontFamily = page
     ? `"QCF_P${String(page.pageNumber).padStart(3, '0')}", 'Amiri Quran', 'Amiri', serif`
@@ -478,6 +567,7 @@ export default function MushafPreviewPage() {
         .mark-action.alert { background: var(--warn-soft); color: var(--warn); }
         .mark-secondary { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
         .mark-secondary .u-btn { flex: 1 1 150px; }
+        .mark-delete-alert { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
         @media (min-width: 768px) {
           .preview-sheet { right: auto; left: 50%; width: min(520px, calc(100vw - 32px)); transform: translateX(-50%); }
         }
@@ -495,49 +585,88 @@ export default function MushafPreviewPage() {
 
       <div className="u-top">
         <div>
-          <div className="u-sub">شكل تجريبي · لا يحفظ شيئاً</div>
+          <div className="u-sub">
+            {isReciterPreview ? 'تجربة على طلاب اللجنة · لا يحفظ شيئاً' : 'شكل تجريبي · لا يحفظ شيئاً'}
+          </div>
           <h1>تسميع على المصحف</h1>
         </div>
       </div>
 
       <div className="u-card preview-setup">
-        <div className="u-field" style={{ marginBottom: 0 }}>
-          <label>الحزب المسموع</label>
-          <select
-            className="u-input"
-            value={hizb}
-            onChange={(e) => changeHizb(Number(e.target.value))}
-          >
-            {Array.from({ length: 60 }, (_, i) => i + 1).map((n) => (
-              <option key={n} value={n}>الحزب {toArabicDigits(n)}</option>
-            ))}
-          </select>
-        </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-          <button className="u-btn u-btn-g sm" onClick={resetAll} disabled={marks.length === 0}>
-            مسح جميع العلامات
-          </button>
-          <button className="u-btn u-btn-s sm" onClick={() => setShowJson(true)} disabled={marks.length === 0}>
-            عرض البيانات (JSON)
-          </button>
-          <div style={{ width: '100%', color: 'var(--ink3)', fontSize: 12, alignSelf: 'center' }}>
-            اضغط على الآية لتسجيل خطأ أو تنبيه
+        {isReciterPreview && setupMissing ? (
+          <div style={{ textAlign: 'center' }}>
+            <div className="u-note warn">اختر اللجنة واكتب اسم المسمّع أولاً لعرض طلابها.</div>
+            <button className="u-btn u-btn-p" onClick={() => router.push('/reciter')}>فتح إعدادات المسمّع</button>
           </div>
-        </div>
+        ) : isReciterPreview && studentsLoading ? (
+          <div className="u-muted" style={{ textAlign: 'center', padding: 12 }}>جاري تحميل طلاب اللجنة…</div>
+        ) : isReciterPreview && studentsError ? (
+          <div className="u-note bad">{studentsError}</div>
+        ) : isReciterPreview && previewStudents.length === 0 ? (
+          <div className="u-empty">لا يوجد طلاب نشطون في اللجنة المحددة.</div>
+        ) : (
+          <>
+            {isReciterPreview && (
+              <div className="u-field">
+                <label>الطالب</label>
+                <select
+                  className="u-input"
+                  value={selectedStudentId}
+                  onChange={(event) => changePreviewStudent(Number(event.target.value))}
+                >
+                  {previewStudents.map((student) => (
+                    <option key={student.id} value={student.id}>
+                      {student.name}{student.circleName ? ` — ${student.circleName}` : ''}{student.assigned.length === 0 ? ' — بدون أحزاب' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="u-field" style={{ marginBottom: 0 }}>
+              <label>الحزب المسموع</label>
+              <select
+                className="u-input"
+                value={hizb}
+                onChange={(e) => changeHizb(Number(e.target.value))}
+                disabled={isReciterPreview && availableHizbs.length === 0}
+              >
+                {(isReciterPreview ? availableHizbs : Array.from({ length: 60 }, (_, i) => i + 1)).map((n) => (
+                  <option key={n} value={n}>
+                    الحزب {toArabicDigits(n)}{isReciterPreview && selectedStudent && !selectedStudent.remaining.includes(n) ? ' — مجتاز' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {isReciterPreview && selectedStudent && availableHizbs.length === 0 && (
+              <div className="u-note warn" style={{ marginTop: 10, marginBottom: 0 }}>لا توجد أحزاب مسجلة لهذا الطالب.</div>
+            )}
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+              <button className="u-btn u-btn-g sm" onClick={resetAll} disabled={marks.length === 0}>
+                مسح جميع العلامات
+              </button>
+              <button className="u-btn u-btn-s sm" onClick={() => setShowJson(true)} disabled={marks.length === 0}>
+                عرض البيانات (JSON)
+              </button>
+              <div style={{ width: '100%', color: 'var(--ink3)', fontSize: 12, alignSelf: 'center' }}>
+                اضغط على الآية لتسجيل خطأ أو تنبيه
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {loading && (
+      {previewReady && loading && (
         <div className="u-card" style={{ padding: 60, textAlign: 'center', color: 'var(--ink2)' }}>
           جاري تحميل الحزب…
         </div>
       )}
-      {error && (
+      {previewReady && error && (
         <div className="u-card" style={{ padding: 40, textAlign: 'center', color: 'var(--bad)' }}>
           {error}
         </div>
       )}
 
-      {!loading && !error && page && (
+      {previewReady && !loading && !error && page && (
         <div className="mushaf-card preview-workspace">
           <div className="mus-band">
             <div className={`mus-band-timer ${timerRunning ? 'running' : ''}`} aria-label="مؤقت التسميع">
@@ -678,7 +807,7 @@ export default function MushafPreviewPage() {
               <p>
                 صفحة {toArabicDigits(page?.pageNumber || 0)}
                 {activeAyahMarks.length > 0 && (
-                  <> · مسجّل {toArabicDigits(activeAyahMarks.filter((m) => m.type === 'error').length)} خطأ و{toArabicDigits(activeAyahMarks.filter((m) => m.type === 'alert').length)} تنبيه</>
+                  <> · مسجّل {toArabicDigits(activeErrorMarks)} خطأ و{toArabicDigits(activeAlertMarks)} تنبيه</>
                 )}
               </p>
             </div>
@@ -693,11 +822,14 @@ export default function MushafPreviewPage() {
               </button>
             </div>
             <div className="mark-secondary">
-              {activeAyahMarks.length > 0 && (
-                <button className="u-btn u-btn-g" onClick={undoLastForAyah}>تراجع عن آخر علامة</button>
+              {activeErrorMarks > 0 && (
+                <button className="u-btn u-btn-bad" onClick={() => removeLastMarkOfType('error')}>حذف الخطأ</button>
+              )}
+              {activeAlertMarks > 0 && (
+                <button className="u-btn mark-delete-alert" onClick={() => removeLastMarkOfType('alert')}>حذف التنبيه</button>
               )}
               {activeAyahMarks.length > 1 && (
-                <button className="u-btn u-btn-bad" onClick={clearAyahMarks}>مسح علامات الآية</button>
+                <button className="u-btn u-btn-g" onClick={clearAyahMarks}>مسح كل علامات الآية</button>
               )}
               <button className="u-btn u-btn-g" onClick={() => setSheetFor(null)}>إلغاء</button>
             </div>
@@ -720,6 +852,9 @@ export default function MushafPreviewPage() {
             }}>
               {JSON.stringify(
                 {
+                  student: isReciterPreview && selectedStudent
+                    ? { id: selectedStudent.id, name: selectedStudent.name }
+                    : undefined,
                   hizb,
                   totals: { errors: errorCount, alerts: alertCount },
                   marks: marks.map(({ surah, ayah, type }) => ({ surah, ayah, type }))
