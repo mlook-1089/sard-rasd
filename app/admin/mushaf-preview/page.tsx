@@ -87,7 +87,11 @@ export default function MushafPreviewPage() {
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [studentsError, setStudentsError] = useState<string | null>(null);
   const [setupMissing, setSetupMissing] = useState(false);
+  const [sessionStarted, setSessionStarted] = useState(!isReciterPreview);
   const mushafTextRef = useRef<HTMLDivElement | null>(null);
+  const mushafCardRef = useRef<HTMLDivElement | null>(null);
+  const swipeRef = useRef({ startX: 0, startY: 0, moved: false });
+  const suppressAyahTapUntilRef = useRef(0);
 
   // Load Amiri font once
   useEffect(() => {
@@ -321,6 +325,7 @@ export default function MushafPreviewPage() {
 
   const changeHizb = (nextHizb: number) => {
     setHizb(nextHizb);
+    setSessionStarted(!isReciterPreview);
     setMarks([]);
     setSheetFor(null);
     setElapsedSeconds(0);
@@ -329,6 +334,7 @@ export default function MushafPreviewPage() {
 
   const changePreviewStudent = (studentId: number) => {
     setSelectedStudentId(studentId);
+    setSessionStarted(false);
     const student = previewStudents.find((row) => row.id === studentId);
     const nextHizb = student?.remaining[0] || student?.assigned[0];
     if (nextHizb) changeHizb(nextHizb);
@@ -340,15 +346,71 @@ export default function MushafPreviewPage() {
     }
   };
 
-  const resetTimer = () => {
+  const startPreviewSession = () => {
+    if (!previewReady || loading || error) return;
+    setMarks([]);
+    setSheetFor(null);
+    setPageIndex(0);
+    setElapsedSeconds(0);
+    setSessionStarted(true);
+    setTimerRunning(true);
+    window.setTimeout(() => mushafCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  };
+
+  const returnToPreviewSetup = () => {
+    if (marks.length > 0 && !confirm('العودة لاختيار الطالب؟ ستُمسح علامات التجربة الحالية.')) return;
+    setSessionStarted(false);
     setTimerRunning(false);
     setElapsedSeconds(0);
+    setMarks([]);
+    setSheetFor(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const formattedTime = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:${String(elapsedSeconds % 60).padStart(2, '0')}`;
 
   const canPrev = pageIndex > 0;
   const canNext = pageIndex < pages.length - 1;
+  const showMushaf = previewReady && (!isReciterPreview || sessionStarted);
+
+  const changePage = (direction: 'next' | 'previous') => {
+    setSheetFor(null);
+    setPageIndex((current) => {
+      if (direction === 'next') return Math.min(pages.length - 1, current + 1);
+      return Math.max(0, current - 1);
+    });
+  };
+
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    swipeRef.current = { startX: touch.clientX, startY: touch.clientY, moved: false };
+  };
+
+  const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - swipeRef.current.startX;
+    const deltaY = touch.clientY - swipeRef.current.startY;
+    if (Math.abs(deltaX) > 14 && Math.abs(deltaX) > Math.abs(deltaY) * 1.15) {
+      swipeRef.current.moved = true;
+      suppressAyahTapUntilRef.current = Date.now() + 450;
+    }
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    const { startX, startY, moved } = swipeRef.current;
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+    if (!moved || Math.abs(deltaX) < 58 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.25) return;
+
+    suppressAyahTapUntilRef.current = Date.now() + 450;
+    // اتجاه المصحف عربي: السحب يميناً يتقدم، والسحب يساراً يرجع للصفحة السابقة.
+    if (deltaX > 0 && canNext) changePage('next');
+    if (deltaX < 0 && canPrev) changePage('previous');
+  };
 
   const linesWithBanners = useMemo(() => {
     if (!page) return [] as { kind: 'line' | 'banner'; data: any }[];
@@ -515,6 +577,26 @@ export default function MushafPreviewPage() {
 
         .preview-workspace { max-width: 780px; margin-inline: auto; }
         .preview-setup { max-width: 780px; margin-inline: auto; }
+        .preview-record-section { margin: 14px -16px -16px; overflow: hidden; border-radius: 0 0 16px 16px; }
+        .preview-record-bar { padding: 9px 14px; background: #063954; color: #fff; font-size: 14px; font-weight: 800; }
+        .preview-hizb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(94px, 1fr)); gap: 8px; padding: 12px 14px; background: var(--card); }
+        .preview-hizb-option {
+          min-height: 72px; padding: 8px 10px; border-radius: 11px; text-align: start; cursor: pointer;
+          display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between;
+          color: var(--ink2); background: var(--muted-bg); border: 1.5px dashed var(--line2); font-family: inherit;
+        }
+        .preview-hizb-option.selected { color: var(--brand-ink); background: var(--brand-soft); border: 2px solid var(--brand-ink); box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand) 14%, transparent); }
+        .preview-hizb-option.passed:not(.selected) { color: var(--good); background: var(--good-soft); border: 1.5px solid color-mix(in srgb, var(--good) 32%, transparent); }
+        .preview-hizb-option b { font-size: 13px; }
+        .preview-hizb-option strong { font-size: 18px; line-height: 1.15; }
+        .preview-hizb-option small { font-size: 11px; font-weight: 700; }
+        .preview-start-wrap { grid-column: 1 / -1; padding-top: 8px; border-top: 1px solid var(--line); }
+        .preview-session-info {
+          max-width: 780px; margin-inline: auto; display: flex; align-items: center; justify-content: space-between;
+          gap: 12px; padding: 10px 14px;
+        }
+        .preview-session-info b { display: block; color: var(--ink); font-size: 14px; }
+        .preview-session-info small { color: var(--ink3); font-size: 12px; }
 
         .mus-pagination {
           display: grid;
@@ -538,6 +620,11 @@ export default function MushafPreviewPage() {
         .mus-progress { min-width: 62px; text-align: center; color: var(--mus-ink); }
         .mus-progress b { display: block; font-size: 13px; font-variant-numeric: tabular-nums; }
         .mus-progress small { display: block; margin-top: 1px; font-size: 10px; opacity: .65; }
+        .mus-swipe-zone { touch-action: pan-y; }
+        .mus-swipe-hint {
+          padding: 5px 10px 7px; color: color-mix(in srgb, var(--mus-ink) 65%, transparent);
+          text-align: center; font-family: 'IBM Plex Sans Arabic', sans-serif; font-size: 10px; font-weight: 700;
+        }
 
         .ms-seg.is-selected {
           background: color-mix(in srgb, var(--brand-soft) 72%, transparent);
@@ -592,8 +679,17 @@ export default function MushafPreviewPage() {
         </div>
       </div>
 
-      <div className="u-card preview-setup">
-        {isReciterPreview && setupMissing ? (
+      {isReciterPreview && sessionStarted ? (
+        <div className="u-card preview-session-info">
+          <div>
+            <b>{selectedStudent?.name}</b>
+            <small>الحزب {toArabicDigits(hizb)} · تجربة لا تُحفظ</small>
+          </div>
+          <button type="button" className="u-btn u-btn-g sm" onClick={returnToPreviewSetup}>تغيير الطالب أو الحزب</button>
+        </div>
+      ) : (
+        <div className="u-card preview-setup">
+          {isReciterPreview && setupMissing ? (
           <div style={{ textAlign: 'center' }}>
             <div className="u-note warn">اختر اللجنة واكتب اسم المسمّع أولاً لعرض طلابها.</div>
             <button className="u-btn u-btn-p" onClick={() => router.push('/reciter')}>فتح إعدادات المسمّع</button>
@@ -604,9 +700,8 @@ export default function MushafPreviewPage() {
           <div className="u-note bad">{studentsError}</div>
         ) : isReciterPreview && previewStudents.length === 0 ? (
           <div className="u-empty">لا يوجد طلاب نشطون في اللجنة المحددة.</div>
-        ) : (
-          <>
-            {isReciterPreview && (
+          ) : isReciterPreview ? (
+            <>
               <div className="u-field">
                 <label>الطالب</label>
                 <select
@@ -621,53 +716,81 @@ export default function MushafPreviewPage() {
                   ))}
                 </select>
               </div>
-            )}
-            <div className="u-field" style={{ marginBottom: 0 }}>
-              <label>الحزب المسموع</label>
-              <select
-                className="u-input"
-                value={hizb}
-                onChange={(e) => changeHizb(Number(e.target.value))}
-                disabled={isReciterPreview && availableHizbs.length === 0}
-              >
-                {(isReciterPreview ? availableHizbs : Array.from({ length: 60 }, (_, i) => i + 1)).map((n) => (
-                  <option key={n} value={n}>
-                    الحزب {toArabicDigits(n)}{isReciterPreview && selectedStudent && !selectedStudent.remaining.includes(n) ? ' — مجتاز' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {isReciterPreview && selectedStudent && availableHizbs.length === 0 && (
-              <div className="u-note warn" style={{ marginTop: 10, marginBottom: 0 }}>لا توجد أحزاب مسجلة لهذا الطالب.</div>
-            )}
-            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-              <button className="u-btn u-btn-g sm" onClick={resetAll} disabled={marks.length === 0}>
-                مسح جميع العلامات
-              </button>
-              <button className="u-btn u-btn-s sm" onClick={() => setShowJson(true)} disabled={marks.length === 0}>
-                عرض البيانات (JSON)
-              </button>
-              <div style={{ width: '100%', color: 'var(--ink3)', fontSize: 12, alignSelf: 'center' }}>
-                اضغط على الآية لتسجيل خطأ أو تنبيه
+              {selectedStudent && availableHizbs.length === 0 ? (
+                <div className="u-note warn" style={{ marginBottom: 0 }}>لا توجد أحزاب مسجلة لهذا الطالب.</div>
+              ) : (
+                <div className="preview-record-section">
+                  <div className="preview-record-bar">الأحزاب المحددة</div>
+                  <div className="preview-hizb-grid">
+                    {availableHizbs.map((number) => {
+                      const passed = Boolean(selectedStudent && !selectedStudent.remaining.includes(number));
+                      const selected = hizb === number;
+                      return (
+                        <button
+                          key={number}
+                          type="button"
+                          className={`preview-hizb-option${selected ? ' selected' : ''}${passed ? ' passed' : ''}`}
+                          onClick={() => changeHizb(number)}
+                        >
+                          <b>الحزب {toArabicDigits(number)}</b>
+                          <strong>{passed ? '✓' : '—'}</strong>
+                          <small>{selected ? 'محدّد ✓' : passed ? 'مجتاز' : 'رصد'}</small>
+                        </button>
+                      );
+                    })}
+                    <div className="preview-start-wrap">
+                      <button
+                        type="button"
+                        className="u-btn u-btn-p lg w"
+                        onClick={startPreviewSession}
+                        disabled={!previewReady || loading || Boolean(error)}
+                      >
+                        {loading ? 'جاري تجهيز المصحف…' : `بدء التسميع — الحزب ${toArabicDigits(hizb)}`}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="u-field" style={{ marginBottom: 0 }}>
+                <label>الحزب المسموع</label>
+                <select className="u-input" value={hizb} onChange={(event) => changeHizb(Number(event.target.value))}>
+                  {Array.from({ length: 60 }, (_, index) => index + 1).map((number) => (
+                    <option key={number} value={number}>الحزب {toArabicDigits(number)}</option>
+                  ))}
+                </select>
               </div>
-            </div>
-          </>
-        )}
-      </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                <button className="u-btn u-btn-g sm" onClick={resetAll} disabled={marks.length === 0}>مسح جميع العلامات</button>
+                <button className="u-btn u-btn-s sm" onClick={() => setShowJson(true)} disabled={marks.length === 0}>عرض البيانات (JSON)</button>
+                <div style={{ width: '100%', color: 'var(--ink3)', fontSize: 12 }}>اضغط على الآية لتسجيل خطأ أو تنبيه</div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
-      {previewReady && loading && (
+      {showMushaf && loading && (
         <div className="u-card" style={{ padding: 60, textAlign: 'center', color: 'var(--ink2)' }}>
           جاري تحميل الحزب…
         </div>
       )}
-      {previewReady && error && (
+      {showMushaf && error && (
         <div className="u-card" style={{ padding: 40, textAlign: 'center', color: 'var(--bad)' }}>
           {error}
         </div>
       )}
 
-      {previewReady && !loading && !error && page && (
-        <div className="mushaf-card preview-workspace">
+      {showMushaf && !loading && !error && page && (
+        <div
+          className="mushaf-card preview-workspace mus-swipe-zone"
+          ref={mushafCardRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <div className="mus-band">
             <div className={`mus-band-timer ${timerRunning ? 'running' : ''}`} aria-label="مؤقت التسميع">
               <button
@@ -684,15 +807,6 @@ export default function MushafPreviewPage() {
                 )}
               </button>
               <time>{formattedTime}</time>
-              <button
-                type="button"
-                onClick={resetTimer}
-                disabled={elapsedSeconds === 0}
-                aria-label="تصفير مؤقت التسميع"
-                title="تصفير المؤقت"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 4v6h6M20 20v-6h-6M5.1 15a8 8 0 0 0 13.2 2.6L20 14M4 10l1.7-3.6A8 8 0 0 1 18.9 9" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </button>
             </div>
             <div className="mus-band-center">
               <div className="mus-band-title">
@@ -752,7 +866,10 @@ export default function MushafPreviewPage() {
                       <span
                         key={`seg-${line.lineNumber}-${si}`}
                         className={cls}
-                        onClick={() => setSheetFor({ surah: seg.surah, ayah: seg.ayah })}
+                        onClick={() => {
+                          if (Date.now() < suppressAyahTapUntilRef.current) return;
+                          setSheetFor({ surah: seg.surah, ayah: seg.ayah });
+                        }}
                         role="button"
                         tabIndex={0}
                         aria-label={`سورة ${page.surahsOnPage.find((s) => s.number === seg.surah)?.name || seg.surah}، الآية ${seg.ayah}`}
@@ -772,10 +889,12 @@ export default function MushafPreviewPage() {
             })}
           </div>
 
+          <div className="mus-swipe-hint">اسحب يميناً للصفحة التالية · ويساراً للصفحة السابقة</div>
+
           <div className="mus-pagination">
             <button
               className="mus-page-button"
-              onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
+              onClick={() => changePage('previous')}
               disabled={!canPrev}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
@@ -787,7 +906,7 @@ export default function MushafPreviewPage() {
             </div>
             <button
               className="mus-page-button"
-              onClick={() => setPageIndex((i) => Math.min(pages.length - 1, i + 1))}
+              onClick={() => changePage('next')}
               disabled={!canNext}
             >
               التالية
