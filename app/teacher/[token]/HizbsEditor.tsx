@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { HIZB_PRESETS, juzForHizb } from '@/lib/hizbPresets';
 
@@ -469,14 +469,22 @@ export default function HizbsEditor({
   const [sel, setSel] = useState<Set<number>>(new Set(initial));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const selectionRef = useRef<Set<number>>(new Set(initial));
+  const touchStartsRef = useRef(new Map<number, { x: number; y: number }>());
+  const suppressedTouchClicksRef = useRef(new Map<number, number>());
+
+  function replaceSelection(next: Set<number>) {
+    selectionRef.current = next;
+    setSel(next);
+  }
 
   useEffect(() => {
     setSavedHizbs(initial);
-    setSel(new Set(initial));
+    replaceSelection(new Set(initial));
   }, [initial]);
 
   function openModal() {
-    setSel(new Set(savedHizbs));
+    replaceSelection(new Set(savedHizbs));
     setErr(null);
     setOpen(true);
   }
@@ -484,13 +492,42 @@ export default function HizbsEditor({
   function toggle(n: number) {
     if (saving) return;
     if (mandatory.includes(n)) return;
-    // Functional form so rapid taps don't overwrite each other through
-    // a stale `sel` closure (React hasn't applied the previous setSel yet).
-    setSel((current) => {
-      const next = new Set(current);
-      if (next.has(n)) next.delete(n); else next.add(n);
-      return next;
-    });
+    // Keep an immediate source of truth in addition to React state. This makes
+    // consecutive mobile taps (and an immediate Save tap) deterministic even
+    // before React has painted the previous selection.
+    const next = new Set(selectionRef.current);
+    if (next.has(n)) next.delete(n); else next.add(n);
+    replaceSelection(next);
+  }
+
+  function beginTouchTap(event: React.PointerEvent<HTMLButtonElement>) {
+    if (event.pointerType !== 'touch') return;
+    touchStartsRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  }
+
+  function finishTouchTap(event: React.PointerEvent<HTMLButtonElement>, n: number) {
+    if (event.pointerType !== 'touch') return;
+    const start = touchStartsRef.current.get(event.pointerId);
+    touchStartsRef.current.delete(event.pointerId);
+    if (!start) return;
+    const moved = Math.hypot(event.clientX - start.x, event.clientY - start.y);
+    if (moved > 12) return;
+
+    // Handle the touch immediately instead of waiting for the compatibility
+    // click. Suppress that later click so one tap can never toggle twice.
+    event.preventDefault();
+    suppressedTouchClicksRef.current.set(n, Date.now() + 700);
+    toggle(n);
+  }
+
+  function handleHizbClick(event: React.MouseEvent<HTMLButtonElement>, n: number) {
+    const suppressUntil = suppressedTouchClicksRef.current.get(n) || 0;
+    if (Date.now() < suppressUntil) {
+      event.preventDefault();
+      return;
+    }
+    suppressedTouchClicksRef.current.delete(n);
+    toggle(n);
   }
 
   // Close on Escape
@@ -505,32 +542,34 @@ export default function HizbsEditor({
 
   function selectAll() {
     if (saving) return;
-    setSel(new Set(Array.from({ length: 60 }, (_, i) => i + 1)));
+    replaceSelection(new Set(Array.from({ length: 60 }, (_, i) => i + 1)));
   }
 
   function clearAll() {
     if (saving) return;
-    setSel(new Set(mandatory));
+    replaceSelection(new Set(mandatory));
   }
 
   function togglePreset(hizbs: readonly number[]) {
     if (saving) return;
-    setSel((current) => {
-      const complete = hizbs.every((n) => current.has(n));
-      if (!complete) return new Set([...current, ...hizbs]);
-      const next = new Set(current);
-      for (const n of hizbs) {
-        if (!mandatory.includes(n)) next.delete(n);
-      }
-      return next;
-    });
+    const current = selectionRef.current;
+    const complete = hizbs.every((n) => current.has(n));
+    if (!complete) {
+      replaceSelection(new Set([...current, ...hizbs]));
+      return;
+    }
+    const next = new Set(current);
+    for (const n of hizbs) {
+      if (!mandatory.includes(n)) next.delete(n);
+    }
+    replaceSelection(next);
   }
 
   async function save() {
     if (saving) return;
     setSaving(true);
     setErr(null);
-    const chosen = Array.from(sel).sort((a, b) => a - b);
+    const chosen = Array.from(selectionRef.current).sort((a, b) => a - b);
     try {
       const res = await fetch(`/api/teacher/${token}/students/${studentId}/hizbs`, {
         method: 'PUT',
@@ -544,7 +583,7 @@ export default function HizbsEditor({
       }
       const nextHizbs: number[] = Array.isArray(d.hizbs) ? d.hizbs : chosen;
       setSavedHizbs(nextHizbs);
-      setSel(new Set(nextHizbs));
+      replaceSelection(new Set(nextHizbs));
       onSaved?.(nextHizbs, d.status);
       setOpen(false);
       router.refresh();
@@ -677,10 +716,14 @@ export default function HizbsEditor({
                   return (
                     <button
                       key={n}
-                      onClick={() => toggle(n)}
+                      onPointerDown={beginTouchTap}
+                      onPointerUp={(event) => finishTouchTap(event, n)}
+                      onPointerCancel={(event) => touchStartsRef.current.delete(event.pointerId)}
+                      onClick={(event) => handleHizbClick(event, n)}
                       disabled={saving || isMandatory}
                       className={`th-h${stateClass}`}
                       type="button"
+                      aria-pressed={on}
                       title={isMandatory ? 'حزب إلزامي مقفل من الإدارة' : willBeRemoved ? 'سيُحذف عند الحفظ' : isSaved ? 'محفوظ سابقاً ويمكن إلغاء اختياره' : undefined}
                     >
                       {isMandatory && <span className="th-h-lock" aria-hidden="true">🔒</span>}
