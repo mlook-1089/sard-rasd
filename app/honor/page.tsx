@@ -157,7 +157,14 @@ async function getHonorInitialData() {
       });
     }
 
-    return { stats, columns };
+    return {
+      stats,
+      columns,
+      settings: {
+        logoUrl: set?.logoUrl ?? null,
+        title: null as string | null
+      }
+    };
   } catch {
     return null;
   }

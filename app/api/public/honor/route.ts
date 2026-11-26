@@ -171,5 +171,12 @@ export async function GET() {
     });
   }
 
-  return noStore({ stats, columns });
+  return noStore({
+    stats,
+    columns,
+    settings: {
+      logoUrl: set?.logoUrl ?? null,
+      title: null
+    }
+  });
 }
