@@ -45,15 +45,22 @@ export default function SupStudentsReport() {
 
   useEffect(() => {
     setLoading(true);
+    // Each request is isolated: a failure in the report aggregates must NOT hide the student list.
+    const safeJson = (url: string) =>
+      fetch(url)
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+
     Promise.all([
-      fetch('/api/students').then((r) => r.json()),
-      fetch('/api/reports/students').then((r) => r.json()),
-      fetch('/api/programs/active').then((r) => r.json())
+      safeJson('/api/students'),
+      safeJson('/api/reports/students?format=json'),
+      safeJson('/api/programs/active')
     ])
       .then(([stData, repData, progData]) => {
-        const activeStudents: Student[] = (stData.rows || []).filter((s: any) => s.status === 'active');
+        const activeStudents: Student[] = ((stData?.rows || []) as any[])
+          .filter((s) => s.status === 'active');
         const repMap = new Map<number, ReportRow>();
-        for (const r of (repData.rows || [])) {
+        for (const r of (repData?.rows || [])) {
           repMap.set(r.id, {
             id: r.id,
             target: Number(r.target || 0),
