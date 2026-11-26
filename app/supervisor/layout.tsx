@@ -43,6 +43,7 @@ export default async function SupervisorLayout({ children }: { children: React.R
       userName={supervisorName}
       userRoleLabel={committeeName || 'مشرف لجنة'}
       nav={nav}
+      hideBottomNav
     >
       <ActiveProgramBanner />
       {children}
