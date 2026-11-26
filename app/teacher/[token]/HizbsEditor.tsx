@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { HIZB_PRESETS, juzForHizb } from '@/lib/hizbPresets';
+import { surahName } from '@/lib/quranSurahs';
 
 export type TeacherStudentRow = {
   id: number;
@@ -34,6 +35,7 @@ type StudentSessionResult = {
   id: number;
   hizbNumber: number;
   reciterName: string;
+  recordingMode: string;
   startedAt: string;
   endedAt: string | null;
   durationSeconds: number | null;
@@ -41,6 +43,7 @@ type StudentSessionResult = {
   alerts: number;
   score: number | null;
   passed: boolean | null;
+  marks: { surah: number; ayah: number; type: 'error' | 'alert' }[];
 };
 
 type HizbResultRow = {
@@ -70,6 +73,13 @@ function formatResultDate(raw: string): string {
     month: 'short',
     year: 'numeric'
   }).format(date);
+}
+
+function formatResultDuration(seconds: number | null): string {
+  if (seconds == null) return '—';
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return `${minutes}د ${remainder}ث`;
 }
 
 // ======================================================
@@ -280,7 +290,21 @@ function StudentDetail({
                       <div style={{ display: 'flex', gap: 10, fontSize: 12, flexWrap: 'wrap', color: 'var(--ink2)' }}>
                         <span style={{ color: 'var(--bad)' }}>أخطاء: <b>{r.errors}</b></span>
                         <span style={{ color: 'var(--warn)' }}>تنبيهات: <b>{r.alerts}</b></span>
+                        <span>مدة الجلسة: <b>{formatResultDuration(r.durationSeconds)}</b></span>
+                        {r.recordingMode === 'mushaf' && <span className="u-pill brand">رصد بالمصحف</span>}
                       </div>
+                      {Array.isArray(r.marks) && r.marks.length > 0 && (
+                        <details className="session-mark-details">
+                          <summary>تفاصيل الأخطاء والتنبيهات ({r.marks.length})</summary>
+                          <div className="session-mark-list">
+                            {r.marks.map((mark, index) => (
+                              <span key={`${r.id}-${mark.surah}-${mark.ayah}-${mark.type}-${index}`} className={`session-mark ${mark.type}`}>
+                                {mark.type === 'error' ? 'خطأ' : 'تنبيه'} · سورة {surahName(mark.surah)} · الآية {mark.ayah}
+                              </span>
+                            ))}
+                          </div>
+                        </details>
+                      )}
                       <div>
                         <span className="sess-reciter">
                           <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -440,6 +464,12 @@ function TeacherReportStyles() {
       .sess-card.failed { background: var(--bad-soft); border-color: color-mix(in srgb, var(--bad) 35%, var(--line)); }
       .sess-card.open { background: var(--muted-bg); }
       .sess-reciter { display: inline-flex; align-items: center; gap: 4px; background: var(--card); border: 1px solid var(--line); padding: 3px 9px; border-radius: 99px; font-size: 11.5px; font-weight: 700; color: var(--brand-ink); margin-top: 6px; }
+      .session-mark-details { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 7px; }
+      .session-mark-details summary { cursor: pointer; color: var(--brand-ink); font-size: 12px; font-weight: 700; }
+      .session-mark-list { display: flex; flex-direction: column; gap: 5px; margin-top: 7px; }
+      .session-mark { display: block; border-radius: 9px; padding: 6px 8px; font-size: 11.5px; font-weight: 700; }
+      .session-mark.error { color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, transparent); }
+      .session-mark.alert { color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); }
     ` }} />
   );
 }

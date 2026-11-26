@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { students, studentHizbs, sessions, committees } from '@/lib/schema';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { students, studentHizbs, sessionMarks, sessions, committees } from '@/lib/schema';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
 
 export const runtime = 'nodejs';
@@ -29,6 +29,25 @@ export async function GET() {
     .from(sessions)
     .where(and(eq(sessions.studentId, studentId), eq(sessions.cancelled, false)))
     .orderBy(desc(sessions.startedAt));
+
+  const markRows = rawSessions.length > 0
+    ? await db
+      .select({
+        sessionId: sessionMarks.sessionId,
+        surah: sessionMarks.surah,
+        ayah: sessionMarks.ayah,
+        type: sessionMarks.type
+      })
+      .from(sessionMarks)
+      .where(inArray(sessionMarks.sessionId, rawSessions.map((row) => row.id)))
+      .orderBy(asc(sessionMarks.id))
+    : [];
+  const marksBySession = new Map<number, { surah: number; ayah: number; type: string }[]>();
+  for (const mark of markRows) {
+    const current = marksBySession.get(mark.sessionId) || [];
+    current.push({ surah: mark.surah, ayah: mark.ayah, type: mark.type });
+    marksBySession.set(mark.sessionId, current);
+  }
 
   const passedHizbs = new Set(
     rawSessions.filter((s) => s.passed && s.endedAt).map((s) => s.hizbNumber)
@@ -65,7 +84,9 @@ export async function GET() {
     score: s.score,
     passed: s.passed,
     reciter: s.reciterName,
-    durationSeconds: s.durationSeconds
+    recordingMode: s.recordingMode,
+    durationSeconds: s.durationSeconds,
+    marks: marksBySession.get(s.id) || []
   }));
 
   return NextResponse.json({

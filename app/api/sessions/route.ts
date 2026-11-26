@@ -48,7 +48,7 @@ export async function GET(req: Request) {
     durationSeconds: sessions.durationSeconds, hizbNumber: sessions.hizbNumber,
     errors: sessions.errors, alerts: sessions.alerts, score: sessions.score,
     passed: sessions.passed, cancelled: sessions.cancelled,
-    reciterName: sessions.reciterName, deviceTag: sessions.deviceTag,
+    reciterName: sessions.reciterName, recordingMode: sessions.recordingMode, deviceTag: sessions.deviceTag,
     studentId: sessions.studentId, committeeId: sessions.committeeId,
     studentName: students.name, committeeName: committees.name
   })
@@ -106,6 +106,7 @@ export async function POST(req: Request) {
   }
 
   const trimmedReciter = (b.reciterName || '').trim() || 'بدون اسم';
+  const recordingMode = b.recordingMode === 'mushaf' ? 'mushaf' : 'manual';
   const deviceTag = b.deviceTag ? String(b.deviceTag).trim() : null;
   const STALE_SESSION_MS = 2 * 60 * 60 * 1000; // 2 hours
 
@@ -149,7 +150,7 @@ export async function POST(req: Request) {
     const sameOwner = sameDevice || sameNameNoDevice;
 
     // If the same reciter/device is re-requesting the exact same active hizb, resume it idempotently
-    if (sameOwner && activeStudentSession.hizbNumber === hizbNumber) {
+    if (sameOwner && activeStudentSession.hizbNumber === hizbNumber && activeStudentSession.recordingMode === recordingMode) {
       return NextResponse.json({
         ok: true,
         id: activeStudentSession.id,
@@ -191,6 +192,7 @@ export async function POST(req: Request) {
     studentId,
     hizbNumber,
     reciterName: trimmedReciter,
+    recordingMode,
     committeeId,
     programId: activeId,
     deviceTag

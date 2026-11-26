@@ -31,6 +31,14 @@ type PreviewStudent = {
   remaining: number[];
   attendanceStatus: 'present' | 'absent' | 'unset';
 };
+type ActiveMushafSession = {
+  id: number;
+  startedAt: string;
+  studentId: number;
+  hizbNumber: number;
+};
+
+const MUSHAF_ACTIVE_SESSION_KEY = 'rasd_mushaf_active_session';
 
 const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
 const toArabicDigits = (n: number) =>
@@ -87,6 +95,13 @@ export default function MushafPreviewPage() {
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [studentsError, setStudentsError] = useState<string | null>(null);
   const [setupMissing, setSetupMissing] = useState(false);
+  const [committeeId, setCommitteeId] = useState(0);
+  const [reciterName, setReciterName] = useState('');
+  const [activeSession, setActiveSession] = useState<ActiveMushafSession | null>(null);
+  const [startingSession, setStartingSession] = useState(false);
+  const [savingSession, setSavingSession] = useState(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const [savedResult, setSavedResult] = useState<string | null>(null);
   const [sessionStarted, setSessionStarted] = useState(!isReciterPreview);
   const [finishConfirmOpen, setFinishConfirmOpen] = useState(false);
   const mushafTextRef = useRef<HTMLDivElement | null>(null);
@@ -107,13 +122,17 @@ export default function MushafPreviewPage() {
   useEffect(() => {
     if (!isReciterPreview) return;
     let cancelled = false;
-    let committeeId = 0;
+    let setupCommitteeId = 0;
+    let setupReciterName = '';
     try {
       const setup = JSON.parse(localStorage.getItem('sard_reciter_setup') || '{}');
-      committeeId = Math.max(0, Math.floor(Number(setup.committeeId) || 0));
+      setupCommitteeId = Math.max(0, Math.floor(Number(setup.committeeId) || 0));
+      setupReciterName = String(setup.name || '').trim();
     } catch {}
 
-    if (!committeeId) {
+    setCommitteeId(setupCommitteeId);
+    setReciterName(setupReciterName);
+    if (!setupCommitteeId || !setupReciterName) {
       setSetupMissing(true);
       setStudentsLoading(false);
       return;
@@ -122,16 +141,45 @@ export default function MushafPreviewPage() {
     setSetupMissing(false);
     setStudentsLoading(true);
     setStudentsError(null);
-    fetch(`/api/students/for-record?committeeId=${committeeId}`, { cache: 'no-store' })
+    fetch(`/api/students/for-record?committeeId=${setupCommitteeId}`, { cache: 'no-store' })
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'تعذر تحميل الطلاب');
         return data;
       })
-      .then((data) => {
+      .then(async (data) => {
         if (cancelled) return;
         const rows = (data.students || []) as PreviewStudent[];
         setPreviewStudents(rows);
+        try {
+          const raw = localStorage.getItem(MUSHAF_ACTIVE_SESSION_KEY);
+          const saved = raw ? JSON.parse(raw) : null;
+          const savedStudent = saved && rows.find((student) => student.id === Number(saved.studentId));
+          if (savedStudent && saved.sessionId && saved.hizbNumber) {
+            const check = await fetch(`/api/sessions?activeOnly=1&studentId=${savedStudent.id}`, { cache: 'no-store' });
+            const checkData = check.ok ? await check.json() : { rows: [] };
+            const open = (checkData.rows || []).find((row: any) => Number(row.id) === Number(saved.sessionId));
+            if (open && !cancelled) {
+              setSelectedStudentId(savedStudent.id);
+              setHizb(Number(saved.hizbNumber));
+              setMarks(Array.isArray(saved.marks) ? saved.marks : []);
+              setElapsedSeconds(Math.max(
+                Math.floor(Number(saved.elapsedSeconds) || 0),
+                Math.floor((Date.now() - new Date(open.startedAt).getTime()) / 1000)
+              ));
+              setActiveSession({
+                id: Number(open.id),
+                startedAt: new Date(open.startedAt).toISOString(),
+                studentId: savedStudent.id,
+                hizbNumber: Number(open.hizbNumber)
+              });
+              setSessionStarted(true);
+              setTimerRunning(true);
+              return;
+            }
+          }
+          localStorage.removeItem(MUSHAF_ACTIVE_SESSION_KEY);
+        } catch {}
         const first = rows.find((student) => student.assigned.length > 0) || rows[0];
         if (first) {
           setSelectedStudentId(first.id);
@@ -147,6 +195,30 @@ export default function MushafPreviewPage() {
 
     return () => { cancelled = true; };
   }, [isReciterPreview]);
+
+  useEffect(() => {
+    if (!isReciterPreview || !activeSession) return;
+    try {
+      localStorage.setItem(MUSHAF_ACTIVE_SESSION_KEY, JSON.stringify({
+        sessionId: activeSession.id,
+        studentId: activeSession.studentId,
+        hizbNumber: activeSession.hizbNumber,
+        startedAt: activeSession.startedAt,
+        elapsedSeconds,
+        marks
+      }));
+    } catch {}
+  }, [isReciterPreview, activeSession, elapsedSeconds, marks]);
+
+  useEffect(() => {
+    if (!isReciterPreview || !activeSession) return;
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeLeaving);
+    return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
+  }, [isReciterPreview, activeSession]);
 
   // Fetch pages + fonts for selected hizb
   useEffect(() => {
@@ -347,8 +419,46 @@ export default function MushafPreviewPage() {
     }
   };
 
-  const startPreviewSession = () => {
-    if (!previewReady || loading || error) return;
+  const startPreviewSession = async () => {
+    if (!previewReady || loading || error || !selectedStudent || startingSession) return;
+    if (!committeeId || !reciterName) {
+      setSessionError('اختر اللجنة واكتب اسم المسمّع من الإعدادات أولاً.');
+      return;
+    }
+    if (selectedStudent.attendanceStatus === 'absent') {
+      setSessionError('لا يمكن تسميع طالب مسجل غائباً في التحضير.');
+      return;
+    }
+    setStartingSession(true);
+    setSessionError(null);
+    setSavedResult(null);
+    try {
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          studentId: selectedStudent.id,
+          hizbNumber: hizb,
+          reciterName,
+          committeeId,
+          recordingMode: 'mushaf',
+          deviceTag: getOrSetDeviceTag()
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'تعذر بدء جلسة التسميع');
+
+      setActiveSession({
+        id: Number(data.id),
+        startedAt: new Date(data.startedAt).toISOString(),
+        studentId: selectedStudent.id,
+        hizbNumber: hizb
+      });
+    } catch (startError: any) {
+      setSessionError(startError?.message || 'تعذر بدء جلسة التسميع');
+      setStartingSession(false);
+      return;
+    }
     setMarks([]);
     setSheetFor(null);
     setPageIndex(0);
@@ -356,17 +466,70 @@ export default function MushafPreviewPage() {
     setSessionStarted(true);
     setFinishConfirmOpen(false);
     setTimerRunning(true);
+    setStartingSession(false);
     window.setTimeout(() => mushafCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   };
 
-  const finishPreviewSession = () => {
+  const resetSessionUi = () => {
     setFinishConfirmOpen(false);
     setSessionStarted(false);
     setTimerRunning(false);
     setElapsedSeconds(0);
     setMarks([]);
     setSheetFor(null);
+    setActiveSession(null);
+    try { localStorage.removeItem(MUSHAF_ACTIVE_SESSION_KEY); } catch {}
     window.setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 60);
+  };
+
+  const finishPreviewSession = async () => {
+    if (!activeSession || savingSession) return;
+    setSavingSession(true);
+    setSessionError(null);
+    try {
+      const response = await fetch(`/api/sessions/${activeSession.id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          action: 'end',
+          durationSeconds: Math.max(0, Math.floor(elapsedSeconds)),
+          marks: marks.map(({ surah, ayah, type }) => ({ surah, ayah, type }))
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'تعذر حفظ الجلسة');
+      const passed = Boolean(data.passed);
+      setPreviewStudents((current) => current.map((student) => student.id === activeSession.studentId
+        ? { ...student, remaining: passed ? student.remaining.filter((number) => number !== activeSession.hizbNumber) : student.remaining }
+        : student));
+      setSavedResult(`تم حفظ الحزب ${toArabicDigits(activeSession.hizbNumber)} · الدرجة ${toArabicDigits(Number(data.score) || 0)} · ${passed ? 'مجتاز' : 'لم يجتز'}`);
+      resetSessionUi();
+    } catch (finishError: any) {
+      setSessionError(finishError?.message || 'تعذر حفظ الجلسة');
+    } finally {
+      setSavingSession(false);
+    }
+  };
+
+  const cancelPreviewSession = async () => {
+    if (!activeSession || savingSession) return;
+    setSavingSession(true);
+    setSessionError(null);
+    try {
+      const response = await fetch(`/api/sessions/${activeSession.id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel', durationSeconds: Math.max(0, Math.floor(elapsedSeconds)) })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'تعذر إلغاء الجلسة');
+      setSavedResult('تم إلغاء الجلسة دون احتسابها.');
+      resetSessionUi();
+    } catch (cancelError: any) {
+      setSessionError(cancelError?.message || 'تعذر إلغاء الجلسة');
+    } finally {
+      setSavingSession(false);
+    }
   };
 
   const formattedTime = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:${String(elapsedSeconds % 60).padStart(2, '0')}`;
@@ -675,17 +838,20 @@ export default function MushafPreviewPage() {
       <div className="u-top">
         <div>
           <div className="u-sub">
-            {isReciterPreview ? 'تجربة على طلاب اللجنة · لا يحفظ شيئاً' : 'شكل تجريبي · لا يحفظ شيئاً'}
+            {isReciterPreview ? 'خيار الرصد الثاني · حفظ مواضع الأخطاء والتنبيهات' : 'شكل تجريبي · لا يحفظ شيئاً'}
           </div>
           <h1>تسميع على المصحف</h1>
         </div>
       </div>
 
+      {sessionError && <div className="u-note bad" style={{ marginBottom: 12 }}>{sessionError}</div>}
+      {savedResult && !sessionStarted && <div className="u-note ok" style={{ marginBottom: 12 }}>{savedResult}</div>}
+
       {isReciterPreview && sessionStarted ? (
         <div className="u-card preview-session-info">
           <div>
             <b>{selectedStudent?.name}</b>
-            <small>الحزب {toArabicDigits(hizb)} · تجربة لا تُحفظ</small>
+            <small>الحزب {toArabicDigits(hizb)} · جلسة رصد محفوظة</small>
           </div>
         </div>
       ) : (
@@ -744,9 +910,9 @@ export default function MushafPreviewPage() {
                         type="button"
                         className="u-btn u-btn-p lg w"
                         onClick={startPreviewSession}
-                        disabled={!previewReady || loading || Boolean(error)}
+                        disabled={!previewReady || loading || Boolean(error) || startingSession}
                       >
-                        {loading ? 'جاري تجهيز المصحف…' : `بدء التسميع — الحزب ${toArabicDigits(hizb)}`}
+                        {startingSession ? 'جاري بدء الجلسة…' : loading ? 'جاري تجهيز المصحف…' : `بدء التسميع — الحزب ${toArabicDigits(hizb)}`}
                       </button>
                     </div>
                   </div>
@@ -1001,19 +1167,35 @@ export default function MushafPreviewPage() {
             <div className="grab" />
             <div className="mark-sheet-head">
               <h3 id="finish-sheet-title">إنهاء جلسة {selectedStudent?.name}</h3>
-              <p>الحزب {toArabicDigits(hizb)} · هذه تجربة ولن يُحفظ الرصد</p>
+              <p>الحزب {toArabicDigits(hizb)} · ستُحفظ الدرجة والمدة ومواضع العلامات</p>
             </div>
             <div className="finish-summary">
               <div><b>{formattedTime}</b><small>المدة</small></div>
               <div><b>{toArabicDigits(errorCount)} / {toArabicDigits(alertCount)}</b><small>خطأ / تنبيه</small></div>
             </div>
             <div className="mark-secondary">
-              <button className="u-btn u-btn-bad" onClick={finishPreviewSession}>إنهاء والعودة للاختيار</button>
-              <button className="u-btn u-btn-g" onClick={() => setFinishConfirmOpen(false)}>متابعة التسميع</button>
+              <button className="u-btn u-btn-ok" onClick={finishPreviewSession} disabled={savingSession}>
+                {savingSession ? 'جاري الحفظ…' : 'إنهاء وحفظ'}
+              </button>
+              <button className="u-btn u-btn-g" onClick={() => setFinishConfirmOpen(false)} disabled={savingSession}>متابعة التسميع</button>
+              <button className="u-btn u-btn-bad" onClick={cancelPreviewSession} disabled={savingSession}>إلغاء الجلسة دون اعتماد</button>
             </div>
           </section>
         </>
       )}
     </div>
   );
+}
+
+function getOrSetDeviceTag(): string {
+  try {
+    let tag = localStorage.getItem('sard_device_tag');
+    if (!tag) {
+      tag = `dev_${Math.random().toString(36).slice(2, 10)}`;
+      localStorage.setItem('sard_device_tag', tag);
+    }
+    return tag;
+  } catch {
+    return 'dev_anon';
+  }
 }

@@ -101,6 +101,21 @@ async function main() {
   await sql`CREATE INDEX IF NOT EXISTS sessions_committee_idx ON sessions(committee_id)`;
   await sql`CREATE INDEX IF NOT EXISTS sessions_active_idx ON sessions(ended_at)`;
   await sql`CREATE INDEX IF NOT EXISTS sessions_date_idx ON sessions(started_at)`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS recording_mode TEXT NOT NULL DEFAULT 'manual'`;
+
+  await sql`CREATE TABLE IF NOT EXISTS session_marks (
+    id SERIAL PRIMARY KEY,
+    session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    surah INTEGER NOT NULL,
+    ayah INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT session_marks_type_check CHECK (type IN ('error', 'alert')),
+    CONSTRAINT session_marks_surah_check CHECK (surah BETWEEN 1 AND 114),
+    CONSTRAINT session_marks_ayah_check CHECK (ayah > 0)
+  )`;
+  await sql`CREATE INDEX IF NOT EXISTS session_marks_session_idx ON session_marks(session_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS session_marks_verse_idx ON session_marks(surah, ayah)`;
 
   // Legacy attendance (may still exist from v1)
   await sql`CREATE TABLE IF NOT EXISTS attendance (
@@ -188,7 +203,7 @@ async function main() {
     WHERE whatsapp_template LIKE '%المحفوظ%'
   `;
 
-  console.log('[sard] migrate complete (v2 programs)');
+  console.log('[sard] migrate complete (v3 mushaf marks)');
 }
 
 main().catch((e) => {

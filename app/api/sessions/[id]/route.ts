@@ -1,12 +1,27 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { sessions } from '@/lib/schema';
+import { sessionMarks, sessions } from '@/lib/schema';
 import { and, eq } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
 import { computeScore, getGrading } from '@/lib/grading';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+type MushafMark = { surah: number; ayah: number; type: 'error' | 'alert' };
+
+function normalizeMarks(raw: unknown): MushafMark[] | null {
+  if (!Array.isArray(raw)) return null;
+  return raw.flatMap((item): MushafMark[] => {
+    if (!item || typeof item !== 'object') return [];
+    const mark = item as Record<string, unknown>;
+    const surah = Math.floor(Number(mark.surah));
+    const ayah = Math.floor(Number(mark.ayah));
+    const type = mark.type === 'error' || mark.type === 'alert' ? mark.type : null;
+    if (!type || surah < 1 || surah > 114 || ayah < 1) return [];
+    return [{ surah, ayah, type }];
+  }).slice(0, 500);
+}
 
 /** End or edit a session. Body:
  *   action: 'end'    → { errors, alerts }      finalize
@@ -49,10 +64,26 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       return NextResponse.json({ ok: true, score: row.score, passed: row.passed });
     }
 
-    const errors = Math.max(0, Math.floor(Number(b.errors ?? row.errors) || 0));
-    const alerts = Math.max(0, Math.floor(Number(b.alerts ?? row.alerts) || 0));
+    const marks = normalizeMarks(b.marks);
+    const errors = marks
+      ? marks.filter((mark) => mark.type === 'error').length
+      : Math.max(0, Math.floor(Number(b.errors ?? row.errors) || 0));
+    const alerts = marks
+      ? marks.filter((mark) => mark.type === 'alert').length
+      : Math.max(0, Math.floor(Number(b.alerts ?? row.alerts) || 0));
     const score = computeScore(g.total, g.errDeduct, g.alertDeduct, errors, alerts);
     const passed = score >= g.pass;
+    if (marks) {
+      await db.delete(sessionMarks).where(eq(sessionMarks.sessionId, id));
+      if (marks.length > 0) {
+        await db.insert(sessionMarks).values(marks.map((mark) => ({
+          sessionId: id,
+          surah: mark.surah,
+          ayah: mark.ayah,
+          type: mark.type
+        })));
+      }
+    }
     await db.update(sessions).set({ endedAt, durationSeconds, errors, alerts, score, passed }).where(eq(sessions.id, id));
     return NextResponse.json({ ok: true, score, passed });
   }

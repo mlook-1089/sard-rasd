@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { unstable_noStore as noStore } from 'next/cache';
 import { db } from '@/lib/db';
-import { circles, sessions, studentHizbs, students } from '@/lib/schema';
-import { and, desc, eq, isNotNull } from 'drizzle-orm';
+import { circles, sessionMarks, sessions, studentHizbs, students } from '@/lib/schema';
+import { and, asc, desc, eq, inArray, isNotNull } from 'drizzle-orm';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -57,6 +57,7 @@ export async function GET(
         id: sessions.id,
         hizbNumber: sessions.hizbNumber,
         reciterName: sessions.reciterName,
+        recordingMode: sessions.recordingMode,
         startedAt: sessions.startedAt,
         endedAt: sessions.endedAt,
         durationSeconds: sessions.durationSeconds,
@@ -74,11 +75,33 @@ export async function GET(
       .orderBy(desc(sessions.startedAt), desc(sessions.id))
   ]);
 
+  const markRows = records.length > 0
+    ? await db
+      .select({
+        sessionId: sessionMarks.sessionId,
+        surah: sessionMarks.surah,
+        ayah: sessionMarks.ayah,
+        type: sessionMarks.type
+      })
+      .from(sessionMarks)
+      .where(inArray(sessionMarks.sessionId, records.map((record) => record.id)))
+      .orderBy(asc(sessionMarks.id))
+    : [];
+  const marksBySession = new Map<number, typeof markRows>();
+  for (const mark of markRows) {
+    const current = marksBySession.get(mark.sessionId) || [];
+    current.push(mark);
+    marksBySession.set(mark.sessionId, current);
+  }
+
   return NextResponse.json(
     {
       student: { id: student.id, name: student.name },
       assignedHizbs: assigned.map((row) => row.hizbNumber).sort((a, b) => a - b),
-      sessions: records
+      sessions: records.map((record) => ({
+        ...record,
+        marks: (marksBySession.get(record.id) || []).map(({ surah, ayah, type }) => ({ surah, ayah, type }))
+      }))
     },
     { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
   );

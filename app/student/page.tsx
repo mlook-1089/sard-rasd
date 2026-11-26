@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { students, studentHizbs, sessions, committees } from '@/lib/schema';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { students, studentHizbs, sessionMarks, sessions, committees } from '@/lib/schema';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import StudentActions from './StudentActions';
+import { surahName } from '@/lib/quranSurahs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -40,6 +41,25 @@ export default async function StudentPage() {
     .from(sessions)
     .where(and(eq(sessions.studentId, studentId), eq(sessions.cancelled, false)))
     .orderBy(desc(sessions.startedAt));
+
+  const markRows = rawSessions.length > 0
+    ? await db
+      .select({
+        sessionId: sessionMarks.sessionId,
+        surah: sessionMarks.surah,
+        ayah: sessionMarks.ayah,
+        type: sessionMarks.type
+      })
+      .from(sessionMarks)
+      .where(inArray(sessionMarks.sessionId, rawSessions.map((row) => row.id)))
+      .orderBy(asc(sessionMarks.id))
+    : [];
+  const marksBySession = new Map<number, typeof markRows>();
+  for (const mark of markRows) {
+    const current = marksBySession.get(mark.sessionId) || [];
+    current.push(mark);
+    marksBySession.set(mark.sessionId, current);
+  }
 
   const passedHizbs = new Set(rawSessions.filter((s) => s.passed && s.endedAt).map((s) => s.hizbNumber));
   const memorized = passedHizbs.size;
@@ -153,6 +173,7 @@ export default async function StudentPage() {
                     <th>الدرجة</th>
                     <th>المسمع</th>
                     <th>المدة</th>
+                    <th>تفاصيل الرصد</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -171,6 +192,35 @@ export default async function StudentPage() {
                       </td>
                       <td data-label="المسمع">{s.reciterName}</td>
                       <td data-label="المدة">{fmtDuration(s.durationSeconds)}</td>
+                      <td data-label="تفاصيل الرصد">
+                        {(marksBySession.get(s.id) || []).length > 0 ? (
+                          <details style={{ textAlign: 'start', minWidth: 190 }}>
+                            <summary style={{ cursor: 'pointer', color: 'var(--brand-ink)', fontWeight: 700 }}>
+                              {s.recordingMode === 'mushaf' ? 'رصد بالمصحف' : 'عرض المواضع'} ({(marksBySession.get(s.id) || []).length})
+                            </summary>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 7 }}>
+                              {(marksBySession.get(s.id) || []).map((mark, index) => (
+                                <span
+                                  key={`${s.id}-${mark.surah}-${mark.ayah}-${mark.type}-${index}`}
+                                  style={{
+                                    display: 'block',
+                                    borderRadius: 9,
+                                    padding: '6px 8px',
+                                    fontSize: 11.5,
+                                    fontWeight: 700,
+                                    color: mark.type === 'error' ? 'var(--bad)' : 'var(--warn)',
+                                    background: mark.type === 'error' ? 'var(--bad-soft)' : 'var(--warn-soft)'
+                                  }}
+                                >
+                                  {mark.type === 'error' ? 'خطأ' : 'تنبيه'} · سورة {surahName(mark.surah)} · الآية {mark.ayah}
+                                </span>
+                              ))}
+                            </div>
+                          </details>
+                        ) : (
+                          <span className="u-muted">لا توجد مواضع مفصلة</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -134,6 +134,7 @@ export const sessions = pgTable('sessions', {
   programId: integer('program_id').references(() => programs.id, { onDelete: 'set null' }),
   hizbNumber: integer('hizb_number').notNull(),
   reciterName: text('reciter_name').notNull(),
+  recordingMode: text('recording_mode').default('manual').notNull(), // manual | mushaf
   deviceTag: text('device_tag'),
   startedAt: timestamp('started_at').defaultNow().notNull(),
   endedAt: timestamp('ended_at'),
@@ -149,6 +150,21 @@ export const sessions = pgTable('sessions', {
   programIdx: index('sessions_program_idx').on(t.programId),
   activeIdx: index('sessions_active_idx').on(t.endedAt),
   dateIdx: index('sessions_date_idx').on(t.startedAt)
+}));
+
+// ----- Verse-level marks recorded from the Mushaf flow -----
+// More than one mark of the same type may be recorded on an ayah, so rows are
+// intentionally not unique by (session, surah, ayah, type).
+export const sessionMarks = pgTable('session_marks', {
+  id: serial('id').primaryKey(),
+  sessionId: integer('session_id').notNull().references(() => sessions.id, { onDelete: 'cascade' }),
+  surah: integer('surah').notNull(),
+  ayah: integer('ayah').notNull(),
+  type: text('type').notNull(), // error | alert
+  createdAt: timestamp('created_at').defaultNow().notNull()
+}, (t) => ({
+  sessionIdx: index('session_marks_session_idx').on(t.sessionId),
+  verseIdx: index('session_marks_verse_idx').on(t.surah, t.ayah)
 }));
 
 // ----- Attendance (التحضير بلا تاريخ) -----
@@ -172,5 +188,6 @@ export type Committee = typeof committees.$inferSelect;
 export type Supervisor = typeof supervisors.$inferSelect;
 export type Student = typeof students.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
+export type SessionMark = typeof sessionMarks.$inferSelect;
 export type Attendance = typeof attendance.$inferSelect;
 export type Program = typeof programs.$inferSelect;
