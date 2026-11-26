@@ -109,13 +109,6 @@ function StudentResultsDialog({ token, student }: { token: string; student: Teac
     };
   }, [open]);
 
-  const completed = resultRows.filter((row) => row.latest).length;
-  const passed = resultRows.filter((row) => row.latest?.passed === true).length;
-  const scored = resultRows.filter((row) => row.latest?.score != null);
-  const average = scored.length
-    ? Math.round(scored.reduce((sum, row) => sum + Number(row.latest?.score ?? 0), 0) / scored.length)
-    : null;
-
   return (
     <>
       <button type="button" className="teacher-student-name" onClick={loadResults} title={`عرض نتائج ${student.name}`}>
@@ -142,15 +135,6 @@ function StudentResultsDialog({ token, student }: { token: string; student: Teac
                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
-
-            {!loading && !error && (
-              <div className="student-results-stats">
-                <div><span>الأحزاب</span><b>{resultRows.length}</b></div>
-                <div><span>تم تسميعها</span><b>{completed}</b></div>
-                <div><span>مجتاز</span><b className="ok">{passed}</b></div>
-                <div><span>متوسط الدرجة</span><b>{average == null ? '—' : `${average}%`}</b></div>
-              </div>
-            )}
 
             <div className="student-results-body">
               {loading ? (
@@ -535,41 +519,16 @@ export function TeacherPortalClient({
     );
   }
 
-  const totalTarget = rows.reduce((a, r) => a + r.target, 0);
-  const totalMem = rows.reduce((a, r) => a + r.memorized, 0);
-  const avgCompletion = rows.length > 0
-    ? Math.round(rows.reduce((a, r) => a + r.completion, 0) / rows.length)
-    : 0;
-
   return (
     <div style={{ maxWidth: 1120, width: '100%', margin: '0 auto', padding: '12px', boxSizing: 'border-box' }} className="u-page">
-      <div className="u-hero">
-        <div className="l">السلام عليكم ورحمة الله</div>
-        <div className="big">
-          {teacherName ? `أهلاً ${teacherName}` : 'أهلاً بك'}
-        </div>
-        <div className="meta">
-          <span>حلقة <b>{circleName}</b></span>
-        </div>
-      </div>
-
-      <div className="u-grid3">
-        <div className="u-stat">
-          <div className="l">عدد الطلاب</div>
-          <div className="v">{rows.length}</div>
-        </div>
-        <div className="u-stat">
-          <div className="l">المنجز / الهدف</div>
-          <div className="v sm"><span className="u-num">{totalMem}</span> / <span className="u-num">{totalTarget}</span></div>
-        </div>
-        <div className="u-stat">
-          <div className="l">متوسط الإنجاز</div>
-          <div className="v" style={{ color: 'var(--ok)' }}>{avgCompletion}%</div>
+      <div className="u-top">
+        <div>
+          <div className="u-sub">{teacherName ? `${teacherName} · ` : ''}حلقة {circleName}</div>
+          <h1>تقرير الحلقة</h1>
         </div>
       </div>
 
       <div className="u-card">
-        <div className="u-card-h"><h3>تقرير الحلقة الكامل</h3></div>
         {rows.length === 0 ? (
           <div className="u-empty">لا يوجد طلاب بعد</div>
         ) : (
