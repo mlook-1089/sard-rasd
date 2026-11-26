@@ -8,17 +8,24 @@ type Student = {
 };
 type ReportRow = {
   id: number; target: number; memorized: number; completionNum: number;
+  avgScore: number; scoredCount: number;
 };
 type SessRow = {
   id: number; startedAt: string; durationSeconds: number | null;
   hizbNumber: number; errors: number; alerts: number; score: number | null;
-  passed: boolean | null; reciterName: string; programId: number | null;
+  passed: boolean | null; reciterName: string; programId?: number | null;
 };
 
-type SortKey = 'name' | 'circleName' | 'target' | 'memorized' | 'completionNum';
+type SortKey = 'name' | 'circleName' | 'target' | 'memorized' | 'avgScore';
 type SortDir = 'asc' | 'desc';
 
-type Combined = Student & { target: number; memorized: number; completionNum: number };
+type Combined = Student & {
+  target: number;
+  memorized: number;
+  completionNum: number;
+  avgScore: number;
+  scoredCount: number;
+};
 
 function fmtDate(d: string | null) {
   if (!d) return '—';
@@ -26,17 +33,16 @@ function fmtDate(d: string | null) {
   catch { return d; }
 }
 
-// Color tier based on percentage — matches the model in the mockup
+// Color tier based on the AVERAGE SCORE, aligned with the grading thresholds (pass = 60)
 function pctColor(p: number): string {
-  if (p >= 75) return 'var(--ok)';
-  if (p >= 25) return 'var(--warn)';
+  if (p >= 85) return 'var(--ok)';
+  if (p >= 60) return 'var(--warn)';
   if (p > 0) return '#D9551F';
   return 'var(--bad)';
 }
 
 export default function SupStudentsReport() {
   const [students, setStudents] = useState<Combined[]>([]);
-  const [program, setProgram] = useState<{ id: number; name: string } | null>(null);
   const [q, setQ] = useState('');
   const [sel, setSel] = useState<Combined | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +51,7 @@ export default function SupStudentsReport() {
 
   useEffect(() => {
     setLoading(true);
-    // Each request is isolated: a failure in the report aggregates must NOT hide the student list.
+    // Isolated requests: a failed aggregates endpoint must NOT hide the student list.
     const safeJson = (url: string) =>
       fetch(url)
         .then((r) => (r.ok ? r.json() : null))
@@ -53,10 +59,9 @@ export default function SupStudentsReport() {
 
     Promise.all([
       safeJson('/api/students'),
-      safeJson('/api/reports/students?format=json'),
-      safeJson('/api/programs/active')
+      safeJson('/api/reports/students?format=json')
     ])
-      .then(([stData, repData, progData]) => {
+      .then(([stData, repData]) => {
         const activeStudents: Student[] = ((stData?.rows || []) as any[])
           .filter((s) => s.status === 'active');
         const repMap = new Map<number, ReportRow>();
@@ -65,7 +70,9 @@ export default function SupStudentsReport() {
             id: r.id,
             target: Number(r.target || 0),
             memorized: Number(r.memorized || 0),
-            completionNum: Number(r.completionNum || 0)
+            completionNum: Number(r.completionNum || 0),
+            avgScore: Number(r.avgScore || 0),
+            scoredCount: Number(r.scoredCount || 0)
           });
         }
         const combined: Combined[] = activeStudents.map((s) => {
@@ -74,11 +81,12 @@ export default function SupStudentsReport() {
             ...s,
             target: rep?.target ?? 0,
             memorized: rep?.memorized ?? 0,
-            completionNum: rep?.completionNum ?? 0
+            completionNum: rep?.completionNum ?? 0,
+            avgScore: rep?.avgScore ?? 0,
+            scoredCount: rep?.scoredCount ?? 0
           };
         });
         setStudents(combined);
-        setProgram(progData && progData.id ? progData : null);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -115,7 +123,7 @@ export default function SupStudentsReport() {
     });
   }, [students, q, sortKey, sortDir]);
 
-  if (sel) return <StudentDetail student={sel} program={program} onBack={() => setSel(null)} />;
+  if (sel) return <StudentDetail student={sel} onBack={() => setSel(null)} />;
 
   return (
     <div className="u-page">
@@ -149,19 +157,6 @@ export default function SupStudentsReport() {
           align-items: center;
           gap: 4px;
         }
-        .st-rpt-sort-all {
-          background: none;
-          border: 0;
-          color: var(--ink2);
-          font-family: inherit;
-          font-size: 13px;
-          cursor: pointer;
-          padding: 4px 6px;
-          border-radius: 6px;
-        }
-        .st-rpt-sort-all:hover { color: var(--brand-ink); background: var(--muted-bg); }
-
-        /* Table */
         .st-rpt-table { width: 100%; border-collapse: collapse; }
         .st-rpt-table th {
           padding: 10px 12px;
@@ -203,39 +198,25 @@ export default function SupStudentsReport() {
           text-align: start;
         }
         .st-rpt-link:hover { text-decoration-color: var(--brand-ink); }
-
         .st-pct {
           display: inline-block;
           font-weight: 800;
           font-size: 15px;
           font-variant-numeric: tabular-nums;
         }
-        .st-sort {
-          display: inline-block;
-          margin-inline-start: 2px;
-          font-size: 10px;
-        }
+        .st-sort { display: inline-block; margin-inline-start: 2px; font-size: 10px; }
         .st-sort.muted { color: var(--ink3); opacity: .5; }
         .st-sort.on { color: var(--brand-ink); }
-
-        /* Mobile: hide circle column, show under name */
+        .st-circle-sub { font-size: 11.5px; color: var(--ink3); display: none; margin-top: 2px; }
         @media (max-width: 560px) {
           .st-rpt-table .col-circle { display: none; }
+          .st-circle-sub { display: block; }
           .st-rpt-table td.col-name,
           .st-rpt-table th.col-name { padding-inline-start: 10px; }
           .st-rpt-table td,
           .st-rpt-table th { padding: 9px 7px; font-size: 13px; }
           .st-pct { font-size: 14px; }
           .st-rpt-head { padding: 12px 14px; }
-        }
-        .st-circle-sub {
-          font-size: 11.5px;
-          color: var(--ink3);
-          display: none;
-          margin-top: 2px;
-        }
-        @media (max-width: 560px) {
-          .st-circle-sub { display: block; }
         }
       ` }} />
 
@@ -271,9 +252,9 @@ export default function SupStudentsReport() {
               <tr>
                 <th className="col-name" onClick={() => toggleSort('name')}>الطالب{sortGlyph('name')}</th>
                 <th className="col-circle" onClick={() => toggleSort('circleName')}>الحلقة{sortGlyph('circleName')}</th>
-                <th onClick={() => toggleSort('target')}>الأجزاء{sortGlyph('target')}</th>
+                <th onClick={() => toggleSort('target')}>الأحزاب{sortGlyph('target')}</th>
                 <th onClick={() => toggleSort('memorized')}>المرصود{sortGlyph('memorized')}</th>
-                <th onClick={() => toggleSort('completionNum')}>النسبة{sortGlyph('completionNum')}</th>
+                <th onClick={() => toggleSort('avgScore')}>النسبة{sortGlyph('avgScore')}</th>
               </tr>
             </thead>
             <tbody>
@@ -291,8 +272,8 @@ export default function SupStudentsReport() {
                   <td>{s.target}</td>
                   <td>{s.memorized}</td>
                   <td>
-                    <span className="st-pct" style={{ color: pctColor(s.completionNum) }}>
-                      {s.completionNum}%
+                    <span className="st-pct" style={{ color: pctColor(s.avgScore) }}>
+                      {s.scoredCount > 0 ? `${s.avgScore}%` : '—'}
                     </span>
                   </td>
                 </tr>
@@ -306,7 +287,7 @@ export default function SupStudentsReport() {
 }
 
 // ======================================================
-// Student Detail — Hizb grid view with colors
+// Student Detail — hizb grid view with colors + reciter
 // ======================================================
 type HizbStat = {
   hizb: number;
@@ -314,9 +295,11 @@ type HizbStat = {
   passed: boolean;
   bestScore: number | null;
   lastDate: string | null;
+  lastReciter: string | null;
+  isAssigned: boolean;
 };
 
-function StudentDetail({ student, program, onBack }: { student: Combined; program: { id: number; name: string } | null; onBack: () => void }) {
+function StudentDetail({ student, onBack }: { student: Combined; onBack: () => void }) {
   const [rows, setRows] = useState<SessRow[]>([]);
   const [targetHizbs, setTargetHizbs] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
@@ -335,22 +318,23 @@ function StudentDetail({ student, program, onBack }: { student: Combined; progra
       .finally(() => setLoading(false));
   }, [student.id]);
 
-  const inProgram = useMemo(
-    () => (program ? rows.filter((r) => r.programId === program.id) : rows),
-    [rows, program]
-  );
-
-  // Build per-hizb aggregate from all assigned hizbs, union with any hizb that has sessions
+  // Build per-hizb aggregate from BOTH the assigned list and every session the
+  // student has ever had. Any hizb the student has actually recited always
+  // appears in the grid, even if it isn't on their assigned list.
   const hizbStats: HizbStat[] = useMemo(() => {
+    const assignedSet = new Set(targetHizbs);
     const byHizb = new Map<number, HizbStat>();
-    // Seed from assigned hizbs
     for (const h of targetHizbs) {
-      byHizb.set(h, { hizb: h, attempts: 0, passed: false, bestScore: null, lastDate: null });
+      byHizb.set(h, { hizb: h, attempts: 0, passed: false, bestScore: null, lastDate: null, lastReciter: null, isAssigned: true });
     }
-    for (const r of inProgram) {
+    // Chronological order so lastReciter / lastDate reflect the latest session.
+    const sortedRows = [...rows].sort((a, b) =>
+      new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()
+    );
+    for (const r of sortedRows) {
       let stat = byHizb.get(r.hizbNumber);
       if (!stat) {
-        stat = { hizb: r.hizbNumber, attempts: 0, passed: false, bestScore: null, lastDate: null };
+        stat = { hizb: r.hizbNumber, attempts: 0, passed: false, bestScore: null, lastDate: null, lastReciter: null, isAssigned: assignedSet.has(r.hizbNumber) };
         byHizb.set(r.hizbNumber, stat);
       }
       stat.attempts++;
@@ -358,34 +342,33 @@ function StudentDetail({ student, program, onBack }: { student: Combined; progra
       if (r.score != null && (stat.bestScore == null || r.score > stat.bestScore)) {
         stat.bestScore = r.score;
       }
-      if (!stat.lastDate || new Date(r.startedAt) > new Date(stat.lastDate)) {
-        stat.lastDate = r.startedAt;
-      }
+      stat.lastDate = r.startedAt;
+      stat.lastReciter = r.reciterName || stat.lastReciter;
     }
     return Array.from(byHizb.values()).sort((a, b) => a.hizb - b.hizb);
-  }, [targetHizbs, inProgram]);
+  }, [targetHizbs, rows]);
 
-  const passedCount = hizbStats.filter((h) => h.passed).length;
+  const passedCount = hizbStats.filter((h) => h.isAssigned && h.passed).length;
   const totalTarget = targetHizbs.length;
   const completion = totalTarget > 0 ? Math.round((passedCount / totalTarget) * 100) : 0;
-  const totalErrors = inProgram.reduce((a, b) => a + (b.errors || 0), 0);
-  const scored = inProgram.filter((r) => r.score != null && r.passed !== null);
+  const scored = rows.filter((r) => r.score != null && r.passed !== null);
   const avgScore = scored.length ? Math.round(scored.reduce((a, b) => a + (b.score || 0), 0) / scored.length) : 0;
+  const totalErrors = rows.reduce((a, b) => a + (b.errors || 0), 0);
 
   // Sessions for the focused hizb (deep dive)
   const focusSessions = useMemo(() => {
     if (focusHizb == null) return [];
-    return inProgram
+    return rows
       .filter((r) => r.hizbNumber === focusHizb)
       .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
-  }, [inProgram, focusHizb]);
+  }, [rows, focusHizb]);
 
   return (
     <div className="u-page">
       <style dangerouslySetInnerHTML={{ __html: `
         .hz-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
           gap: 10px;
         }
         .hz-card {
@@ -414,15 +397,53 @@ function StudentDetail({ student, program, onBack }: { student: Combined; progra
         .hz-card.attempted .hz-status { background: var(--warn-soft); color: var(--warn); }
         .hz-card.pending .hz-num { color: var(--ink3); }
         .hz-card.pending .hz-status { background: var(--muted-bg); color: var(--ink3); }
+        .hz-card.extra {
+          border-style: dashed;
+          border-color: color-mix(in srgb, var(--brand-ink) 35%, var(--line));
+        }
         .hz-score { font-size: 12px; font-weight: 700; margin-top: 4px; color: var(--ink2); }
+        .hz-reciter {
+          font-size: 10.5px;
+          margin-top: 5px;
+          color: var(--ink2);
+          font-weight: 600;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          background: var(--muted-bg);
+          padding: 2px 6px;
+          border-radius: 6px;
+        }
         .hz-attempts { position: absolute; top: 6px; inset-inline-end: 6px; font-size: 10px; color: var(--ink3); font-weight: 700; background: var(--muted-bg); padding: 1px 6px; border-radius: 99px; }
-
-        .hz-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; margin-top: 10px; }
+        .hz-extra-tag { position: absolute; top: 6px; inset-inline-start: 6px; font-size: 9.5px; color: var(--brand-ink); font-weight: 700; background: var(--brand-soft); padding: 1px 6px; border-radius: 99px; }
+        .hz-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; margin-top: 12px; color: var(--ink2); }
         .hz-legend .leg { display: inline-flex; align-items: center; gap: 5px; }
         .hz-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
         .hz-legend .dot.ok { background: var(--ok); }
         .hz-legend .dot.warn { background: var(--warn); }
         .hz-legend .dot.mute { background: var(--ink3); }
+
+        .sess-card {
+          border: 1px solid var(--line);
+          border-radius: 11px;
+          padding: 10px 12px;
+        }
+        .sess-card.passed { background: var(--ok-soft); border-color: color-mix(in srgb, var(--ok) 35%, var(--line)); }
+        .sess-card.failed { background: var(--bad-soft); border-color: color-mix(in srgb, var(--bad) 35%, var(--line)); }
+        .sess-card.open { background: var(--muted-bg); }
+        .sess-reciter {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          background: var(--card);
+          border: 1px solid var(--line);
+          padding: 3px 9px;
+          border-radius: 99px;
+          font-size: 11.5px;
+          font-weight: 700;
+          color: var(--brand-ink);
+          margin-top: 6px;
+        }
       ` }} />
 
       <div className="u-top">
@@ -440,33 +461,33 @@ function StudentDetail({ student, program, onBack }: { student: Combined; progra
         <div className="big">{student.name}</div>
         <div className="u-bar light"><i style={{ width: `${completion}%`, background: 'var(--gold-bright)' }} /></div>
         <div className="meta" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <span>الإنجاز في البرنامج</span>
+          <span>الإنجاز في الأحزاب المسندة</span>
           <span className="u-num"><bdi dir="ltr">{passedCount} / {totalTarget}</bdi> · <bdi dir="ltr">{completion}%</bdi></span>
         </div>
       </div>
 
       <div className="u-grid2 md4" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-        <div className="u-stat"><div className="l">الهدف</div><div className="v">{totalTarget}</div></div>
-        <div className="u-stat"><div className="l">المرصود</div><div className="v" style={{ color: 'var(--ok)' }}>{passedCount}</div></div>
-        <div className="u-stat"><div className="l">عدد الجلسات</div><div className="v">{inProgram.length}</div></div>
+        <div className="u-stat"><div className="l">الأحزاب المسندة</div><div className="v">{totalTarget}</div></div>
+        <div className="u-stat"><div className="l">الأحزاب المرصودة</div><div className="v" style={{ color: 'var(--ok)' }}>{passedCount}</div></div>
+        <div className="u-stat"><div className="l">عدد الجلسات</div><div className="v">{rows.length}</div></div>
         <div className="u-stat">
           <div className="l">{scored.length > 0 ? 'متوسط الدرجة' : 'عدد الأخطاء'}</div>
-          <div className="v" style={{ color: scored.length > 0 ? 'var(--brand-ink)' : 'var(--bad)' }}>
-            {scored.length > 0 ? avgScore : totalErrors}
+          <div className="v" style={{ color: scored.length > 0 ? pctColor(avgScore) : 'var(--bad)' }}>
+            {scored.length > 0 ? `${avgScore}%` : totalErrors}
           </div>
         </div>
       </div>
 
       <div className="u-card">
         <div className="u-card-h">
-          <h3>الأحزاب المسندة</h3>
+          <h3>سجل الأحزاب</h3>
           <span className="u-pill mute">اضغط على الحزب لتفاصيله</span>
         </div>
 
         {loading ? (
           <div className="u-empty">...جاري التحميل</div>
         ) : hizbStats.length === 0 ? (
-          <div className="u-empty">لا توجد أحزاب مسندة لهذا الطالب</div>
+          <div className="u-empty">لا توجد أحزاب مسندة ولا جلسات مسجّلة لهذا الطالب</div>
         ) : (
           <>
             <div className="hz-grid">
@@ -474,13 +495,23 @@ function StudentDetail({ student, program, onBack }: { student: Combined; progra
                 const cls = h.passed ? 'passed' : (h.attempts > 0 ? 'attempted' : 'pending');
                 const status = h.passed ? 'منجز' : (h.attempts > 0 ? 'لم يُجتز' : 'لم يُسمّع');
                 return (
-                  <div key={h.hizb} className={`hz-card ${cls}`} onClick={() => setFocusHizb(h.hizb)}>
+                  <div
+                    key={h.hizb}
+                    className={`hz-card ${cls} ${!h.isAssigned ? 'extra' : ''}`}
+                    onClick={() => setFocusHizb(h.hizb)}
+                  >
                     {h.attempts > 0 && <span className="hz-attempts">×{h.attempts}</span>}
+                    {!h.isAssigned && <span className="hz-extra-tag">خارج المسند</span>}
                     <div className="hz-num">{h.hizb}</div>
                     <div className="hz-label">الحزب</div>
                     <span className="hz-status">{status}</span>
                     {h.bestScore != null && (
                       <div className="hz-score">الدرجة: {h.bestScore}</div>
+                    )}
+                    {h.lastReciter && (
+                      <div className="hz-reciter" title={`آخر مسمع: ${h.lastReciter}`}>
+                        {h.lastReciter}
+                      </div>
                     )}
                   </div>
                 );
@@ -508,28 +539,33 @@ function StudentDetail({ student, program, onBack }: { student: Combined; progra
               <div className="u-empty" style={{ margin: '20px 0' }}>لم يُسمَّع هذا الحزب بعد</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 12 }}>
-                {focusSessions.map((r) => (
-                  <div key={r.id} style={{
-                    border: '1px solid var(--line)',
-                    borderRadius: 11,
-                    padding: '10px 12px',
-                    background: r.passed ? 'var(--ok-soft)' : (r.passed === false ? 'var(--bad-soft)' : 'var(--muted-bg)')
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, flexWrap: 'wrap', gap: 6 }}>
-                      <b style={{ fontSize: 13 }}>{fmtDate(r.startedAt)}</b>
-                      {r.score != null ? (
-                        <span className={`u-pill ${r.passed ? 'ok' : 'bad'}`}>{r.score}</span>
-                      ) : (
-                        <span className="u-pill mute">مفتوحة</span>
-                      )}
+                {focusSessions.map((r) => {
+                  const cls = r.passed === true ? 'passed' : r.passed === false ? 'failed' : 'open';
+                  return (
+                    <div key={r.id} className={`sess-card ${cls}`}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, flexWrap: 'wrap', gap: 6 }}>
+                        <b style={{ fontSize: 13 }}>{fmtDate(r.startedAt)}</b>
+                        {r.score != null ? (
+                          <span className={`u-pill ${r.passed ? 'ok' : 'bad'}`}>{r.score}</span>
+                        ) : (
+                          <span className="u-pill mute">مفتوحة</span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, fontSize: 12, flexWrap: 'wrap', color: 'var(--ink2)' }}>
+                        <span style={{ color: 'var(--bad)' }}>أخطاء: <b>{r.errors}</b></span>
+                        <span style={{ color: 'var(--warn)' }}>تنبيهات: <b>{r.alerts}</b></span>
+                      </div>
+                      <div>
+                        <span className="sess-reciter">
+                          <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 11V7a2 2 0 10-4 0v4M5 11h14l-1 10H6L5 11z"/>
+                          </svg>
+                          المسمع: {r.reciterName || 'بدون اسم'}
+                        </span>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 10, fontSize: 12, flexWrap: 'wrap', color: 'var(--ink2)' }}>
-                      <span style={{ color: 'var(--bad)' }}>أخطاء: <b>{r.errors}</b></span>
-                      <span style={{ color: 'var(--warn)' }}>تنبيهات: <b>{r.alerts}</b></span>
-                      {r.reciterName && <span>المسمع: <b>{r.reciterName}</b></span>}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             <button className="u-btn u-btn-g w sm" onClick={() => setFocusHizb(null)} style={{ marginTop: 6 }}>

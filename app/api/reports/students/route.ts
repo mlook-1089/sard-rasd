@@ -40,7 +40,9 @@ export async function GET(req: NextRequest) {
       studentId: sessions.studentId,
       passedCount: sql<number>`COALESCE(SUM(CASE WHEN ${sessions.passed} = TRUE THEN 1 ELSE 0 END), 0)`,
       sumErr: sql<number>`COALESCE(SUM(${sessions.errors}), 0)`,
-      sumAlt: sql<number>`COALESCE(SUM(${sessions.alerts}), 0)`
+      sumAlt: sql<number>`COALESCE(SUM(${sessions.alerts}), 0)`,
+      avgScore: sql<number>`COALESCE(AVG(${sessions.score}), 0)`,
+      scoredCount: sql<number>`COALESCE(SUM(CASE WHEN ${sessions.score} IS NOT NULL THEN 1 ELSE 0 END), 0)`
     })
       .from(sessions)
       .where(eq(sessions.cancelled, false))
@@ -54,20 +56,23 @@ export async function GET(req: NextRequest) {
   const tgtMap = new Map<number, number>();
   for (const t of tgtRows) tgtMap.set(t.studentId, Number(t.c ?? 0));
 
-  const sessMap = new Map<number, { passedCount: number; sumErr: number; sumAlt: number }>();
+  const sessMap = new Map<number, { passedCount: number; sumErr: number; sumAlt: number; avgScore: number; scoredCount: number }>();
   for (const s of sessRows) {
     sessMap.set(s.studentId, {
       passedCount: Number(s.passedCount ?? 0),
       sumErr: Number(s.sumErr ?? 0),
-      sumAlt: Number(s.sumAlt ?? 0)
+      sumAlt: Number(s.sumAlt ?? 0),
+      avgScore: Number(s.avgScore ?? 0),
+      scoredCount: Number(s.scoredCount ?? 0)
     });
   }
 
   const out = rows.map((r) => {
     const target = tgtMap.get(r.id) ?? 0;
-    const st = sessMap.get(r.id) ?? { passedCount: 0, sumErr: 0, sumAlt: 0 };
+    const st = sessMap.get(r.id) ?? { passedCount: 0, sumErr: 0, sumAlt: 0, avgScore: 0, scoredCount: 0 };
     const memorized = st.passedCount;
     const completionNum = target > 0 ? Math.round((memorized / target) * 100) : 0;
+    const avgScoreNum = st.scoredCount > 0 ? Math.round(st.avgScore * 10) / 10 : 0;
     return {
       id: r.id,
       name: r.name,
@@ -80,6 +85,8 @@ export async function GET(req: NextRequest) {
       memorized,
       errors: st.sumErr,
       alerts: st.sumAlt,
+      avgScore: avgScoreNum,
+      scoredCount: st.scoredCount,
       completionNum,
       completion: `${completionNum}%`
     };
