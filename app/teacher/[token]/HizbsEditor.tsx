@@ -309,6 +309,9 @@ function TeacherReportStyles() {
   return (
     <style dangerouslySetInnerHTML={{ __html: `
       .st-rpt-card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); }
+      .st-rpt-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .st-rpt-scroll::-webkit-scrollbar { height: 4px; }
+      .st-rpt-scroll::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 4px; }
       .st-rpt-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); gap: 10px; background: linear-gradient(0deg, var(--card2), var(--card)); }
       .st-rpt-title { font-weight: 800; font-size: 15.5px; color: var(--ink); }
       .st-rpt-count { background: var(--brand-soft); color: var(--brand-ink); padding: 4px 11px; border-radius: 99px; font-weight: 800; font-size: 12.5px; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 4px; }
@@ -327,11 +330,14 @@ function TeacherReportStyles() {
       .st-sort { display: inline-block; margin-inline-start: 2px; font-size: 10px; }
       .st-sort.muted { color: var(--ink3); opacity: .5; }
       .st-sort.on { color: var(--brand-ink); }
-      .st-row-actions { display: inline-flex; gap: 6px; justify-content: center; align-items: center; }
+      .st-row-actions { display: inline-flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap; }
       @media (max-width: 640px) {
-        .st-rpt-table td, .st-rpt-table th { padding: 9px 7px; font-size: 13px; }
+        .st-rpt-table { min-width: 460px; }
+        .st-rpt-table td, .st-rpt-table th { padding: 8px 5px; font-size: 12.5px; }
         .st-pct { font-size: 14px; }
         .st-rpt-head { padding: 12px 14px; }
+        .st-row-actions { flex-direction: column; gap: 4px; }
+        .st-row-actions .u-icon-btn { width: 36px !important; height: 36px !important; min-width: 36px !important; min-height: 36px !important; }
       }
 
       .hz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
@@ -782,6 +788,7 @@ export function TeacherPortalClient({
             </div>
           </div>
 
+          <div className="st-rpt-scroll">
           <table className="st-rpt-table">
             <thead>
               <tr>
@@ -850,6 +857,7 @@ export function TeacherPortalClient({
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

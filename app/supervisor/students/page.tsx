@@ -135,6 +135,9 @@ export default function SupStudentsReport() {
           overflow: hidden;
           box-shadow: var(--shadow);
         }
+        .st-rpt-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .st-rpt-scroll::-webkit-scrollbar { height: 4px; }
+        .st-rpt-scroll::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 4px; }
         .st-rpt-head {
           display: flex;
           align-items: center;
@@ -247,6 +250,7 @@ export default function SupStudentsReport() {
             </div>
           </div>
 
+          <div className="st-rpt-scroll">
           <table className="st-rpt-table">
             <thead>
               <tr>
@@ -280,6 +284,7 @@ export default function SupStudentsReport() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>
