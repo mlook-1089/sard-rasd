@@ -1,5 +1,6 @@
 'use client';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 
 type AttendanceStatus = 'present' | 'absent' | 'unset';
 
@@ -1478,6 +1479,15 @@ export default function RecordFlow({
                 <div className="u-muted">الحزب {active.hizbNumber}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {committeeIdRequired && (
+                  <Link
+                    href="/reciter/mushaf-preview?view=session"
+                    className="u-btn u-btn-s sm"
+                    style={{ height: 36, padding: '0 12px', fontSize: 12.5, textDecoration: 'none' }}
+                  >
+                    استعراض المصحف
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={togglePause}

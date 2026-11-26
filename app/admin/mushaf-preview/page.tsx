@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { pagesForHizb } from '@/lib/hizbPages';
 
 type Segment = {
@@ -78,7 +78,9 @@ async function fetchPage(pageNum: number): Promise<Page> {
 export default function MushafPreviewPage() {
   const pathname = usePathname() || '';
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isReciterPreview = pathname.startsWith('/reciter/');
+  const isSessionViewer = isReciterPreview && searchParams.get('view') === 'session';
   const [hizb, setHizb] = useState(1);
   const [pages, setPages] = useState<Page[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
@@ -102,6 +104,8 @@ export default function MushafPreviewPage() {
   const [savingSession, setSavingSession] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [savedResult, setSavedResult] = useState<string | null>(null);
+  const [viewerMode, setViewerMode] = useState(false);
+  const [viewerCounts, setViewerCounts] = useState({ errors: 0, alerts: 0 });
   const [sessionStarted, setSessionStarted] = useState(!isReciterPreview);
   const [finishConfirmOpen, setFinishConfirmOpen] = useState(false);
   const mushafTextRef = useRef<HTMLDivElement | null>(null);
@@ -151,6 +155,39 @@ export default function MushafPreviewPage() {
         if (cancelled) return;
         const rows = (data.students || []) as PreviewStudent[];
         setPreviewStudents(rows);
+        if (isSessionViewer) {
+          try {
+            const rawActive = localStorage.getItem('rasd_active_session');
+            const savedActive = rawActive ? JSON.parse(rawActive) : null;
+            const savedStudent = savedActive && rows.find((student) => student.id === Number(savedActive.studentId));
+            if (savedStudent && savedActive.sessionId && savedActive.hizbNumber) {
+              const check = await fetch(`/api/sessions?activeOnly=1&studentId=${savedStudent.id}`, { cache: 'no-store' });
+              const checkData = check.ok ? await check.json() : { rows: [] };
+              const open = (checkData.rows || []).find((row: any) => Number(row.id) === Number(savedActive.sessionId));
+              if (open && !cancelled) {
+                const pausedAt = savedActive.isPaused && savedActive.pausedAt ? Number(savedActive.pausedAt) : Date.now();
+                const elapsed = Math.max(0, Math.floor(
+                  (pausedAt - new Date(open.startedAt).getTime() - Math.max(0, Number(savedActive.pausedMs) || 0)) / 1000
+                ));
+                setSelectedStudentId(savedStudent.id);
+                setHizb(Number(savedActive.hizbNumber));
+                setElapsedSeconds(elapsed);
+                setViewerCounts({
+                  errors: Math.max(0, Math.floor(Number(savedActive.errors) || 0)),
+                  alerts: Math.max(0, Math.floor(Number(savedActive.alerts) || 0))
+                });
+                setViewerMode(true);
+                setSessionStarted(true);
+                setTimerRunning(!savedActive.isPaused);
+                return;
+              }
+            }
+            setSessionError('لا توجد جلسة عادية جارية لعرض مصحفها.');
+          } catch {
+            setSessionError('تعذر استعادة الجلسة العادية الحالية.');
+          }
+          return;
+        }
         try {
           const raw = localStorage.getItem(MUSHAF_ACTIVE_SESSION_KEY);
           const saved = raw ? JSON.parse(raw) : null;
@@ -194,7 +231,7 @@ export default function MushafPreviewPage() {
       });
 
     return () => { cancelled = true; };
-  }, [isReciterPreview]);
+  }, [isReciterPreview, isSessionViewer]);
 
   useEffect(() => {
     if (!isReciterPreview || !activeSession) return;
@@ -353,8 +390,8 @@ export default function MushafPreviewPage() {
     };
   }, [page, isReciterPreview, sessionStarted]);
 
-  const errorCount = marks.filter((m) => m.type === 'error').length;
-  const alertCount = marks.filter((m) => m.type === 'alert').length;
+  const errorCount = viewerMode ? viewerCounts.errors : marks.filter((m) => m.type === 'error').length;
+  const alertCount = viewerMode ? viewerCounts.alerts : marks.filter((m) => m.type === 'alert').length;
   const selectedStudent = previewStudents.find((student) => student.id === selectedStudentId) || null;
   const availableHizbs = selectedStudent?.assigned || [];
   const previewReady = !isReciterPreview || Boolean(selectedStudent && availableHizbs.length > 0);
@@ -838,7 +875,11 @@ export default function MushafPreviewPage() {
       <div className="u-top">
         <div>
           <div className="u-sub">
-            {isReciterPreview ? 'خيار الرصد الثاني · حفظ مواضع الأخطاء والتنبيهات' : 'شكل تجريبي · لا يحفظ شيئاً'}
+            {viewerMode
+              ? 'استعراض الحزب داخل جلسة الرصد الحالية'
+              : isReciterPreview
+                ? 'رصد مواضع الأخطاء والتنبيهات على الآيات'
+                : 'شكل تجريبي · لا يحفظ شيئاً'}
           </div>
           <h1>تسميع على المصحف</h1>
         </div>
@@ -851,12 +892,25 @@ export default function MushafPreviewPage() {
         <div className="u-card preview-session-info">
           <div>
             <b>{selectedStudent?.name}</b>
-            <small>الحزب {toArabicDigits(hizb)} · جلسة رصد محفوظة</small>
+            <small>
+              الحزب {toArabicDigits(hizb)} · {viewerMode ? 'استعراض فقط — الرصد مستمر في الجلسة العادية' : 'جلسة رصد محفوظة'}
+            </small>
           </div>
         </div>
       ) : (
         <div className="u-card preview-setup">
-          {isReciterPreview && setupMissing ? (
+          {isSessionViewer ? (
+          <div style={{ textAlign: 'center' }}>
+            {studentsLoading ? (
+              <div className="u-muted" style={{ padding: 12 }}>جاري استعادة الجلسة الحالية…</div>
+            ) : (
+              <>
+                <div className="u-note warn">ابدأ جلسة التسميع العادية أولاً، ثم افتح المصحف من زر «استعراض المصحف».</div>
+                <button className="u-btn u-btn-p" onClick={() => router.push('/reciter/record')}>العودة إلى رصد التسميع</button>
+              </>
+            )}
+          </div>
+        ) : isReciterPreview && setupMissing ? (
           <div style={{ textAlign: 'center' }}>
             <div className="u-note warn">اختر اللجنة واكتب اسم المسمّع أولاً لعرض طلابها.</div>
             <button className="u-btn u-btn-p" onClick={() => router.push('/reciter')}>فتح إعدادات المسمّع</button>
@@ -964,9 +1018,10 @@ export default function MushafPreviewPage() {
               <button
                 type="button"
                 className="primary"
-                onClick={() => setTimerRunning((running) => !running)}
-                aria-label={timerRunning ? 'إيقاف مؤقت التسميع مؤقتاً' : 'بدء مؤقت التسميع'}
-                title={timerRunning ? 'إيقاف مؤقت' : 'بدء'}
+                onClick={() => { if (!viewerMode) setTimerRunning((running) => !running); }}
+                disabled={viewerMode}
+                aria-label={viewerMode ? 'مؤقت الجلسة العادية' : timerRunning ? 'إيقاف مؤقت التسميع مؤقتاً' : 'بدء مؤقت التسميع'}
+                title={viewerMode ? 'يُدار المؤقت من جلسة الرصد' : timerRunning ? 'إيقاف مؤقت' : 'بدء'}
               >
                 {timerRunning ? (
                   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h3v14H7zM14 5h3v14h-3z" /></svg>
@@ -1035,13 +1090,15 @@ export default function MushafPreviewPage() {
                         key={`seg-${line.lineNumber}-${si}`}
                         className={cls}
                         onClick={() => {
+                          if (viewerMode) return;
                           if (Date.now() < suppressAyahTapUntilRef.current) return;
                           setSheetFor({ surah: seg.surah, ayah: seg.ayah });
                         }}
-                        role="button"
-                        tabIndex={0}
+                        role={viewerMode ? undefined : 'button'}
+                        tabIndex={viewerMode ? -1 : 0}
                         aria-label={`سورة ${page.surahsOnPage.find((s) => s.number === seg.surah)?.name || seg.surah}، الآية ${seg.ayah}`}
                         onKeyDown={(event) => {
+                          if (viewerMode) return;
                           if (event.key === 'Enter' || event.key === ' ') {
                             event.preventDefault();
                             setSheetFor({ surah: seg.surah, ayah: seg.ayah });
@@ -1079,9 +1136,14 @@ export default function MushafPreviewPage() {
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
             </button>
           </div>
-          {isReciterPreview && (
+          {isReciterPreview && !viewerMode && (
             <div className="mus-session-end">
               <button type="button" onClick={() => setFinishConfirmOpen(true)}>إنهاء الجلسة</button>
+            </div>
+          )}
+          {viewerMode && (
+            <div className="mus-session-end">
+              <button type="button" onClick={() => router.push('/reciter/record')}>العودة للرصد</button>
             </div>
           )}
         </div>
