@@ -891,7 +891,7 @@ export function TeacherPortalClient({
                     <td>{r.memorized}</td>
                     <td>
                       <span className="st-pct" style={{ color: pctColor(r.avgScore) }}>
-                        {r.scoredCount > 0 ? `${r.avgScore}%` : '—'}
+                        {r.avgScore}%
                       </span>
                     </td>
                     <td>
@@ -940,14 +940,13 @@ export function TeacherPortalClient({
                 completion: r.completion
               });
               const waUrl = wa ? `https://wa.me/${wa}?text=${encodeURIComponent(waText)}` : null;
-              const pctLabel = r.scoredCount > 0 ? `${r.avgScore}%` : '—';
               return (
                 <div key={r.id} className="st-stu-card">
                   <div className="st-stu-head">
                     <button type="button" onClick={() => setSel(r.id)} className="st-stu-name">
                       {r.name}
                     </button>
-                    <span className="st-stu-pct" style={{ color: pctColor(r.avgScore) }}>{pctLabel}</span>
+                    <span className="st-stu-pct" style={{ color: pctColor(r.avgScore) }}>{r.avgScore}%</span>
                   </div>
                   <div className="st-stu-meta">
                     <span>الأحزاب <b>{r.target}</b></span>

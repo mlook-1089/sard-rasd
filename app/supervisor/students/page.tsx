@@ -312,7 +312,7 @@ export default function SupStudentsReport() {
                   <td>{s.memorized}</td>
                   <td>
                     <span className="st-pct" style={{ color: pctColor(s.avgScore) }}>
-                      {s.scoredCount > 0 ? `${s.avgScore}%` : '—'}
+                      {s.avgScore}%
                     </span>
                   </td>
                 </tr>
@@ -323,14 +323,13 @@ export default function SupStudentsReport() {
 
           <div className="st-mobile-view st-cards-list">
             {filtered.map((s) => {
-              const pctLabel = s.scoredCount > 0 ? `${s.avgScore}%` : '—';
               return (
                 <div key={s.id} className="st-stu-card">
                   <div className="st-stu-head">
                     <button type="button" onClick={() => setSel(s)} className="st-stu-name">
                       {s.name}
                     </button>
-                    <span className="st-stu-pct" style={{ color: pctColor(s.avgScore) }}>{pctLabel}</span>
+                    <span className="st-stu-pct" style={{ color: pctColor(s.avgScore) }}>{s.avgScore}%</span>
                   </div>
                   {s.circleName && <div className="st-stu-sub">{s.circleName}</div>}
                   <div className="st-stu-meta">
