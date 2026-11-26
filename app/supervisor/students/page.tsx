@@ -348,13 +348,6 @@ function StudentDetail({ student, onBack }: { student: Combined; onBack: () => v
     return Array.from(byHizb.values()).sort((a, b) => a.hizb - b.hizb);
   }, [targetHizbs, rows]);
 
-  const passedCount = hizbStats.filter((h) => h.isAssigned && h.passed).length;
-  const totalTarget = targetHizbs.length;
-  const completion = totalTarget > 0 ? Math.round((passedCount / totalTarget) * 100) : 0;
-  const scored = rows.filter((r) => r.score != null && r.passed !== null);
-  const avgScore = scored.length ? Math.round(scored.reduce((a, b) => a + (b.score || 0), 0) / scored.length) : 0;
-  const totalErrors = rows.reduce((a, b) => a + (b.errors || 0), 0);
-
   // Sessions for the focused hizb (deep dive)
   const focusSessions = useMemo(() => {
     if (focusHizb == null) return [];
@@ -448,33 +441,11 @@ function StudentDetail({ student, onBack }: { student: Combined; onBack: () => v
 
       <div className="u-top">
         <div>
-          <div className="u-sub">تقارير الطلاب</div>
+          <div className="u-sub">تقارير الطلاب{student.circleName ? ` · ${student.circleName}` : ''}</div>
           <h1>{student.name}</h1>
         </div>
         <div className="u-actions">
           <button type="button" onClick={onBack} className="u-btn u-btn-g sm">← رجوع</button>
-        </div>
-      </div>
-
-      <div className="u-hero">
-        <div className="l">{student.level || 'بدون مستوى'}{student.circleName ? ` · ${student.circleName}` : ''}</div>
-        <div className="big">{student.name}</div>
-        <div className="u-bar light"><i style={{ width: `${completion}%`, background: 'var(--gold-bright)' }} /></div>
-        <div className="meta" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <span>الإنجاز في الأحزاب المسندة</span>
-          <span className="u-num"><bdi dir="ltr">{passedCount} / {totalTarget}</bdi> · <bdi dir="ltr">{completion}%</bdi></span>
-        </div>
-      </div>
-
-      <div className="u-grid2 md4" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-        <div className="u-stat"><div className="l">الأحزاب المسندة</div><div className="v">{totalTarget}</div></div>
-        <div className="u-stat"><div className="l">الأحزاب المرصودة</div><div className="v" style={{ color: 'var(--ok)' }}>{passedCount}</div></div>
-        <div className="u-stat"><div className="l">عدد الجلسات</div><div className="v">{rows.length}</div></div>
-        <div className="u-stat">
-          <div className="l">{scored.length > 0 ? 'متوسط الدرجة' : 'عدد الأخطاء'}</div>
-          <div className="v" style={{ color: scored.length > 0 ? pctColor(avgScore) : 'var(--bad)' }}>
-            {scored.length > 0 ? `${avgScore}%` : totalErrors}
-          </div>
         </div>
       </div>
 
