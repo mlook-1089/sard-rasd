@@ -59,20 +59,23 @@ export default async function TeacherPortal({ params }: PageProps) {
     const mandatoryHizbs = hs.filter((r) => r.isMandatory).map((r) => r.hizbNumber).sort((a, b) => a - b);
     const [agg] = await db
       .select({
-        memorized: sql<number>`count(DISTINCT ${sessions.hizbNumber})`,
+        memorized: sql<number>`COUNT(DISTINCT CASE WHEN ${sessions.passed} = TRUE THEN ${sessions.hizbNumber} END)`,
         errors: sql<number>`COALESCE(SUM(${sessions.errors}), 0)`,
-        alerts: sql<number>`COALESCE(SUM(${sessions.alerts}), 0)`
+        alerts: sql<number>`COALESCE(SUM(${sessions.alerts}), 0)`,
+        avgScore: sql<number>`COALESCE(AVG(${sessions.score}), 0)`,
+        scoredCount: sql<number>`COALESCE(SUM(CASE WHEN ${sessions.score} IS NOT NULL THEN 1 ELSE 0 END), 0)`
       })
       .from(sessions)
       .where(and(
         eq(sessions.studentId, s.id),
-        eq(sessions.cancelled, false),
-        eq(sessions.passed, true)
+        eq(sessions.cancelled, false)
       ));
     const target = hizbsSet.length;
     const memorized = Number(agg?.memorized ?? 0);
     const errors = Number(agg?.errors ?? 0);
     const alerts = Number(agg?.alerts ?? 0);
+    const scoredCount = Number(agg?.scoredCount ?? 0);
+    const avgScore = scoredCount > 0 ? Math.round(Number(agg?.avgScore ?? 0) * 10) / 10 : 0;
     const completion = target > 0 ? Math.round((memorized / target) * 100) : 0;
     const effectiveStatus =
       target === 0
@@ -97,7 +100,9 @@ export default async function TeacherPortal({ params }: PageProps) {
       memorized,
       errors,
       alerts,
-      completion
+      completion,
+      avgScore,
+      scoredCount
     });
   }
 
