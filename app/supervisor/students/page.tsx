@@ -211,16 +211,51 @@ export default function SupStudentsReport() {
         .st-sort.muted { color: var(--ink3); opacity: .5; }
         .st-sort.on { color: var(--brand-ink); }
         .st-circle-sub { font-size: 11.5px; color: var(--ink3); display: none; margin-top: 2px; }
-        @media (max-width: 560px) {
-          .st-rpt-table .col-circle { display: none; }
-          .st-circle-sub { display: block; }
-          .st-rpt-table td.col-name,
-          .st-rpt-table th.col-name { padding-inline-start: 10px; }
-          .st-rpt-table td,
-          .st-rpt-table th { padding: 9px 7px; font-size: 13px; }
-          .st-pct { font-size: 14px; }
+
+        /* === Mobile (≤ 640px): switch to per-student cards === */
+        .st-desktop-view { display: block; }
+        .st-mobile-view { display: none; }
+        @media (max-width: 640px) {
+          .st-desktop-view { display: none !important; }
+          .st-mobile-view { display: block !important; }
           .st-rpt-head { padding: 12px 14px; }
         }
+
+        .st-cards-list { display: flex; flex-direction: column; }
+        .st-stu-card {
+          background: var(--card);
+          padding: 12px 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 9px;
+          border-bottom: 1px solid var(--line);
+        }
+        .st-stu-card:last-child { border-bottom: 0; }
+        .st-stu-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .st-stu-name {
+          background: none; border: 0;
+          color: var(--brand-ink); font-weight: 800; font-size: 15px;
+          text-align: start; padding: 0;
+          text-decoration: underline;
+          text-decoration-color: color-mix(in srgb, var(--brand-ink) 40%, transparent);
+          text-underline-offset: 3px;
+          flex: 1; min-width: 0;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+          font-family: inherit; cursor: pointer;
+        }
+        .st-stu-pct {
+          font-weight: 800; font-size: 14.5px;
+          font-variant-numeric: tabular-nums;
+          flex-shrink: 0;
+          padding: 4px 11px;
+          border-radius: 99px;
+          background: color-mix(in srgb, currentColor 12%, transparent);
+          border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+        }
+        .st-stu-sub { color: var(--ink3); font-size: 12px; margin-top: -2px; }
+        .st-stu-meta { color: var(--ink2); font-size: 12.5px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .st-stu-meta .sep { color: var(--ink3); opacity: .5; }
+        .st-stu-meta b { color: var(--ink); font-weight: 700; margin-inline-start: 3px; }
       ` }} />
 
       <div className="u-top">
@@ -250,7 +285,7 @@ export default function SupStudentsReport() {
             </div>
           </div>
 
-          <div className="st-rpt-scroll">
+          <div className="st-rpt-scroll st-desktop-view">
           <table className="st-rpt-table">
             <thead>
               <tr>
@@ -284,6 +319,28 @@ export default function SupStudentsReport() {
               ))}
             </tbody>
           </table>
+          </div>
+
+          <div className="st-mobile-view st-cards-list">
+            {filtered.map((s) => {
+              const pctLabel = s.scoredCount > 0 ? `${s.avgScore}%` : '—';
+              return (
+                <div key={s.id} className="st-stu-card">
+                  <div className="st-stu-head">
+                    <button type="button" onClick={() => setSel(s)} className="st-stu-name">
+                      {s.name}
+                    </button>
+                    <span className="st-stu-pct" style={{ color: pctColor(s.avgScore) }}>{pctLabel}</span>
+                  </div>
+                  {s.circleName && <div className="st-stu-sub">{s.circleName}</div>}
+                  <div className="st-stu-meta">
+                    <span>الأحزاب <b>{s.target}</b></span>
+                    <span className="sep">·</span>
+                    <span>المرصود <b>{s.memorized}</b></span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

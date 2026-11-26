@@ -331,14 +331,83 @@ function TeacherReportStyles() {
       .st-sort.muted { color: var(--ink3); opacity: .5; }
       .st-sort.on { color: var(--brand-ink); }
       .st-row-actions { display: inline-flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap; }
+
+      /* === Mobile (≤ 640px): switch from a cramped table to per-student cards === */
+      .st-desktop-view { display: block; }
+      .st-mobile-view { display: none; }
       @media (max-width: 640px) {
-        .st-rpt-table { min-width: 460px; }
-        .st-rpt-table td, .st-rpt-table th { padding: 8px 5px; font-size: 12.5px; }
-        .st-pct { font-size: 14px; }
+        .st-desktop-view { display: none !important; }
+        .st-mobile-view { display: block !important; }
         .st-rpt-head { padding: 12px 14px; }
-        .st-row-actions { flex-direction: column; gap: 4px; }
-        .st-row-actions .u-icon-btn { width: 36px !important; height: 36px !important; min-width: 36px !important; min-height: 36px !important; }
       }
+
+      .st-cards-list {
+        display: flex;
+        flex-direction: column;
+      }
+      .st-stu-card {
+        background: var(--card);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+        border-bottom: 1px solid var(--line);
+      }
+      .st-stu-card:last-child { border-bottom: 0; }
+      .st-stu-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .st-stu-name {
+        background: none;
+        border: 0;
+        color: var(--brand-ink);
+        font-weight: 800;
+        font-size: 15px;
+        text-align: start;
+        padding: 0;
+        text-decoration: underline;
+        text-decoration-color: color-mix(in srgb, var(--brand-ink) 40%, transparent);
+        text-underline-offset: 3px;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-family: inherit;
+        cursor: pointer;
+      }
+      .st-stu-pct {
+        font-weight: 800;
+        font-size: 14.5px;
+        font-variant-numeric: tabular-nums;
+        flex-shrink: 0;
+        padding: 4px 11px;
+        border-radius: 99px;
+        background: color-mix(in srgb, currentColor 12%, transparent);
+        border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+      }
+      .st-stu-meta {
+        color: var(--ink2);
+        font-size: 12.5px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .st-stu-meta .sep { color: var(--ink3); opacity: .5; }
+      .st-stu-meta b { color: var(--ink); font-weight: 700; margin-inline-start: 3px; }
+      .st-stu-actions {
+        display: flex;
+        gap: 8px;
+        align-items: stretch;
+        padding-top: 2px;
+      }
+      .st-stu-actions .teacher-hizbs-btn,
+      .st-stu-actions > button,
+      .st-stu-actions > .u-btn { flex: 1; min-height: 40px; }
+      .st-stu-actions .u-icon-btn { flex-shrink: 0; width: 40px !important; height: 40px !important; min-width: 40px !important; min-height: 40px !important; }
 
       .hz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
       .hz-card { background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 8px 9px; text-align: center; cursor: pointer; transition: transform .12s, box-shadow .12s, border-color .12s; position: relative; overflow: hidden; }
@@ -788,7 +857,7 @@ export function TeacherPortalClient({
             </div>
           </div>
 
-          <div className="st-rpt-scroll">
+          <div className="st-rpt-scroll st-desktop-view">
           <table className="st-rpt-table">
             <thead>
               <tr>
@@ -857,6 +926,62 @@ export function TeacherPortalClient({
               })}
             </tbody>
           </table>
+          </div>
+
+          <div className="st-mobile-view st-cards-list">
+            {sortedRows.map((r) => {
+              const wa = waNumber(r.parentPhone);
+              const waText = fillTemplate(waTemplate, {
+                name: r.name,
+                memorized: r.memorized,
+                hizbs: r.target,
+                errors: r.errors,
+                alerts: r.alerts,
+                completion: r.completion
+              });
+              const waUrl = wa ? `https://wa.me/${wa}?text=${encodeURIComponent(waText)}` : null;
+              const pctLabel = r.scoredCount > 0 ? `${r.avgScore}%` : '—';
+              return (
+                <div key={r.id} className="st-stu-card">
+                  <div className="st-stu-head">
+                    <button type="button" onClick={() => setSel(r.id)} className="st-stu-name">
+                      {r.name}
+                    </button>
+                    <span className="st-stu-pct" style={{ color: pctColor(r.avgScore) }}>{pctLabel}</span>
+                  </div>
+                  <div className="st-stu-meta">
+                    <span>الأحزاب <b>{r.target}</b></span>
+                    <span className="sep">·</span>
+                    <span>المرصود <b>{r.memorized}</b></span>
+                  </div>
+                  <div className="st-stu-actions">
+                    <HizbsEditor
+                      token={token}
+                      studentId={r.id}
+                      initial={r.hizbsSet}
+                      mandatory={r.mandatoryHizbs}
+                      studentName={r.name}
+                      editingLocked={r.hizbsLocked}
+                      compact
+                      onSaved={(newHizbs, newStatus) => handleStudentSaved(r.id, newHizbs, newStatus)}
+                    />
+                    {waUrl && (
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="u-icon-btn u-icon-btn-whatsapp"
+                        title={`إرسال تقرير ${r.name} عبر واتساب`}
+                        aria-label={`إرسال تقرير ${r.name} عبر واتساب`}
+                        style={{ textDecoration: 'none' }}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10.14 10.14 0 0 0 11.9 2a10.08 10.08 0 0 0-8.7 15.17L2 22l4.95-1.17A10.07 10.07 0 0 0 11.9 22a10.08 10.08 0 0 0 7.21-17.1zM11.9 20.14a8.37 8.37 0 0 1-4.27-1.17l-.3-.18-3.1.73.82-3.04-.2-.31a8.37 8.37 0 0 1 7.05-12.83 8.3 8.3 0 0 1 5.9 2.45 8.3 8.3 0 0 1-5.9 14.35zm4.57-6.26c-.25-.12-1.47-.72-1.7-.8-.22-.09-.39-.13-.56.13s-.65.8-.8.97c-.14.17-.3.19-.55.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.1-.5.1-.1.23-.3.34-.44.11-.14.14-.25.21-.42.07-.17.04-.31-.02-.44-.06-.13-.56-1.35-.76-1.85-.2-.48-.4-.42-.56-.42h-.47c-.17 0-.44.06-.67.31-.22.25-.87.85-.87 2.07 0 1.22.9 2.4 1.02 2.57.12.17 1.77 2.72 4.3 3.81.6.26 1.07.42 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.19.21-.58.21-1.08.14-1.19-.06-.1-.23-.16-.47-.28z"/></svg>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
