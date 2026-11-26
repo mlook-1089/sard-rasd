@@ -553,6 +553,40 @@ html.dark .bg-gradient-to-r.from-brand{
 .th-cnt:disabled{ opacity:.4; cursor:not-allowed; }
 .th-cnt.mistake{ background:linear-gradient(140deg, #ef4444 0%, #b91c1c 100%); }
 .th-cnt.warning{ background:linear-gradient(140deg, #f59e0b 0%, #c2410c 100%); }
+
+/* Student switcher in the recitation flow */
+.record-student-summary-info { flex: 1 1 auto; overflow: hidden; }
+.record-student-switch { white-space: nowrap; }
+.record-student-option { min-width: 0; }
+@media (max-width: 640px) {
+  .record-student-summary {
+    align-items: stretch !important;
+    flex-direction: column !important;
+    padding: 12px !important;
+  }
+  .record-student-summary-info { width: 100%; }
+  .record-student-summary-info > div { white-space: normal; overflow-wrap: anywhere; }
+  .record-student-switch {
+    width: 100%;
+    min-height: 42px !important;
+    font-size: 14px !important;
+  }
+  .record-student-picker-card { padding: 12px !important; }
+  .record-student-picker-card .u-card-h { align-items: stretch; }
+  .record-student-filters { width: 100%; display: grid !important; grid-template-columns: 1fr !important; }
+  .record-student-filters .u-chip { width: 100%; min-height: 38px; justify-content: center; }
+  .record-student-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    max-height: min(58vh, 520px) !important;
+    gap: 10px !important;
+    padding-inline-end: 2px;
+  }
+  .record-student-option {
+    width: 100%;
+    min-height: 82px;
+    padding: 13px 14px !important;
+  }
+}
 .th-cnt-plus{ position:absolute; top:10px; left:12px; font-size:12px; font-weight:800; opacity:.75; }
 .th-cnt-ded{ position:absolute; bottom:8px; left:12px; font-size:11px; font-weight:700; opacity:.75; }
 .th-cnt-num{ font-size:48px; font-weight:900; line-height:1; }

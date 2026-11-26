@@ -65,10 +65,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
 
     const marks = normalizeMarks(b.marks);
-    const errors = marks
+    const useMarkTotals = row.recordingMode === 'mushaf' && marks !== null;
+    const errors = useMarkTotals
       ? marks.filter((mark) => mark.type === 'error').length
       : Math.max(0, Math.floor(Number(b.errors ?? row.errors) || 0));
-    const alerts = marks
+    const alerts = useMarkTotals
       ? marks.filter((mark) => mark.type === 'alert').length
       : Math.max(0, Math.floor(Number(b.alerts ?? row.alerts) || 0));
     const score = computeScore(g.total, g.errDeduct, g.alertDeduct, errors, alerts);

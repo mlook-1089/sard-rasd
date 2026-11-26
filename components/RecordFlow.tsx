@@ -40,6 +40,13 @@ type ActiveSession = {
   hizbNumber: number;
 };
 
+type MushafMark = {
+  id?: string;
+  surah: number;
+  ayah: number;
+  type: 'error' | 'alert';
+};
+
 type PersistedActiveSession = {
   sessionId: number;
   studentId: number;
@@ -55,6 +62,7 @@ type PersistedActiveSession = {
   pausedAt: number | null;
   notes: string;
   actionHistory: ('err' | 'alt')[];
+  marks?: MushafMark[];
   reciterName?: string;
 };
 
@@ -99,6 +107,7 @@ export default function RecordFlow({
   const [errors, setErrors] = useState(0);
   const [alerts, setAlerts] = useState(0);
   const [actionHistory, setActionHistory] = useState<('err' | 'alt')[]>([]);
+  const [mushafMarks, setMushafMarks] = useState<MushafMark[]>([]);
   const [pausedMs, setPausedMs] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [pausedAt, setPausedAt] = useState<number | null>(null);
@@ -203,6 +212,7 @@ export default function RecordFlow({
             setPausedAt(saved.pausedAt ? Number(saved.pausedAt) : null);
             setNotes(saved.notes || '');
             setActionHistory(Array.isArray(saved.actionHistory) ? saved.actionHistory : []);
+            setMushafMarks(Array.isArray(saved.marks) ? saved.marks : []);
             setSelected((prev) => prev ?? {
               id: saved.studentId,
               name: saved.studentName || 'طالب',
@@ -305,11 +315,12 @@ export default function RecordFlow({
         pausedAt,
         notes,
         actionHistory,
+        marks: mushafMarks,
         reciterName
       };
       localStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, JSON.stringify(payload));
     } catch {}
-  }, [active, selected, liveCommitteeId, errors, alerts, pausedMs, isPaused, pausedAt, notes, actionHistory, reciterName]);
+  }, [active, selected, liveCommitteeId, errors, alerts, pausedMs, isPaused, pausedAt, notes, actionHistory, mushafMarks, reciterName]);
 
   // Warn before closing/reloading browser tab while a session is active
   useEffect(() => {
@@ -358,10 +369,11 @@ export default function RecordFlow({
   }
 
   const bumpCounter = useCallback((kind: 'err' | 'alt', delta: number) => {
+    const markedMinimum = mushafMarks.filter((mark) => mark.type === (kind === 'err' ? 'error' : 'alert')).length;
     if (kind === 'err') {
-      setErrors((v) => Math.max(0, v + delta));
+      setErrors((v) => Math.max(markedMinimum, v + delta));
     } else {
-      setAlerts((v) => Math.max(0, v + delta));
+      setAlerts((v) => Math.max(markedMinimum, v + delta));
     }
 
     if (delta > 0) {
@@ -384,7 +396,7 @@ export default function RecordFlow({
         return copy;
       });
     }
-  }, []);
+  }, [mushafMarks]);
 
   const undoLastAction = useCallback(() => {
     setActionHistory((prev) => {
@@ -458,6 +470,7 @@ export default function RecordFlow({
       setErrors(0);
       setAlerts(0);
       setActionHistory([]);
+      setMushafMarks([]);
       setPausedMs(0);
       setIsPaused(false);
       setPausedAt(null);
@@ -532,7 +545,8 @@ export default function RecordFlow({
           action: 'end',
           errors: Math.max(0, Math.floor(errors)),
           alerts: Math.max(0, Math.floor(alerts)),
-          durationSeconds: Math.max(0, Math.floor(seconds))
+          durationSeconds: Math.max(0, Math.floor(seconds)),
+          marks: mushafMarks.map(({ surah, ayah, type }) => ({ surah, ayah, type }))
         })
       });
       const data = await res.json().catch(() => ({}));
@@ -565,6 +579,7 @@ export default function RecordFlow({
       setErrors(0);
       setAlerts(0);
       setActionHistory([]);
+      setMushafMarks([]);
       setPausedMs(0);
       setIsPaused(false);
       setPausedAt(null);
@@ -580,7 +595,7 @@ export default function RecordFlow({
     } finally {
       setSavingEnd(false);
     }
-  }, [active, savingEnd, savingCancel, selected, notes, errors, alerts, seconds, liveCommitteeId, committeeIdRequired, loadStudents]);
+  }, [active, savingEnd, savingCancel, selected, notes, errors, alerts, seconds, mushafMarks, liveCommitteeId, committeeIdRequired, loadStudents]);
 
   async function confirmCancelSession() {
     if (!active || savingCancel || savingEnd) return;
@@ -606,6 +621,7 @@ export default function RecordFlow({
       setErrors(0);
       setAlerts(0);
       setActionHistory([]);
+      setMushafMarks([]);
       setPausedMs(0);
       setIsPaused(false);
       setPausedAt(null);
@@ -846,6 +862,7 @@ export default function RecordFlow({
             const circleOrLevel = selected.circleName || selected.level || 'بدون حلقة';
             return (
               <div
+                className="record-student-summary"
                 style={{
                   background: '#ffffff',
                   border: '1.5px solid #cbd5e1',
@@ -858,7 +875,7 @@ export default function RecordFlow({
                   boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)'
                 }}
               >
-                <div style={{ minWidth: 0 }}>
+                <div className="record-student-summary-info" style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 16, fontWeight: 900, color: '#0f172a', lineHeight: 1.25 }}>
                     {selected.name}
                   </div>
@@ -868,6 +885,7 @@ export default function RecordFlow({
                 </div>
                 <button
                   type="button"
+                  className="record-student-switch"
                   onClick={() => setShowPicker((v) => !v)}
                   style={{
                     background: '#07476e',
@@ -889,10 +907,10 @@ export default function RecordFlow({
           })()}
 
           {(!selected || showPicker) && (
-          <div className="u-card">
+          <div className="u-card record-student-picker-card">
             <div className="u-card-h" style={{ flexWrap: 'wrap', gap: 8 }}>
               <h3>١) اختر الطالب</h3>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <div className="record-student-filters" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 <button
                   type="button"
                   onClick={() => setAttendanceFilter('all')}
@@ -928,7 +946,7 @@ export default function RecordFlow({
             {filtered.length === 0 ? (
               <div className="u-empty">لا يوجد طلاب مطابقين للبحث أو الفلتر</div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))', gap: 8, maxHeight: 340, overflowY: 'auto' }}>
+              <div className="record-student-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))', gap: 8, maxHeight: 340, overflowY: 'auto' }}>
                 {filtered.map((s) => {
                   const on = selected?.id === s.id;
                   const att = s.attendanceStatus ?? 'unset';
@@ -942,7 +960,7 @@ export default function RecordFlow({
                       type="button"
                       onClick={() => handleSelectStudent(s)}
                       aria-disabled={blocked}
-                      className="u-btn"
+                      className="u-btn record-student-option"
                       style={{
                         height: 'auto',
                         padding: '12px 14px',

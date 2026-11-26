@@ -176,6 +176,7 @@ export default function MushafPreviewPage() {
                   errors: Math.max(0, Math.floor(Number(savedActive.errors) || 0)),
                   alerts: Math.max(0, Math.floor(Number(savedActive.alerts) || 0))
                 });
+                setMarks(Array.isArray(savedActive.marks) ? savedActive.marks : []);
                 setViewerMode(true);
                 setSessionStarted(true);
                 setTimerRunning(!savedActive.isPaused);
@@ -399,32 +400,70 @@ export default function MushafPreviewPage() {
   const marksFor = (s: number, a: number) =>
     marks.filter((m) => m.surah === s && m.ayah === a);
 
+  const persistViewerMarks = (nextMarks: Mark[], nextCounts: { errors: number; alerts: number }) => {
+    setMarks(nextMarks);
+    setViewerCounts(nextCounts);
+    try {
+      const raw = localStorage.getItem('rasd_active_session');
+      const active = raw ? JSON.parse(raw) : null;
+      if (active?.sessionId) {
+        active.errors = nextCounts.errors;
+        active.alerts = nextCounts.alerts;
+        active.marks = nextMarks;
+        localStorage.setItem('rasd_active_session', JSON.stringify(active));
+      }
+    } catch {}
+  };
+
   const addMark = (type: MarkType) => {
     if (!sheetFor) return;
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    setMarks((p) => [...p, { id, surah: sheetFor.surah, ayah: sheetFor.ayah, type }]);
+    const nextMarks = [...marks, { id, surah: sheetFor.surah, ayah: sheetFor.ayah, type }];
+    if (viewerMode) {
+      persistViewerMarks(nextMarks, {
+        errors: viewerCounts.errors + (type === 'error' ? 1 : 0),
+        alerts: viewerCounts.alerts + (type === 'alert' ? 1 : 0)
+      });
+    } else {
+      setMarks(nextMarks);
+    }
     setSheetFor(null);
   };
   const removeLastMarkOfType = (type: MarkType) => {
     if (!sheetFor) return;
-    setMarks((current) => {
-      let removeIndex = -1;
-      for (let index = current.length - 1; index >= 0; index -= 1) {
-        const mark = current[index];
-        if (mark.surah === sheetFor.surah && mark.ayah === sheetFor.ayah && mark.type === type) {
-          removeIndex = index;
-          break;
-        }
+    let removeIndex = -1;
+    for (let index = marks.length - 1; index >= 0; index -= 1) {
+      const mark = marks[index];
+      if (mark.surah === sheetFor.surah && mark.ayah === sheetFor.ayah && mark.type === type) {
+        removeIndex = index;
+        break;
       }
-      return removeIndex === -1
-        ? current
-        : current.filter((_, index) => index !== removeIndex);
-    });
+    }
+    if (removeIndex !== -1) {
+      const nextMarks = marks.filter((_, index) => index !== removeIndex);
+      if (viewerMode) {
+        persistViewerMarks(nextMarks, {
+          errors: Math.max(0, viewerCounts.errors - (type === 'error' ? 1 : 0)),
+          alerts: Math.max(0, viewerCounts.alerts - (type === 'alert' ? 1 : 0))
+        });
+      } else {
+        setMarks(nextMarks);
+      }
+    }
     setSheetFor(null);
   };
   const clearAyahMarks = () => {
     if (!sheetFor) return;
-    setMarks((p) => p.filter((m) => !(m.surah === sheetFor.surah && m.ayah === sheetFor.ayah)));
+    const removed = marks.filter((mark) => mark.surah === sheetFor.surah && mark.ayah === sheetFor.ayah);
+    const nextMarks = marks.filter((mark) => !(mark.surah === sheetFor.surah && mark.ayah === sheetFor.ayah));
+    if (viewerMode) {
+      persistViewerMarks(nextMarks, {
+        errors: Math.max(0, viewerCounts.errors - removed.filter((mark) => mark.type === 'error').length),
+        alerts: Math.max(0, viewerCounts.alerts - removed.filter((mark) => mark.type === 'alert').length)
+      });
+    } else {
+      setMarks(nextMarks);
+    }
     setSheetFor(null);
   };
   const resetAll = () => {
@@ -893,7 +932,7 @@ export default function MushafPreviewPage() {
           <div>
             <b>{selectedStudent?.name}</b>
             <small>
-              الحزب {toArabicDigits(hizb)} · {viewerMode ? 'استعراض فقط — الرصد مستمر في الجلسة العادية' : 'جلسة رصد محفوظة'}
+              الحزب {toArabicDigits(hizb)} · {viewerMode ? 'اضغط الآية لتسجيل خطأ أو تنبيه' : 'جلسة رصد محفوظة'}
             </small>
           </div>
         </div>
@@ -1090,15 +1129,13 @@ export default function MushafPreviewPage() {
                         key={`seg-${line.lineNumber}-${si}`}
                         className={cls}
                         onClick={() => {
-                          if (viewerMode) return;
                           if (Date.now() < suppressAyahTapUntilRef.current) return;
                           setSheetFor({ surah: seg.surah, ayah: seg.ayah });
                         }}
-                        role={viewerMode ? undefined : 'button'}
-                        tabIndex={viewerMode ? -1 : 0}
+                        role="button"
+                        tabIndex={0}
                         aria-label={`سورة ${page.surahsOnPage.find((s) => s.number === seg.surah)?.name || seg.surah}، الآية ${seg.ayah}`}
                         onKeyDown={(event) => {
-                          if (viewerMode) return;
                           if (event.key === 'Enter' || event.key === ' ') {
                             event.preventDefault();
                             setSheetFor({ surah: seg.surah, ayah: seg.ayah });
