@@ -249,9 +249,13 @@ export default function HizbsEditor({
   function toggle(n: number) {
     if (saving) return;
     if (mandatory.includes(n)) return;
-    const next = new Set(sel);
-    if (next.has(n)) next.delete(n); else next.add(n);
-    setSel(next);
+    // Functional form so rapid taps don't overwrite each other through
+    // a stale `sel` closure (React hasn't applied the previous setSel yet).
+    setSel((current) => {
+      const next = new Set(current);
+      if (next.has(n)) next.delete(n); else next.add(n);
+      return next;
+    });
   }
 
   // Close on Escape
