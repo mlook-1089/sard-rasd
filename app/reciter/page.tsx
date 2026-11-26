@@ -28,34 +28,78 @@ export default function ReciterSetup() {
     router.push('/reciter/record');
   }
 
+  const ready = Boolean(committeeId && reciterName.trim());
+
   return (
-    <div className="u-page" style={{ maxWidth: 480, marginInline: 'auto' }}>
-      <div className="u-top">
-        <div>
-          <div className="u-sub">قبل بدء التسميع</div>
-          <h1>إعدادات جلسة المسمع</h1>
+    <div className="u-page" style={{ maxWidth: 520, marginInline: 'auto', paddingTop: 18 }}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .reciter-setup-card {
+          background: var(--card);
+          border: 1px solid var(--line);
+          border-radius: 18px;
+          padding: 14px 14px 12px;
+          box-shadow: var(--shadow);
+        }
+        .reciter-setup-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          margin-bottom: 12px;
+        }
+        .reciter-setup-row .u-field {
+          margin-bottom: 0;
+        }
+        .reciter-setup-row .u-field > label {
+          font-size: 12px;
+          font-weight: 600;
+          margin-bottom: 5px;
+          color: var(--ink2);
+        }
+        .reciter-setup-row .u-input {
+          height: 42px;
+          font-size: 14.5px;
+          padding: 0 11px;
+          border-radius: 11px;
+        }
+        .reciter-setup-card .u-btn {
+          height: 46px;
+          border-radius: 13px;
+          font-size: 14.5px;
+        }
+      ` }} />
+
+      <div className="reciter-setup-card">
+        <div className="reciter-setup-row">
+          <div className="u-field">
+            <label>اسم المسمع</label>
+            <input
+              value={reciterName}
+              onChange={(e) => setReciterName(e.target.value)}
+              className="u-input"
+              placeholder="أبو عبدالله"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </div>
+          <div className="u-field">
+            <label>اللجنة</label>
+            <select
+              value={committeeId}
+              onChange={(e) => setCommitteeId(e.target.value)}
+              className="u-input"
+            >
+              <option value="">—</option>
+              {committees.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
-      </div>
-
-      <div className="u-note brand">
-        يُحفظ هذا الاختيار على هذا الجهاز ويُطبع اسمك مع كل جلسة ترصدها.
-      </div>
-
-      <div className="u-card">
-        <div className="u-field">
-          <label>اختر اللجنة</label>
-          <select value={committeeId} onChange={(e) => setCommitteeId(e.target.value)} className="u-input">
-            <option value="">—</option>
-            {committees.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </div>
-
-        <div className="u-field">
-          <label>اسمك كمسمع</label>
-          <input value={reciterName} onChange={(e) => setReciterName(e.target.value)} className="u-input" placeholder="أبو عبدالله" />
-        </div>
-
-        <button disabled={!committeeId || !reciterName.trim()} onClick={save} className="u-btn u-btn-p w lg">
+        <button
+          onClick={save}
+          disabled={!ready}
+          className="u-btn u-btn-p w"
+        >
           ابدأ الرصد
         </button>
       </div>
