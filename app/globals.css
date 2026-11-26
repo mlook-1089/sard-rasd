@@ -111,8 +111,8 @@ button svg, a svg, .app-sidebar-ic svg{ max-width:24px; max-height:24px; }
 .u-icon-btn-bad:hover{ background: var(--bad); color: #fff; }
 .u-icon-btn-ok{ background: var(--ok-soft); color: var(--ok); border-color: transparent; }
 .u-icon-btn-ok:hover{ background: var(--ok); color: #fff; }
-.u-icon-btn-whatsapp{ background: #e8f7ee; color: #25D366; border-color: transparent; }
-.u-icon-btn-whatsapp:hover{ background: #25D366; color: #fff; }
+.u-icon-btn-whatsapp{ background: #25D366; color: #fff; border-color: #1EBE57; }
+.u-icon-btn-whatsapp:hover{ background: #128C7E; border-color: #128C7E; color: #fff; }
 
 /* Unify fonts across the whole app — no element should use system/serif accidentally */
 body, h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, select, textarea,
