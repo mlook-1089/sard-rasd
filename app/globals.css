@@ -801,6 +801,14 @@ html.dark .bg-gradient-to-r.from-brand{
   .u-btn.sm svg, .u-btn.sm > svg{ width:16px !important; height:16px !important; }
   .u-btn.lg{ height:46px !important; min-height:46px !important; font-size:14px; border-radius:12px; }
   .u-btn.lg svg, .u-btn.lg > svg{ width:19px !important; height:19px !important; }
+  /* Student cards contain two or three lines; do not force the shared 40px button height. */
+  .record-student-option.u-btn{
+    height:auto !important;
+    min-height:76px !important;
+    padding:12px 14px !important;
+    white-space:normal;
+    flex-shrink:0;
+  }
   .u-icon-btn{ width:44px !important; height:44px !important; min-width:44px !important; min-height:44px !important; border-radius:12px; }
   .u-icon-btn svg{ width:20px !important; height:20px !important; }
   .teacher-row-actions .u-icon-btn{ width:44px !important; height:44px !important; min-width:44px !important; min-height:44px !important; }
