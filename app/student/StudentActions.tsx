@@ -6,7 +6,7 @@ export default function StudentActions() {
 
   async function logout() {
     await fetch('/api/logout', { method: 'POST' });
-    router.push('/');
+    router.push('/student/login');
     router.refresh();
   }
 

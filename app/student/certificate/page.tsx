@@ -5,6 +5,7 @@ import { students, studentHizbs, sessions, settings } from '@/lib/schema';
 import { and, eq } from 'drizzle-orm';
 import { getActiveProgram } from '@/lib/activeProgram';
 import PrintButton from './PrintButton';
+import BrandLogo from '@/components/BrandLogo';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,11 +15,11 @@ const AR_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو
 
 export default async function CertificatePage() {
   const s = await getSession();
-  if (!s || s.role !== 'student' || !s.id) redirect('/');
+  if (!s || s.role !== 'student' || !s.id) redirect('/student/login');
   const studentId = s.id;
 
   const [student] = await db.select().from(students).where(eq(students.id, studentId)).limit(1);
-  if (!student) redirect('/');
+  if (!student) redirect('/student/login');
 
   const [set] = await db.select().from(settings).where(eq(settings.id, 1)).limit(1);
   const program = await getActiveProgram();
@@ -38,9 +39,7 @@ export default async function CertificatePage() {
     return (
       <main style={{ minHeight: '100vh', background: 'var(--bg)', display: 'grid', placeItems: 'center', padding: 24 }}>
         <div className="u-card" style={{ maxWidth: 480, textAlign: 'center' }}>
-          <div style={{ width: 72, height: 72, margin: '0 auto 12px', borderRadius: 18, display: 'grid', placeItems: 'center', background: 'var(--brand-soft)', color: 'var(--brand-ink)' }}>
-            <svg width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          </div>
+          <BrandLogo style={{ width: 240, margin: '0 auto 14px' }} />
           <h1 style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', marginBottom: 8 }}>
             لا يمكن إصدار الشهادة
           </h1>
@@ -134,7 +133,17 @@ export default async function CertificatePage() {
           padding: 28px 24px;
           border-radius: 12px;
         }
-        .cert-ornament { color: #f5d061 !important; margin: 0 auto 4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.45)); }
+        .cert-brand {
+          width: 280px;
+          max-width: 76%;
+          margin: 0 auto 8px;
+          padding: 11px 18px;
+          border: 1.5px solid rgba(245,208,97,.75);
+          border-radius: 15px;
+          background: rgba(255,255,255,.96) !important;
+          box-shadow: 0 8px 24px rgba(0,0,0,.24);
+        }
+        .cert-brand .brand-logo { width: 100%; }
         .cert-inst { font-size: 21px; font-weight: 800; color: #ffffff !important; margin: 0; text-shadow: ${textShadow}; }
         .cert-title { font-size: 48px; font-weight: 900; color: #ffffff !important; margin: 20px 0 4px; letter-spacing: -1px; text-shadow: ${textShadow}; }
         .cert-subtitle { font-size: 18px; font-weight: 600; color: #f8fafc !important; margin: 0 0 28px; text-shadow: ${subtleShadow}; }
@@ -182,6 +191,7 @@ export default async function CertificatePage() {
           }
           .cert::before { inset: 12px; }
           .cert-body { padding: 16px 8px; }
+          .cert-brand { width: 220px; max-width: 82%; padding: 8px 12px; border-radius: 12px; }
           .cert-inst { font-size: 17px; }
           .cert-title { font-size: 32px; margin: 12px 0 4px; }
           .cert-subtitle { font-size: 15px; margin-bottom: 18px; }
@@ -211,9 +221,7 @@ export default async function CertificatePage() {
         <div className="cert-page">
           <div className="cert" style={{ color: '#ffffff' }}>
             <div className="cert-body">
-              <svg className="cert-ornament" style={{ color: '#f5d061' }} width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13" />
-              </svg>
+              <div className="cert-brand"><BrandLogo /></div>
               <h2 className="cert-inst" style={{ color: '#ffffff' }}>{inst}</h2>
 
               <h1 className="cert-title" style={{ color: '#ffffff' }}>شهادة إتمام</h1>

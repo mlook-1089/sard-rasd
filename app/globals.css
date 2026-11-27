@@ -1060,3 +1060,114 @@ input[type="file"] { max-width: 100%; }
   width: 17px;
   height: 17px;
 }
+
+/* Official brand artwork — preserve the supplied 2595 × 1000 aspect ratio everywhere. */
+.brand-logo {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+  user-select: none;
+}
+.brand-logo-sidebar { width: 196px; margin: 0 auto; }
+.brand-logo-mobile { width: 88px; flex: 0 0 auto; }
+.brand-logo-student { width: 118px; flex: 0 0 auto; }
+.brand-logo-topbar { width: 122px; flex: 0 0 auto; }
+
+/* Dedicated, lightweight login portals. */
+.login-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 85% 15%, rgba(11,59,92,.1), transparent 45%),
+    radial-gradient(circle at 15% 85%, rgba(168,132,31,.1), transparent 45%),
+    linear-gradient(180deg,#eef2f6 0%,#f6f8fa 50%,#eceff4 100%);
+}
+.login-card {
+  width: min(430px,100%);
+  overflow: hidden;
+  border: 1px solid rgba(11,59,92,.1);
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 24px 60px -12px rgba(11,59,92,.16),0 4px 16px -2px rgba(15,27,45,.06);
+}
+.login-card-header {
+  padding: 28px 26px 24px;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(135deg,#07283f 0%,#0b3b5c 55%,#11517a 100%);
+  border-top: 4px solid #d3aa42;
+}
+.login-logo-frame {
+  width: min(286px,92%);
+  margin: 0 auto 14px;
+  padding: 10px 16px;
+  border: 1px solid rgba(255,255,255,.62);
+  border-radius: 16px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 10px 26px rgba(0,0,0,.2);
+}
+.login-logo { width: 100%; }
+.login-card-header h1 { margin: 0; color: #fff; font-size: 25px; font-weight: 900; }
+.login-card-header p { margin: 6px 0 0; color: #f5dd98; font-size: 13px; font-weight: 700; }
+.login-card-body { padding: 24px 26px 26px; }
+.login-card-body form { display: grid; gap: 14px; }
+.login-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.login-label-row label { color: #0f1b2d; font-size: 14px; font-weight: 800; }
+.login-label-row .u-pill { flex: 0 0 auto; font-size: 11px; }
+.login-input-wrap { position: relative; }
+.login-input {
+  width: 100%;
+  height: 54px !important;
+  padding-inline: 16px 76px !important;
+  border: 1.5px solid #d9dde4 !important;
+  border-radius: 15px !important;
+  background: #f8fafc !important;
+  direction: ltr;
+  text-align: start;
+  font-size: 17px !important;
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+.login-input:focus { border-color: var(--brand) !important; box-shadow: 0 0 0 3px rgba(7,71,110,.12); }
+.login-show-password {
+  position: absolute;
+  inset-inline-start: 8px;
+  top: 50%;
+  min-width: 58px;
+  height: 38px;
+  transform: translateY(-50%);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #5b6475;
+  font: 700 11.5px/1 inherit;
+  cursor: pointer;
+}
+.login-submit { width: 100%; height: 48px !important; }
+.login-switch {
+  display: block;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--brand-ink);
+  text-align: center;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 800;
+}
+.login-switch:hover { text-decoration: underline; }
+
+@media(max-width:480px) {
+  .login-page { padding: 12px; }
+  .login-card { border-radius: 20px; }
+  .login-card-header { padding: 24px 18px 20px; }
+  .login-card-body { padding: 20px 18px 22px; }
+  .login-logo-frame { width: min(260px,94%); }
+  .brand-logo-mobile { width: 82px; }
+  .brand-logo-student { width: 105px; }
+}

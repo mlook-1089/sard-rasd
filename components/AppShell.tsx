@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { icons } from './icons';
+import BrandLogo from './BrandLogo';
 
 export type NavSection = { href: string; label: string; icon?: React.ReactNode };
 export type NavItem = { href: string; label: string; icon: React.ReactNode; mobile?: boolean; sections?: NavSection[] };
@@ -173,12 +174,7 @@ export default function AppShell({
       >
         {/* Brand header — fixed */}
         <div className="shrink-0 p-5 text-center" style={{ borderBottom: '1px solid var(--line)' }}>
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl mb-2 overflow-hidden" style={{ color: 'var(--brand-ink)', background: 'var(--brand-soft)' }}>
-            <svg width="24" height="24" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-          </div>
-          <h2 className="font-extrabold text-base font-title" style={{ color: 'var(--brand-ink)' }}>منصة رصد</h2>
+          <BrandLogo className="brand-logo-sidebar" />
           {subtitle && <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--ink3)' }}>{subtitle}</p>}
         </div>
 
@@ -255,11 +251,7 @@ export default function AppShell({
               </svg>
             </button>
           )}
-          <div className="u-brand">
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13" />
-            </svg>
-          </div>
+          <BrandLogo className="brand-logo-mobile" />
           <div className="flex-1 min-w-0 overflow-hidden" style={{ minWidth: 0 }}>
             <div className="u-hname truncate">{title}</div>
             {subtitle && <div className="u-hsub truncate">{subtitle}</div>}

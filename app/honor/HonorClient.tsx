@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import BrandLogo from '@/components/BrandLogo';
 
 type Stat = { label: string; value: number };
 type Row = { id: number; name: string; memorized: number; target: number };
@@ -184,7 +185,6 @@ export default function HonorClient({ initialData = null }: { initialData?: Hono
     return n > 0 ? Math.round(sum / n) : data.stats.completion.value;
   }, [data]);
 
-  const logoUrl = data?.settings?.logoUrl || null;
   const titleText = (data?.settings?.title || '').trim() || 'لوحة الشرف';
 
   if (!data) {
@@ -211,11 +211,7 @@ export default function HonorClient({ initialData = null }: { initialData?: Hono
 
         <header className="honor-header">
           <div className="honor-brand">
-            {logoUrl ? (
-              <img src={logoUrl} alt="شعار" />
-            ) : (
-              <div className="honor-brand-mark">۞</div>
-            )}
+            <BrandLogo />
           </div>
           <h1 className="honor-title">{titleText}</h1>
           <div className="honor-live">
@@ -334,7 +330,7 @@ function HonorStyles() {
         flex-shrink: 0;
       }
       .honor-brand { display: flex; align-items: center; gap: 14px; flex-shrink: 0; min-width: 70px; }
-      .honor-brand img { height: 60px; max-width: 160px; object-fit: contain; }
+      .honor-brand img { width: 180px; height: auto; max-width: 22vw; object-fit: contain; }
       .honor-brand-mark {
         width: 52px; height: 52px; border-radius: 14px;
         background: rgba(243,156,18,.15); color: var(--honor-accent);

@@ -3,7 +3,7 @@ import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
 import { db } from './db';
 import { settings, supervisors, students } from './schema';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull, like, or } from 'drizzle-orm';
 
 export type Role = 'admin' | 'reciter' | 'supervisor' | 'student';
 
@@ -59,41 +59,63 @@ export function clearSessionCookie() {
   cookies().delete(COOKIE);
 }
 
-/** Try to resolve a submitted password against admin, reciter, supervisors, students (in that order). */
-export async function identifyByPassword(password: string): Promise<Session | null> {
+/** Resolve staff passwords only. Privileged entry is deliberately separated from student login. */
+export async function identifyStaffByPassword(password: string): Promise<Session | null> {
   if (!password) return null;
 
-  const [s] = await db.select().from(settings).where(eq(settings.id, 1)).limit(1);
+  const [[s], sups] = await Promise.all([
+    db.select().from(settings).where(eq(settings.id, 1)).limit(1),
+    db.select().from(supervisors)
+  ]);
   if (s) {
-    if (await bcrypt.compare(password, s.adminPasswordHash)) return { role: 'admin' };
-    if (await bcrypt.compare(password, s.reciterPasswordHash)) return { role: 'reciter' };
+    const [isAdmin, isReciter] = await Promise.all([
+      bcrypt.compare(password, s.adminPasswordHash),
+      bcrypt.compare(password, s.reciterPasswordHash)
+    ]);
+    if (isAdmin) return { role: 'admin' };
+    if (isReciter) return { role: 'reciter' };
   }
 
-  const sups = await db.select().from(supervisors);
-  for (const sup of sups) {
-    if (await bcrypt.compare(password, sup.passwordHash)) {
-      return { role: 'supervisor', id: sup.id, committeeId: sup.committeeId ?? undefined };
-    }
-  }
-
-  const studs = await db.select().from(students);
-  const trimmedPw = password.trim();
-  // 1) Instant match by nationalId or direct passwordHash (0ms CPU for hundreds of students)
-  for (const st of studs) {
-    if ((st.nationalId && st.nationalId.trim() === trimmedPw) || st.passwordHash === trimmedPw) {
-      return { role: 'student', id: st.id };
-    }
-  }
-  // 2) Legacy bcrypt fallback only for students without nationalId that have a $2 bcrypt hash
-  for (const st of studs) {
-    if (!st.nationalId && st.passwordHash && st.passwordHash.startsWith('$2')) {
-      if (await bcrypt.compare(trimmedPw, st.passwordHash)) {
-        return { role: 'student', id: st.id };
-      }
-    }
+  const supervisorMatches = await Promise.all(sups.map((sup) => bcrypt.compare(password, sup.passwordHash)));
+  const supervisorIndex = supervisorMatches.findIndex(Boolean);
+  if (supervisorIndex >= 0) {
+    const sup = sups[supervisorIndex];
+    return { role: 'supervisor', id: sup.id, committeeId: sup.committeeId ?? undefined };
   }
 
   return null;
+}
+
+/** Resolve student credentials without scanning or hashing every account. */
+export async function identifyStudentByPassword(password: string): Promise<Session | null> {
+  const trimmedPassword = password.trim();
+  if (!trimmedPassword) return null;
+
+  const [directStudent] = await db
+    .select({ id: students.id })
+    .from(students)
+    .where(or(eq(students.nationalId, trimmedPassword), eq(students.passwordHash, trimmedPassword)))
+    .limit(1);
+  if (directStudent) return { role: 'student', id: directStudent.id };
+
+  const legacyStudents = await db
+    .select({ id: students.id, passwordHash: students.passwordHash })
+    .from(students)
+    .where(and(isNull(students.nationalId), like(students.passwordHash, '$2%')));
+  const legacyMatches = await Promise.all(
+    legacyStudents.map((student) => bcrypt.compare(trimmedPassword, student.passwordHash))
+  );
+  const legacyIndex = legacyMatches.findIndex(Boolean);
+  if (legacyIndex >= 0) {
+    return { role: 'student', id: legacyStudents[legacyIndex].id };
+  }
+
+  return null;
+}
+
+/** Backwards-compatible unified resolver for internal checks. */
+export async function identifyByPassword(password: string): Promise<Session | null> {
+  return (await identifyStaffByPassword(password)) ?? (await identifyStudentByPassword(password));
 }
 
 /** Check whether a plaintext password already identifies ANY account — for collision warning. */

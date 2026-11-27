@@ -5,6 +5,7 @@ import { students, studentHizbs, sessionMarks, sessions, committees } from '@/li
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import StudentActions from './StudentActions';
 import { surahName } from '@/lib/quranSurahs';
+import BrandLogo from '@/components/BrandLogo';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -23,11 +24,11 @@ function fmtDate(d: Date | string | null): string {
 
 export default async function StudentPage() {
   const session = await getSession();
-  if (!session || session.role !== 'student' || !session.id) redirect('/');
+  if (!session || session.role !== 'student' || !session.id) redirect('/student/login');
 
   const studentId = session.id!;
   const [student] = await db.select().from(students).where(eq(students.id, studentId)).limit(1);
-  if (!student) redirect('/');
+  if (!student) redirect('/student/login');
 
   const committee = student.committeeId
     ? (await db.select().from(committees).where(eq(committees.id, student.committeeId)).limit(1))[0]
@@ -110,15 +111,7 @@ export default async function StudentPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: '1 1 auto' }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-              background: 'var(--brand)', color: 'var(--gold-bright)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
-              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13" />
-              </svg>
-            </div>
+            <BrandLogo className="brand-logo-student" />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="truncate" style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.25 }}>بوابة الطالب</div>
               <div className="truncate" style={{ fontSize: 11, color: 'var(--ink3)' }}>تقريرك المباشر</div>

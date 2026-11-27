@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function SettingsPage() {
   const [s, setS] = useState<any | null>(null);
@@ -90,9 +91,11 @@ export default function SettingsPage() {
         <div className="u-field"><label>اسم المؤسسة</label>
           <input defaultValue={s.institutionName} onBlur={(e) => e.target.value !== s.institutionName && save({ institutionName: e.target.value })} className="u-input" />
         </div>
-        <div className="u-field"><label>رابط الشعار (URL)</label>
-          <input dir="ltr" defaultValue={s.logoUrl || ''} onBlur={(e) => (e.target.value || null) !== (s.logoUrl || null) && save({ logoUrl: e.target.value || null })} className="u-input" />
-          {s.logoUrl && <img src={s.logoUrl} alt="" style={{ height: 64, marginTop: 8, borderRadius: 10, border: '1px solid var(--line)' }} />}
+        <div className="u-field"><label>الشعار المعتمد</label>
+          <div style={{ width: 'min(280px, 100%)', marginTop: 8, padding: '10px 14px', borderRadius: 12, border: '1px solid var(--line)', background: '#fff' }}>
+            <BrandLogo />
+          </div>
+          <div className="u-muted" style={{ marginTop: 6, fontSize: 11.5 }}>مطبّق تلقائياً على جميع الواجهات والشهادات.</div>
         </div>
         <div className="u-field"><label>رابط صورة الدخول</label>
           <input dir="ltr" defaultValue={s.loginImageUrl || ''} onBlur={(e) => (e.target.value || null) !== (s.loginImageUrl || null) && save({ loginImageUrl: e.target.value || null })} className="u-input" />
