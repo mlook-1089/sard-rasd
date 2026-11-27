@@ -10,6 +10,14 @@ export const HIZB_PRESETS = [
   { id: 'second-half', label: 'الأجزاء 15–30', detail: '29–60', hizbs: range(29, 60) }
 ] as const;
 
+export const JUZ_PRESETS = [
+  { id: 'amma', label: 'عمّ', detail: '30', juzs: [30] },
+  { id: 'tabarak', label: 'تبارك', detail: '29', juzs: [29] },
+  { id: 'mufassal', label: 'المفصّل', detail: '27–30', juzs: range(27, 30) },
+  { id: 'first-half', label: 'النصف الأول', detail: '1–15', juzs: range(1, 15) },
+  { id: 'second-half', label: 'النصف الثاني', detail: '16–30', juzs: range(16, 30) }
+] as const;
+
 export function juzForHizb(hizbNumber: number): number {
   return Math.ceil(hizbNumber / 2);
 }

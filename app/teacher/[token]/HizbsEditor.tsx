@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { hizbsForJuz, juzsForHizbs } from '@/lib/hizbPresets';
+import { JUZ_PRESETS, hizbsForJuz, juzsForHizbs } from '@/lib/hizbPresets';
 import { surahName } from '@/lib/quranSurahs';
 
 export type TeacherStudentRow = {
@@ -585,6 +585,21 @@ export default function HizbsEditor({
     replaceSelection(new Set(mandatoryJuzs));
   }
 
+  function togglePreset(juzs: readonly number[]) {
+    if (saving) return;
+    const current = selectionRef.current;
+    const complete = juzs.every((n) => current.has(n));
+    if (!complete) {
+      replaceSelection(new Set([...current, ...juzs]));
+      return;
+    }
+    const next = new Set(current);
+    for (const n of juzs) {
+      if (!mandatoryJuzs.includes(n)) next.delete(n);
+    }
+    replaceSelection(next);
+  }
+
   async function save() {
     if (saving) return;
     setSaving(true);
@@ -693,6 +708,25 @@ export default function HizbsEditor({
             <div className="hizb-editor-body" style={{ padding: 18, overflowY: 'auto', flex: 1 }}>
               <div className="u-note" style={{ margin: '0 0 12px' }}>
                 اختر الأجزاء المطلوبة؛ سيظهر كل جزء كحزبين منفصلين عند التسميع.
+              </div>
+              <div className="juz-quick" aria-label="اختيارات سريعة للأجزاء">
+                <span className="juz-quick-label">اختيار سريع</span>
+                {JUZ_PRESETS.map((preset) => {
+                  const complete = preset.juzs.every((n) => sel.has(n));
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      disabled={saving}
+                      className={`juz-quick-btn${complete ? ' on' : ''}`}
+                      onClick={() => togglePreset(preset.juzs)}
+                    >
+                      {complete && <span aria-hidden="true">✓</span>}
+                      {preset.label}
+                      <small>{preset.detail}</small>
+                    </button>
+                  );
+                })}
               </div>
               {mandatoryJuzs.length > 0 && (
                 <p className="u-muted" style={{ margin: '0 0 10px', fontSize: 11.5 }}>

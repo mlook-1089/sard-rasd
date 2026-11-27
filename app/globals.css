@@ -473,6 +473,14 @@ html.dark .bg-gradient-to-r.from-brand{
 .hizb-preset.complete{ background:var(--ok-soft); border-color:color-mix(in srgb,var(--ok) 45%,var(--line)); cursor:default; }
 .hizb-preset.complete > span{ background:var(--ok); }.hizb-preset.complete b{ color:var(--ok); }
 @media(max-width:700px){ .hizb-presets-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }.hizb-preset:last-child{ grid-column:1/-1; } }
+.juz-quick{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:0 0 12px; }
+.juz-quick-label{ color:var(--ink3); font-size:11.5px; font-weight:700; margin-inline-end:2px; }
+.juz-quick-btn{ min-height:34px; padding:5px 10px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink2); font-family:inherit; font-size:11.5px; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
+.juz-quick-btn small{ color:var(--ink3); font-size:9.5px; font-weight:600; }
+.juz-quick-btn:hover{ border-color:var(--brand); color:var(--brand-ink); }
+.juz-quick-btn.on{ background:var(--brand-soft); border-color:var(--brand); color:var(--brand-ink); }
+.juz-quick-btn.on small{ color:inherit; opacity:.72; }
+@media(max-width:480px){ .juz-quick-label{ width:100%; }.juz-quick-btn{ flex:1 1 auto; justify-content:center; } }
 
 /* ===== Mandatory hizbs — Excel import experience ===== */
 .mandatory-import-shell{ display:grid; gap:14px; }
