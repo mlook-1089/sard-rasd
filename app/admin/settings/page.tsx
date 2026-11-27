@@ -121,7 +121,7 @@ export default function SettingsPage() {
           <input defaultValue={s.institutionName} onBlur={(e) => e.target.value !== s.institutionName && save({ institutionName: e.target.value })} className="u-input" />
         </div>
         <div className="u-field"><label>الشعار المعتمد</label>
-          <div style={{ width: 'min(280px, 100%)', marginTop: 8, padding: '10px 14px', borderRadius: 12, border: '1px solid var(--line)', background: '#fff' }}>
+          <div style={{ width: 'min(280px, 100%)', marginTop: 8, padding: '10px 14px', borderRadius: 12, border: '1px solid var(--line)', background: 'transparent' }}>
             {s.logoUrl
               ? <BrandLogo src={s.logoUrl} />
               : <div className="u-muted" style={{ textAlign: 'center', padding: '12px 6px', fontSize: 13 }}>لا يوجد شعار مرفوع</div>}

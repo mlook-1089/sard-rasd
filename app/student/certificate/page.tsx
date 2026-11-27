@@ -137,11 +137,11 @@ export default async function CertificatePage() {
           width: 280px;
           max-width: 76%;
           margin: 0 auto 8px;
-          padding: 11px 18px;
-          border: 1.5px solid rgba(245,208,97,.75);
-          border-radius: 15px;
-          background: rgba(255,255,255,.96) !important;
-          box-shadow: 0 8px 24px rgba(0,0,0,.24);
+          padding: 0;
+          border: 0;
+          border-radius: 0;
+          background: transparent !important;
+          box-shadow: none;
         }
         .cert-brand .brand-logo { width: 100%; }
         .cert-inst { font-size: 21px; font-weight: 800; color: #ffffff !important; margin: 0; text-shadow: ${textShadow}; }
@@ -191,7 +191,7 @@ export default async function CertificatePage() {
           }
           .cert::before { inset: 12px; }
           .cert-body { padding: 16px 8px; }
-          .cert-brand { width: 220px; max-width: 82%; padding: 8px 12px; border-radius: 12px; }
+          .cert-brand { width: 220px; max-width: 82%; padding: 0; border-radius: 0; }
           .cert-inst { font-size: 17px; }
           .cert-title { font-size: 32px; margin: 12px 0 4px; }
           .cert-subtitle { font-size: 15px; margin-bottom: 18px; }

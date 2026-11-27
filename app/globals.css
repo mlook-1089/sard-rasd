@@ -1107,11 +1107,11 @@ input[type="file"] { max-width: 100%; }
 .login-logo-frame {
   width: min(286px,92%);
   margin: 0 auto 14px;
-  padding: 10px 16px;
-  border: 1px solid rgba(255,255,255,.62);
-  border-radius: 16px;
-  background: rgba(255,255,255,.96);
-  box-shadow: 0 10px 26px rgba(0,0,0,.2);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .login-logo-frame:not(:has(.brand-logo)) { display: none; }
 .login-logo { width: 100%; }
