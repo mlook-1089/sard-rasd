@@ -2,8 +2,6 @@
 
 import { useEffect, useState, type CSSProperties } from 'react';
 
-export const BRAND_LOGO_SRC = '/brand-logo.png';
-
 let cachedUploadedLogo: string | null | undefined;
 let brandingRequest: Promise<string | null> | null = null;
 
@@ -39,12 +37,12 @@ export default function BrandLogo({
   alt?: string;
   src?: string | null;
 }) {
-  const [resolvedSrc, setResolvedSrc] = useState(src || cachedUploadedLogo || BRAND_LOGO_SRC);
+  const [resolvedSrc, setResolvedSrc] = useState<string | null>(src || cachedUploadedLogo || null);
 
   useEffect(() => {
     const onBrandChange = (event: Event) => {
       const logo = (event as CustomEvent<string | null>).detail;
-      setResolvedSrc(logo || BRAND_LOGO_SRC);
+      setResolvedSrc(logo || null);
     };
     window.addEventListener('sard-brand-logo-change', onBrandChange);
     if (src) {
@@ -53,13 +51,15 @@ export default function BrandLogo({
     }
     let alive = true;
     loadUploadedLogo().then((uploadedLogo) => {
-      if (alive && uploadedLogo) setResolvedSrc(uploadedLogo);
+      if (alive) setResolvedSrc(uploadedLogo);
     });
     return () => {
       alive = false;
       window.removeEventListener('sard-brand-logo-change', onBrandChange);
     };
   }, [src]);
+
+  if (!resolvedSrc) return null;
 
   return (
     <img
