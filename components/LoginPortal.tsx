@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import BrandLogo from './BrandLogo';
@@ -55,7 +54,7 @@ export default function LoginPortal({ audience }: { audience: 'staff' | 'student
       return;
     }
     const controller = new AbortController();
-    const timer = window.setTimeout(() => attemptLogin(trimmed, false, controller.signal), 160);
+    const timer = window.setTimeout(() => attemptLogin(trimmed, true, controller.signal), 160);
     return () => {
       window.clearTimeout(timer);
       controller.abort();
@@ -115,14 +114,7 @@ export default function LoginPortal({ audience }: { audience: 'staff' | 'student
 
             {error && !success && <div id="login-error" className="u-note bad" role="alert">{error}</div>}
 
-            <button type="submit" className="u-btn u-btn-p login-submit" disabled={loading || success || !password.trim()}>
-              {success ? 'جاري فتح الحساب…' : 'دخول'}
-            </button>
           </form>
-
-          <Link className="login-switch" href={isStudent ? '/' : '/student/login'}>
-            {isStudent ? 'العودة للدخول الرئيسي' : 'دخول الطلاب'}
-          </Link>
         </div>
       </div>
     </main>

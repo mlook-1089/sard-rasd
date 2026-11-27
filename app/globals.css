@@ -1148,20 +1148,6 @@ input[type="file"] { max-width: 100%; }
   font: 700 11.5px/1 inherit;
   cursor: pointer;
 }
-.login-submit { width: 100%; height: 48px !important; }
-.login-switch {
-  display: block;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
-  color: var(--brand-ink);
-  text-align: center;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 800;
-}
-.login-switch:hover { text-decoration: underline; }
-
 @media(max-width:480px) {
   .login-page { padding: 12px; }
   .login-card { border-radius: 20px; }
