@@ -3,6 +3,7 @@ import { unstable_noStore as noStore, revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import { circles, students, studentHizbs } from '@/lib/schema';
 import { and, eq } from 'drizzle-orm';
+import { hizbsForJuz } from '@/lib/hizbPresets';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -52,8 +53,20 @@ export async function PUT(
     );
   }
 
-  const body = (await req.json().catch(() => ({}))) as { hizbs?: unknown };
-  const rawHizbs = Array.isArray(body.hizbs) ? body.hizbs : [];
+  const body = (await req.json().catch(() => ({}))) as { juzs?: unknown; hizbs?: unknown };
+  const rawJuzs = Array.isArray(body.juzs) ? body.juzs : null;
+  const parsedJuzs = rawJuzs == null
+    ? null
+    : Array.from(new Set(
+        rawJuzs
+          .map((n) => Number(n))
+          .filter((n) => Number.isInteger(n) && n >= 1 && n <= 30)
+      )).sort((a, b) => a - b);
+  // The teacher assigns whole ajzaa. Persist the two corresponding hizbs so
+  // the existing recitation and grading flow can continue to work per hizb.
+  const rawHizbs = parsedJuzs == null
+    ? (Array.isArray(body.hizbs) ? body.hizbs : [])
+    : parsedJuzs.flatMap(hizbsForJuz);
   const hizbs = Array.from(new Set(
     rawHizbs
       .map((n) => Number(n))
@@ -101,7 +114,7 @@ export async function PUT(
   revalidatePath(`/teacher/${token}`);
 
   return NextResponse.json(
-    { ok: true, count: savedHizbs.length, hizbs: savedHizbs, mandatoryHizbs, status: nextStatus },
+    { ok: true, count: savedHizbs.length, hizbs: savedHizbs, juzs: parsedJuzs, mandatoryHizbs, status: nextStatus },
     { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
   );
 }

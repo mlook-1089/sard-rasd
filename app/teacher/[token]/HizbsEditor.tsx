@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { HIZB_PRESETS, juzForHizb } from '@/lib/hizbPresets';
+import { hizbsForJuz, juzsForHizbs } from '@/lib/hizbPresets';
 import { surahName } from '@/lib/quranSurahs';
 
 export type TeacherStudentRow = {
@@ -338,11 +338,11 @@ function TeacherReportStyles() {
       .st-rpt-scroll::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 4px; }
       .st-rpt-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); gap: 10px; background: linear-gradient(0deg, var(--card2), var(--card)); }
       .st-rpt-title { font-weight: 800; font-size: 15.5px; color: var(--ink); }
+      .st-rpt-sub { color: var(--ink3); font-size: 11.5px; margin-top: 2px; }
       .st-rpt-count { background: var(--brand-soft); color: var(--brand-ink); padding: 4px 11px; border-radius: 99px; font-weight: 800; font-size: 12.5px; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 4px; }
       .st-rpt-table { width: 100%; border-collapse: collapse; }
-      .st-rpt-table th { padding: 10px 12px; text-align: center; font-size: 12.5px; font-weight: 700; color: var(--ink3); border-bottom: 1px solid var(--line); background: var(--card2); cursor: pointer; user-select: none; white-space: nowrap; }
+      .st-rpt-table th { padding: 10px 12px; text-align: center; font-size: 12.5px; font-weight: 700; color: var(--ink3); border-bottom: 1px solid var(--line); background: var(--card2); white-space: nowrap; }
       .st-rpt-table th:first-child { text-align: start; padding-inline-start: 16px; }
-      .st-rpt-table th:hover { color: var(--brand-ink); }
       .st-rpt-table td { padding: 12px; text-align: center; font-size: 14px; border-bottom: 1px solid var(--line); color: var(--ink); font-variant-numeric: tabular-nums; }
       .st-rpt-table td:first-child { text-align: start; padding-inline-start: 16px; }
       .st-rpt-table td:last-child { padding-inline-end: 10px; }
@@ -350,10 +350,12 @@ function TeacherReportStyles() {
       .st-rpt-table tr:hover td { background: var(--card2); }
       .st-rpt-link { color: var(--brand-ink); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--brand-ink) 40%, transparent); text-underline-offset: 3px; font-weight: 700; background: none; border: 0; padding: 0; cursor: pointer; font-family: inherit; font-size: 14.5px; text-align: start; }
       .st-rpt-link:hover { text-decoration-color: var(--brand-ink); }
-      .st-pct { display: inline-block; font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; }
-      .st-sort { display: inline-block; margin-inline-start: 2px; font-size: 10px; }
-      .st-sort.muted { color: var(--ink3); opacity: .5; }
-      .st-sort.on { color: var(--brand-ink); }
+      .st-progress { width: min(230px, 100%); margin-inline:auto; text-align:start; }
+      .st-progress-value { display:flex; align-items:baseline; gap:3px; font-size:12px; color:var(--ink2); }
+      .st-progress-value b { color:var(--ink); font-size:15px; }
+      .st-progress-track { height:5px; margin:5px 0 4px; overflow:hidden; border-radius:99px; background:var(--line); }
+      .st-progress-track span { display:block; height:100%; border-radius:inherit; background:var(--brand); }
+      .st-progress small { color:var(--ink3); font-size:10.5px; }
       .st-row-actions { display: inline-flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap; }
 
       /* === Mobile (≤ 640px): switch from a cramped table to per-student cards === */
@@ -404,6 +406,7 @@ function TeacherReportStyles() {
         cursor: pointer;
       }
       .st-stu-pct {
+        direction: ltr;
         font-weight: 800;
         font-size: 14.5px;
         font-variant-numeric: tabular-nums;
@@ -496,12 +499,14 @@ export default function HizbsEditor({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [savedHizbs, setSavedHizbs] = useState<number[]>(initial);
-  const [sel, setSel] = useState<Set<number>>(new Set(initial));
+  const [sel, setSel] = useState<Set<number>>(new Set(juzsForHizbs(initial)));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const selectionRef = useRef<Set<number>>(new Set(initial));
+  const selectionRef = useRef<Set<number>>(new Set(juzsForHizbs(initial)));
   const touchStartsRef = useRef(new Map<number, { x: number; y: number }>());
   const suppressedTouchClicksRef = useRef(new Map<number, number>());
+  const savedJuzs = juzsForHizbs(savedHizbs);
+  const mandatoryJuzs = juzsForHizbs(mandatory);
 
   function replaceSelection(next: Set<number>) {
     selectionRef.current = next;
@@ -510,18 +515,18 @@ export default function HizbsEditor({
 
   useEffect(() => {
     setSavedHizbs(initial);
-    replaceSelection(new Set(initial));
+    replaceSelection(new Set(juzsForHizbs(initial)));
   }, [initial]);
 
   function openModal() {
-    replaceSelection(new Set(savedHizbs));
+    replaceSelection(new Set(juzsForHizbs(savedHizbs)));
     setErr(null);
     setOpen(true);
   }
 
   function toggle(n: number) {
     if (saving) return;
-    if (mandatory.includes(n)) return;
+    if (mandatoryJuzs.includes(n)) return;
     // Keep an immediate source of truth in addition to React state. This makes
     // consecutive mobile taps (and an immediate Save tap) deterministic even
     // before React has painted the previous selection.
@@ -550,7 +555,7 @@ export default function HizbsEditor({
     toggle(n);
   }
 
-  function handleHizbClick(event: React.MouseEvent<HTMLButtonElement>, n: number) {
+  function handleJuzClick(event: React.MouseEvent<HTMLButtonElement>, n: number) {
     const suppressUntil = suppressedTouchClicksRef.current.get(n) || 0;
     if (Date.now() < suppressUntil) {
       event.preventDefault();
@@ -572,48 +577,34 @@ export default function HizbsEditor({
 
   function selectAll() {
     if (saving) return;
-    replaceSelection(new Set(Array.from({ length: 60 }, (_, i) => i + 1)));
+    replaceSelection(new Set(Array.from({ length: 30 }, (_, i) => i + 1)));
   }
 
   function clearAll() {
     if (saving) return;
-    replaceSelection(new Set(mandatory));
-  }
-
-  function togglePreset(hizbs: readonly number[]) {
-    if (saving) return;
-    const current = selectionRef.current;
-    const complete = hizbs.every((n) => current.has(n));
-    if (!complete) {
-      replaceSelection(new Set([...current, ...hizbs]));
-      return;
-    }
-    const next = new Set(current);
-    for (const n of hizbs) {
-      if (!mandatory.includes(n)) next.delete(n);
-    }
-    replaceSelection(next);
+    replaceSelection(new Set(mandatoryJuzs));
   }
 
   async function save() {
     if (saving) return;
     setSaving(true);
     setErr(null);
-    const chosen = Array.from(selectionRef.current).sort((a, b) => a - b);
+    const chosenJuzs = Array.from(selectionRef.current).sort((a, b) => a - b);
+    const chosenHizbs = chosenJuzs.flatMap(hizbsForJuz);
     try {
       const res = await fetch(`/api/teacher/${token}/students/${studentId}/hizbs`, {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
         cache: 'no-store',
-        body: JSON.stringify({ hizbs: chosen })
+        body: JSON.stringify({ juzs: chosenJuzs })
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(d.error || 'فشل الحفظ');
       }
-      const nextHizbs: number[] = Array.isArray(d.hizbs) ? d.hizbs : chosen;
+      const nextHizbs: number[] = Array.isArray(d.hizbs) ? d.hizbs : chosenHizbs;
       setSavedHizbs(nextHizbs);
-      replaceSelection(new Set(nextHizbs));
+      replaceSelection(new Set(juzsForHizbs(nextHizbs)));
       onSaved?.(nextHizbs, d.status);
       setOpen(false);
       router.refresh();
@@ -631,9 +622,10 @@ export default function HizbsEditor({
         onClick={openModal}
         disabled={editingLocked}
         className={`u-btn ${editingLocked ? 'u-btn-g' : 'u-btn-p'}${compact ? ' sm teacher-hizbs-btn' : ''}`}
-        title={editingLocked ? 'تعديل الأحزاب مقفل من الإدارة' : `تحديد أحزاب ${studentName}`}
+        title={editingLocked ? 'تعديل الأجزاء مقفل من الإدارة' : `تحديد أجزاء ${studentName}`}
       >
-        <span aria-hidden="true" style={{ fontSize: 13 }}>{editingLocked ? '🔒' : '📚'}</span><span>{editingLocked ? `مقفلة (${savedHizbs.length})` : compact ? `الأحزاب (${savedHizbs.length})` : `تحديد الأحزاب (${savedHizbs.length})`}</span>
+        {editingLocked && <span aria-hidden="true" style={{ fontSize: 13 }}>🔒</span>}
+        <span>{editingLocked ? `مقفلة (${savedJuzs.length})` : compact ? `الأجزاء (${savedJuzs.length})` : `تحديد الأجزاء (${savedJuzs.length})`}</span>
       </button>
 
       {open && (
@@ -641,7 +633,7 @@ export default function HizbsEditor({
           className="fixed inset-0 z-50 hizb-editor-modal"
           role="dialog"
           aria-modal="true"
-          aria-label={`أحزاب ${studentName}`}
+          aria-label={`أجزاء ${studentName}`}
           style={{ background: 'var(--overlay)', display: 'grid', placeItems: 'center', padding: 16, overflow: 'hidden' }}
           onClick={() => !saving && setOpen(false)}
         >
@@ -664,8 +656,8 @@ export default function HizbsEditor({
             <div className="hizb-editor-header" style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
               <div className="u-row u-between" style={{ flexWrap: 'wrap', gap: 10 }}>
                 <div className="hizb-editor-title">
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>أحزاب {studentName}</h3>
-                  <p className="u-muted" style={{ margin: '2px 0 0' }}>الحالي: <b>{savedHizbs.length}</b> · بعد الحفظ: <b>{sel.size}</b></p>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>أجزاء {studentName}</h3>
+                  <p className="u-muted" style={{ margin: '2px 0 0' }}>الحالي: <b>{savedJuzs.length}</b> جزء · بعد الحفظ: <b>{sel.size}</b> جزء</p>
                 </div>
                 <div className="hizb-editor-toolbar" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                   <button
@@ -699,67 +691,38 @@ export default function HizbsEditor({
 
             {/* Scrollable body */}
             <div className="hizb-editor-body" style={{ padding: 18, overflowY: 'auto', flex: 1 }}>
-              <div className="hizb-presets">
-                <div className="hizb-presets-title">
-                  <div><b>اختيارات سريعة</b><span>اضغط مرة للإضافة ومرة أخرى للإلغاء</span></div>
-                </div>
-                <div className="hizb-presets-grid">
-                  {HIZB_PRESETS.map((preset) => {
-                    const complete = preset.hizbs.every((n) => sel.has(n));
-                    return (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        disabled={saving}
-                        className={`hizb-preset${complete ? ' complete' : ''}`}
-                        onClick={() => togglePreset(preset.hizbs)}
-                      >
-                        <span>{complete ? '✓' : '+'}</span>
-                        <b>{preset.label}</b>
-                        <small>الأحزاب {preset.detail}</small>
-                      </button>
-                    );
-                  })}
-                </div>
+              <div className="u-note" style={{ margin: '0 0 12px' }}>
+                اختر الأجزاء المطلوبة؛ سيظهر كل جزء كحزبين منفصلين عند التسميع.
               </div>
-              <div className="hizb-lock-legend" aria-label="مفتاح حالات الأحزاب">
-                <span><i className="mandatory" /> إلزامي من الإدارة</span>
-                <span><i className="saved" /> مضاف سابقاً</span>
-                <span><i className="new" /> إضافة جديدة</span>
-                {savedHizbs.some((n) => !mandatory.includes(n) && !sel.has(n)) && <span><i className="remove" /> سيُحذف عند الحفظ</span>}
-              </div>
+              {mandatoryJuzs.length > 0 && (
+                <p className="u-muted" style={{ margin: '0 0 10px', fontSize: 11.5 }}>
+                  🔒 الأجزاء المقفلة تتضمن أحزاباً إلزامية حددتها الإدارة.
+                </p>
+              )}
               <div className="th-hizb-grid">
-                {Array.from({ length: 60 }, (_, i) => i + 1).map((n) => {
+                {Array.from({ length: 30 }, (_, i) => i + 1).map((n) => {
                   const on = sel.has(n);
-                  const isMandatory = mandatory.includes(n);
-                  const isSaved = savedHizbs.includes(n);
-                  const willBeRemoved = isSaved && !isMandatory && !on;
+                  const isMandatory = mandatoryJuzs.includes(n);
                   const stateClass = isMandatory
                     ? ' locked'
-                    : willBeRemoved
-                      ? ' removed'
-                      : isSaved && on
-                        ? ' saved'
-                        : on
-                          ? ' on'
-                          : '';
+                    : on
+                      ? ' on'
+                      : '';
                   return (
                     <button
                       key={n}
                       onPointerDown={beginTouchTap}
                       onPointerUp={(event) => finishTouchTap(event, n)}
                       onPointerCancel={(event) => touchStartsRef.current.delete(event.pointerId)}
-                      onClick={(event) => handleHizbClick(event, n)}
+                      onClick={(event) => handleJuzClick(event, n)}
                       disabled={saving || isMandatory}
                       className={`th-h${stateClass}`}
                       type="button"
                       aria-pressed={on}
-                      title={isMandatory ? 'حزب إلزامي مقفل من الإدارة' : willBeRemoved ? 'سيُحذف عند الحفظ' : isSaved ? 'محفوظ سابقاً ويمكن إلغاء اختياره' : undefined}
+                      title={isMandatory ? 'جزء يتضمن حزباً إلزامياً من الإدارة' : undefined}
                     >
                       {isMandatory && <span className="th-h-lock" aria-hidden="true">🔒</span>}
-                      {willBeRemoved && <span className="th-h-remove" aria-hidden="true">×</span>}
-                      <span className="th-h-num">{n}</span>
-                      <span className="th-h-sub">جزء {juzForHizb(n)}</span>
+                      <span className="th-h-num">الجزء {n}</span>
                     </button>
                   );
                 })}
@@ -801,13 +764,11 @@ export default function HizbsEditor({
 export function TeacherPortalClient({
   token,
   circleName,
-  teacherName,
   waTemplate,
   initialRows
 }: {
   token: string;
   circleName: string;
-  teacherName: string | null;
   waTemplate: string;
   initialRows: TeacherStudentRow[];
 }) {
@@ -844,34 +805,9 @@ export function TeacherPortalClient({
   }
 
   const [sel, setSel] = useState<number | null>(null);
-  const [sortKey, setSortKey] = useState<'name' | 'target' | 'memorized' | 'avgScore'>('name');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
-
-  function toggleSort(key: 'name' | 'target' | 'memorized' | 'avgScore') {
-    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    else { setSortKey(key); setSortDir(key === 'name' ? 'asc' : 'desc'); }
-  }
-  function sortGlyph(key: 'name' | 'target' | 'memorized' | 'avgScore') {
-    if (sortKey !== key) return <span className="st-sort muted">▾</span>;
-    return <span className="st-sort on">{sortDir === 'asc' ? '▴' : '▾'}</span>;
-  }
-
   const sortedRows = useMemo(() => {
-    return [...rows].sort((a, b) => {
-      let cmp = 0;
-      if (sortKey === 'name') cmp = (a.name || '').localeCompare(b.name || '', 'ar');
-      else cmp = (a[sortKey] as number) - (b[sortKey] as number);
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-  }, [rows, sortKey, sortDir]);
-
-  // Dashboard aggregates
-  const totalTarget = rows.reduce((a, r) => a + r.target, 0);
-  const totalMem = rows.reduce((a, r) => a + r.memorized, 0);
-  const scoredRows = rows.filter((r) => r.scoredCount > 0);
-  const circleAvg = scoredRows.length
-    ? Math.round(scoredRows.reduce((a, r) => a + r.avgScore, 0) / scoredRows.length)
-    : 0;
+    return [...rows].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ar'));
+  }, [rows]);
 
   if (sel != null) {
     const student = rows.find((r) => r.id === sel);
@@ -895,37 +831,16 @@ export function TeacherPortalClient({
     <div style={{ maxWidth: 1120, width: '100%', margin: '0 auto', padding: '12px', boxSizing: 'border-box' }} className="u-page">
       <TeacherReportStyles />
 
-      <div className="u-hero">
-        <div className="l">السلام عليكم ورحمة الله</div>
-        <div className="big">{teacherName ? `أهلاً ${teacherName}` : 'أهلاً بك'}</div>
-        <div className="meta"><span>حلقة <b>{circleName}</b></span></div>
-      </div>
-
-      <div className="u-grid3">
-        <div className="u-stat">
-          <div className="l">عدد الطلاب</div>
-          <div className="v">{rows.length}</div>
-        </div>
-        <div className="u-stat">
-          <div className="l">المنجز / الهدف</div>
-          <div className="v sm"><span className="u-num">{totalMem}</span> / <span className="u-num">{totalTarget}</span></div>
-        </div>
-        <div className="u-stat">
-          <div className="l">متوسط الحلقة</div>
-          <div className="v" style={{ color: pctColor(circleAvg) }}>
-            {scoredRows.length > 0 ? `${circleAvg}%` : '—'}
-          </div>
-        </div>
-      </div>
-
       {rows.length === 0 ? (
         <div className="u-empty">لا يوجد طلاب بعد</div>
       ) : (
         <div className="st-rpt-card">
           <div className="st-rpt-head">
-            <div className="st-rpt-title">تقرير الحلقة</div>
+            <div>
+              <div className="st-rpt-title">الطلاب</div>
+              <div className="st-rpt-sub">اضغط على اسم الطالب لعرض سجل التسميع</div>
+            </div>
             <div className="st-rpt-count">
-              <svg width="11" height="11" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4l7 10H5z"/></svg>
               {rows.length} {rows.length === 1 ? 'طالب' : 'طلاب'}
             </div>
           </div>
@@ -934,25 +849,13 @@ export function TeacherPortalClient({
           <table className="st-rpt-table">
             <thead>
               <tr>
-                <th onClick={() => toggleSort('name')}>الطالب{sortGlyph('name')}</th>
-                <th onClick={() => toggleSort('target')}>الأحزاب{sortGlyph('target')}</th>
-                <th onClick={() => toggleSort('memorized')}>المرصود{sortGlyph('memorized')}</th>
-                <th onClick={() => toggleSort('avgScore')}>النسبة{sortGlyph('avgScore')}</th>
+                <th>الطالب</th>
+                <th>التقدم في التسميع</th>
                 <th>الإجراء</th>
               </tr>
             </thead>
             <tbody>
               {sortedRows.map((r) => {
-                const wa = waNumber(r.parentPhone);
-                const waText = fillTemplate(waTemplate, {
-                  name: r.name,
-                  memorized: r.memorized,
-                  hizbs: r.target,
-                  errors: r.errors,
-                  alerts: r.alerts,
-                  completion: r.completion
-                });
-                const waUrl = wa ? `https://wa.me/${wa}?text=${encodeURIComponent(waText)}` : null;
                 return (
                   <tr key={r.id}>
                     <td>
@@ -960,12 +863,14 @@ export function TeacherPortalClient({
                         {r.name}
                       </button>
                     </td>
-                    <td>{r.target}</td>
-                    <td>{r.memorized}</td>
                     <td>
-                      <span className="st-pct" style={{ color: pctColor(r.avgScore) }}>
-                        {r.avgScore}%
-                      </span>
+                      <div className="st-progress">
+                        <div className="st-progress-value"><b>{r.memorized}</b><span> من {r.target} حزب</span></div>
+                        <div className="st-progress-track" aria-hidden="true">
+                          <span style={{ width: `${Math.min(100, Math.max(0, r.completion))}%` }} />
+                        </div>
+                        <small>{r.scoredCount > 0 ? `متوسط الدرجة ${r.avgScore}%` : 'لم يبدأ التسميع'}</small>
+                      </div>
                     </td>
                     <td>
                       <div className="st-row-actions">
@@ -979,19 +884,6 @@ export function TeacherPortalClient({
                           compact
                           onSaved={(newHizbs, newStatus) => handleStudentSaved(r.id, newHizbs, newStatus)}
                         />
-                        {waUrl && (
-                          <a
-                            href={waUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="u-icon-btn u-icon-btn-whatsapp"
-                            title={`إرسال تقرير ${r.name} عبر واتساب`}
-                            aria-label={`إرسال تقرير ${r.name} عبر واتساب`}
-                            style={{ textDecoration: 'none' }}
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10.14 10.14 0 0 0 11.9 2a10.08 10.08 0 0 0-8.7 15.17L2 22l4.95-1.17A10.07 10.07 0 0 0 11.9 22a10.08 10.08 0 0 0 7.21-17.1zM11.9 20.14a8.37 8.37 0 0 1-4.27-1.17l-.3-.18-3.1.73.82-3.04-.2-.31a8.37 8.37 0 0 1 7.05-12.83 8.3 8.3 0 0 1 5.9 2.45 8.3 8.3 0 0 1-5.9 14.35zm4.57-6.26c-.25-.12-1.47-.72-1.7-.8-.22-.09-.39-.13-.56.13s-.65.8-.8.97c-.14.17-.3.19-.55.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.1-.5.1-.1.23-.3.34-.44.11-.14.14-.25.21-.42.07-.17.04-.31-.02-.44-.06-.13-.56-1.35-.76-1.85-.2-.48-.4-.42-.56-.42h-.47c-.17 0-.44.06-.67.31-.22.25-.87.85-.87 2.07 0 1.22.9 2.4 1.02 2.57.12.17 1.77 2.72 4.3 3.81.6.26 1.07.42 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.19.21-.58.21-1.08.14-1.19-.06-.1-.23-.16-.47-.28z"/></svg>
-                          </a>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -1003,28 +895,16 @@ export function TeacherPortalClient({
 
           <div className="st-mobile-view st-cards-list">
             {sortedRows.map((r) => {
-              const wa = waNumber(r.parentPhone);
-              const waText = fillTemplate(waTemplate, {
-                name: r.name,
-                memorized: r.memorized,
-                hizbs: r.target,
-                errors: r.errors,
-                alerts: r.alerts,
-                completion: r.completion
-              });
-              const waUrl = wa ? `https://wa.me/${wa}?text=${encodeURIComponent(waText)}` : null;
               return (
                 <div key={r.id} className="st-stu-card">
                   <div className="st-stu-head">
                     <button type="button" onClick={() => setSel(r.id)} className="st-stu-name">
                       {r.name}
                     </button>
-                    <span className="st-stu-pct" style={{ color: pctColor(r.avgScore) }}>{r.avgScore}%</span>
+                    <span className="st-stu-pct"><b>{r.memorized}</b> / {r.target}</span>
                   </div>
                   <div className="st-stu-meta">
-                    <span>الأحزاب <b>{r.target}</b></span>
-                    <span className="sep">·</span>
-                    <span>المرصود <b>{r.memorized}</b></span>
+                    <span>{r.scoredCount > 0 ? <>متوسط الدرجة <b style={{ color: pctColor(r.avgScore) }}>{r.avgScore}%</b></> : 'لم يبدأ التسميع'}</span>
                   </div>
                   <div className="st-stu-actions">
                     <HizbsEditor
@@ -1037,19 +917,6 @@ export function TeacherPortalClient({
                       compact
                       onSaved={(newHizbs, newStatus) => handleStudentSaved(r.id, newHizbs, newStatus)}
                     />
-                    {waUrl && (
-                      <a
-                        href={waUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="u-icon-btn u-icon-btn-whatsapp"
-                        title={`إرسال تقرير ${r.name} عبر واتساب`}
-                        aria-label={`إرسال تقرير ${r.name} عبر واتساب`}
-                        style={{ textDecoration: 'none' }}
-                      >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.11 4.9A10.14 10.14 0 0 0 11.9 2a10.08 10.08 0 0 0-8.7 15.17L2 22l4.95-1.17A10.07 10.07 0 0 0 11.9 22a10.08 10.08 0 0 0 7.21-17.1zM11.9 20.14a8.37 8.37 0 0 1-4.27-1.17l-.3-.18-3.1.73.82-3.04-.2-.31a8.37 8.37 0 0 1 7.05-12.83 8.3 8.3 0 0 1 5.9 2.45 8.3 8.3 0 0 1-5.9 14.35zm4.57-6.26c-.25-.12-1.47-.72-1.7-.8-.22-.09-.39-.13-.56.13s-.65.8-.8.97c-.14.17-.3.19-.55.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.1-.5.1-.1.23-.3.34-.44.11-.14.14-.25.21-.42.07-.17.04-.31-.02-.44-.06-.13-.56-1.35-.76-1.85-.2-.48-.4-.42-.56-.42h-.47c-.17 0-.44.06-.67.31-.22.25-.87.85-.87 2.07 0 1.22.9 2.4 1.02 2.57.12.17 1.77 2.72 4.3 3.81.6.26 1.07.42 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.19.21-.58.21-1.08.14-1.19-.06-.1-.23-.16-.47-.28z"/></svg>
-                      </a>
-                    )}
                   </div>
                 </div>
               );

@@ -13,3 +13,11 @@ export const HIZB_PRESETS = [
 export function juzForHizb(hizbNumber: number): number {
   return Math.ceil(hizbNumber / 2);
 }
+
+export function hizbsForJuz(juzNumber: number): [number, number] {
+  return [juzNumber * 2 - 1, juzNumber * 2];
+}
+
+export function juzsForHizbs(hizbs: readonly number[]): number[] {
+  return Array.from(new Set(hizbs.map(juzForHizb))).sort((a, b) => a - b);
+}
