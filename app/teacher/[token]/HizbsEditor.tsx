@@ -722,7 +722,7 @@ export default function HizbsEditor({
                       title={isMandatory ? 'جزء يتضمن حزباً إلزامياً من الإدارة' : undefined}
                     >
                       {isMandatory && <span className="th-h-lock" aria-hidden="true">🔒</span>}
-                      <span className="th-h-num">الجزء {n}</span>
+                      <span className="th-h-num">{n}</span>
                     </button>
                   );
                 })}
