@@ -911,32 +911,19 @@ export default function MushafPreviewPage() {
         }
       ` }} />
 
-      <div className="u-top">
-        <div>
-          <div className="u-sub">
-            {viewerMode
-              ? 'استعراض الحزب داخل جلسة الرصد الحالية'
-              : isReciterPreview
-                ? 'رصد مواضع الأخطاء والتنبيهات على الآيات'
-                : 'شكل تجريبي · لا يحفظ شيئاً'}
+      {!isReciterPreview && (
+        <div className="u-top">
+          <div>
+            <div className="u-sub">شكل تجريبي · لا يحفظ شيئاً</div>
+            <h1>تسميع على المصحف</h1>
           </div>
-          <h1>تسميع على المصحف</h1>
         </div>
-      </div>
+      )}
 
       {sessionError && <div className="u-note bad" style={{ marginBottom: 12 }}>{sessionError}</div>}
       {savedResult && !sessionStarted && <div className="u-note ok" style={{ marginBottom: 12 }}>{savedResult}</div>}
 
-      {isReciterPreview && sessionStarted ? (
-        <div className="u-card preview-session-info">
-          <div>
-            <b>{selectedStudent?.name}</b>
-            <small>
-              الحزب {toArabicDigits(hizb)} · {viewerMode ? 'اضغط الآية لتسجيل خطأ أو تنبيه' : 'جلسة رصد محفوظة'}
-            </small>
-          </div>
-        </div>
-      ) : (
+      {isReciterPreview && sessionStarted ? null : (
         <div className="u-card preview-setup">
           {isSessionViewer ? (
           <div style={{ textAlign: 'center' }}>
