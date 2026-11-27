@@ -111,7 +111,7 @@ export default async function TeacherPortal({ params }: PageProps) {
     <main style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <header style={{ background: 'var(--card)', borderBottom: '1px solid var(--line)' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <BrandLogo className="brand-logo-topbar" />
+          <BrandLogo className="brand-logo-topbar" src={set?.logoUrl || null} />
           <div>
             <h1 style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>بوابة معلم الحلقة</h1>
             <p className="u-muted" style={{ margin: 0, fontSize: 12 }}>منصة رصد — برنامج السرد</p>

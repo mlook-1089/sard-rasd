@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import BrandLogo from '@/components/BrandLogo';
+import BrandLogo, { announceBrandLogoChange } from '@/components/BrandLogo';
 
 export default function SettingsPage() {
   const [s, setS] = useState<any | null>(null);
@@ -9,6 +9,7 @@ export default function SettingsPage() {
   const [savingAdminPw, setSavingAdminPw] = useState(false);
   const [savingReciterPw, setSavingReciterPw] = useState(false);
   const [savingField, setSavingField] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [msg, setMsg] = useState<null | { ok: boolean; text: string }>(null);
 
   async function load() {
@@ -69,6 +70,34 @@ export default function SettingsPage() {
     }
   }
 
+  async function uploadLogo(file: File | undefined) {
+    if (!file || uploadingLogo) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setMsg({ ok: false, text: 'صيغة الشعار يجب أن تكون PNG أو JPG أو WebP' });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setMsg({ ok: false, text: 'حجم الشعار يجب ألا يتجاوز 2 ميجابايت' });
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+      const saved = await save({ logoUrl: dataUrl });
+      if (saved) announceBrandLogoChange(dataUrl);
+    } catch {
+      setMsg({ ok: false, text: 'تعذر قراءة ملف الشعار' });
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
   if (!s) return <div className="u-page"><div className="u-empty">...جاري التحميل</div></div>;
 
   return (
@@ -93,9 +122,36 @@ export default function SettingsPage() {
         </div>
         <div className="u-field"><label>الشعار المعتمد</label>
           <div style={{ width: 'min(280px, 100%)', marginTop: 8, padding: '10px 14px', borderRadius: 12, border: '1px solid var(--line)', background: '#fff' }}>
-            <BrandLogo />
+            <BrandLogo src={s.logoUrl || null} />
           </div>
-          <div className="u-muted" style={{ marginTop: 6, fontSize: 11.5 }}>مطبّق تلقائياً على جميع الواجهات والشهادات.</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+            <label className="u-btn u-btn-p sm" style={{ cursor: uploadingLogo ? 'wait' : 'pointer' }}>
+              {uploadingLogo ? 'جاري رفع الشعار…' : 'رفع شعار من الجهاز'}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                disabled={uploadingLogo}
+                onChange={(event) => {
+                  uploadLogo(event.target.files?.[0]);
+                  event.target.value = '';
+                }}
+                style={{ display: 'none' }}
+              />
+            </label>
+            {s.logoUrl && (
+              <button
+                type="button"
+                className="u-btn u-btn-g sm"
+                onClick={async () => {
+                  const saved = await save({ logoUrl: null });
+                  if (saved) announceBrandLogoChange(null);
+                }}
+              >
+                استعادة الشعار الافتراضي
+              </button>
+            )}
+          </div>
+          <div className="u-muted" style={{ marginTop: 6, fontSize: 11.5 }}>PNG أو JPG أو WebP، بحد أقصى 2 ميجابايت. يُطبّق على جميع الواجهات والشهادات.</div>
         </div>
         <div className="u-field"><label>رابط صورة الدخول</label>
           <input dir="ltr" defaultValue={s.loginImageUrl || ''} onBlur={(e) => (e.target.value || null) !== (s.loginImageUrl || null) && save({ loginImageUrl: e.target.value || null })} className="u-input" />

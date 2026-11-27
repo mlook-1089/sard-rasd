@@ -211,7 +211,7 @@ export default function HonorClient({ initialData = null }: { initialData?: Hono
 
         <header className="honor-header">
           <div className="honor-brand">
-            <BrandLogo />
+            <BrandLogo src={data.settings?.logoUrl || null} />
           </div>
           <h1 className="honor-title">{titleText}</h1>
           <div className="honor-live">

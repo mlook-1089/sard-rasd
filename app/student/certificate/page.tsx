@@ -39,7 +39,7 @@ export default async function CertificatePage() {
     return (
       <main style={{ minHeight: '100vh', background: 'var(--bg)', display: 'grid', placeItems: 'center', padding: 24 }}>
         <div className="u-card" style={{ maxWidth: 480, textAlign: 'center' }}>
-          <BrandLogo style={{ width: 240, margin: '0 auto 14px' }} />
+          <BrandLogo src={set?.logoUrl || null} style={{ width: 240, margin: '0 auto 14px' }} />
           <h1 style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', marginBottom: 8 }}>
             لا يمكن إصدار الشهادة
           </h1>
@@ -221,7 +221,7 @@ export default async function CertificatePage() {
         <div className="cert-page">
           <div className="cert" style={{ color: '#ffffff' }}>
             <div className="cert-body">
-              <div className="cert-brand"><BrandLogo /></div>
+              <div className="cert-brand"><BrandLogo src={set?.logoUrl || null} /></div>
               <h2 className="cert-inst" style={{ color: '#ffffff' }}>{inst}</h2>
 
               <h1 className="cert-title" style={{ color: '#ffffff' }}>شهادة إتمام</h1>
